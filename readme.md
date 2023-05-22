@@ -31,7 +31,6 @@ docker run \
     -p 8888:8888 \
     --detach \
     --volume $PWD:/workspace \
-    --env HOME=/workspace \
     --env WANDB_API_KEY='' \
     nvcr.io/nvidia/clara/megamolbart_v0.2:0.2.0
 ```
@@ -40,10 +39,14 @@ download SolProp datasets from https://zenodo.org/record/5970538
 extract AqueousSolu.csv and CombiSolu-Exp.csv into /data
 ```
 ```
-# attach shell to container, cd to /workspace
-cd $HOME
+# attach shell to container
+docker exec -it mmb bash
+# change to /workspace directory
+cd /workspace
 # install requirements
 pip install -r requirements.txt
+# possibly required to add git permission:
+git config --global --add safe.directory /workspace
 ```
 
 ### Add code to extract attention scores + gradients
