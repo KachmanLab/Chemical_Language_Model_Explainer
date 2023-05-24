@@ -34,7 +34,7 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
 combi_model = CombiRegModel()
 combi_model.mmb.unfreeze()
 
-wandb_logger = WandbLogger(project='combi-solu', dir='/results/')
+wandb_logger = WandbLogger(project='combi-solu', dir='/workspace/results/')
 wandb_logger.experiment.config.update(cfg)
 
 trainer = pl.Trainer(

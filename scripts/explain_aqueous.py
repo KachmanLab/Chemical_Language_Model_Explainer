@@ -31,15 +31,15 @@ test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)
 
-subfolders = [f.path for f in os.scandir('/results/aqueous-solu/') if f.is_dir()]
+subfolders = [f.path for f in os.scandir('/workspace/results/aqueous-solu/') if f.is_dir()]
 subfolders = max(subfolders, key=os.path.getmtime)
 
 if cfg['model'] == 'reg':
-    # subfolders = '/results/aqueous-solu/xxxxxxx'  # pick a specific run / ckpt
+    # subfolders = '/workspace/results/aqueous-solu/xxxxxxx'  # pick a specific run / ckpt
     ft_model = AqueousRegModel()
     xai = f"reg"
 elif cfg['model'] == 'baseline':
-    # subfolders = '/results/aqueous-solu/xxxxxxx'  # pick a specific run / ckpt
+    # subfolders = '/workspace/results/aqueous-solu/xxxxxxx'  # pick a specific run / ckpt
     ft_model = BaselineAqueousModel()
     xai = f"sal"
 

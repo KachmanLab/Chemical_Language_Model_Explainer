@@ -4,7 +4,7 @@ This repository accompanies the paper 'Explainability Techniques for Chemical La
 The repository is split into the following:
 ```
 src/
-	model.py		- AqueousRegModel, CombiRegModel & <REG> tokenizer
+	model.py		    - AqueousRegModel, CombiRegModel & <REG> tokenizer
 	dataloader.py 		- AqueousSolu & CombiSolu-Exp Dataloaders (SolProp)
 	explainer.py 		- Explainability code to attribute atom relevance
 
@@ -24,7 +24,7 @@ nemo_src/
 ```
 git clone https://github.com/KachmanLab/Chemical_Language_Model_Explainer.git
 cd Chemical_Language_Model_Explainer
-# pull nvidia megamolbart:v0.2, mount repo (current directory) into /workspace
+# pull nvidia megamolbart:v0.2 docker container, mount repo (current directory) into /workspace
 docker run \
     --gpus all \
     --name mmb \
@@ -45,8 +45,6 @@ docker exec -it mmb bash
 cd /workspace
 # install requirements
 pip install -r requirements.txt
-# possibly required to add git permission:
-git config --global --add safe.directory /workspace
 ```
 
 ### Add code to extract attention scores + gradients

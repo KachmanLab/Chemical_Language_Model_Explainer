@@ -35,7 +35,7 @@ ft_model = AqueousRegModel()
 # unfreeze to train the whole model instead of just the head
 ft_model.mmb.unfreeze() 
 
-wandb_logger = WandbLogger(project='aqueous-solu', dir='/results/')
+wandb_logger = WandbLogger(project='aqueous-solu', dir='/workspace/results/')
 wandb_logger.experiment.config.update(cfg)
 
 trainer = pl.Trainer(

@@ -38,9 +38,9 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
 # logS is scaled to [0, 1] for stability, so we need to unscale it for plotting
 unscale = test_dataset.unscale if cfg['scale_logS'] else lambda x: x
 
-subfolders = [f.path for f in os.scandir('/results/combi-solu/') if f.is_dir()]
+subfolders = [f.path for f in os.scandir('/workspace/results/combi-solu/') if f.is_dir()]
 subfolders = max(subfolders, key=os.path.getmtime)
-# subfolders = '/results/combi-solu/xxxxxxxx' # pick a specific run / ckpt
+# subfolders = '/workspace/results/combi-solu/xxxxxxxx' # pick a specific run / ckpt
 
 ckpt_path = glob.glob(os.path.join(f'{subfolders}/checkpoints/', "*"))[0]
 print(subfolders, ckpt_path)
