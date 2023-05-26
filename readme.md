@@ -88,6 +88,7 @@ python scripts/explain_combi.py
 
 ### Citation
 If you found this repository useful, please cite our paper:
+```
 @misc{hödl2023explainability,
       title={Explainability Techniques for Chemical Language Models}, 
       author={Stefan Hödl and William Robinson and Yoram Bachrach and Wilhelm Huck and Tal Kachman},
@@ -96,3 +97,4 @@ If you found this repository useful, please cite our paper:
       archivePrefix={arXiv},
       primaryClass={cs.LG}
 }
+```
