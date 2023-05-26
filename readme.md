@@ -1,5 +1,6 @@
 # Explainability Techniques for Chemical Language Models
 This repository accompanies the paper 'Explainability Techniques for Chemical Language Models' with code to reproduce the results and apply the technique to other self-attention encoder architectures.
+The paper can be found on Arxiv: https://arxiv.org/abs/2305.16192
 
 The repository is split into the following:
 ```
@@ -84,3 +85,14 @@ python scripts/train_aqueous.py
 ...
 python scripts/explain_combi.py
 ```
+
+### Citation
+If you found this repository useful, please cite our paper:
+@misc{hödl2023explainability,
+      title={Explainability Techniques for Chemical Language Models}, 
+      author={Stefan Hödl and William Robinson and Yoram Bachrach and Wilhelm Huck and Tal Kachman},
+      year={2023},
+      eprint={2305.16192},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
