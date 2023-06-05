@@ -1,12 +1,15 @@
-wandb == 0.13.1
+dagshub == 0.2.17
+dvc == 2.58.2
 matplotlib == 3.5.2
 rdkit == 2022.9.5
 scikit-learn == 0.24.2
 numpy == 1.22.3
 pandas == 1.4.3
 seaborn == 0.12.2
-# contained in MegaMolBART v0.2 docker container:
+## contained in MegaMolBART v0.2 docker container:
 # nemo-chem                     0.2.0.dev0
 # nemo-toolkit                  1.11.0
 # pytorch-lightning             1.6.5
 # torch                         1.13.0a0+08820cb
+## if logging with wandb:
+# wandb == 0.13.1

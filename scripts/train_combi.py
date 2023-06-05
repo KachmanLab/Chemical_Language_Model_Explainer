@@ -2,18 +2,13 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import WandbLogger
+from dagshub.pytorch_lightning import DAGsHubLogger
 from src.dataloader import CombiSoluDataset
 from src.model import CombiRegModel
+import json
 
-cfg = {
-    'n_batch': 56,
-    'seed': 42,
-    'n_epochs': 40,
-    'temp_test': False,
-    'split': 0.9,
-    'scale_logS': True,
-}
+with open('/workspace/scripts/combi_config.json', 'r') as f:
+    cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
 
@@ -32,17 +27,21 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
     shuffle=False, num_workers=8)
 
 combi_model = CombiRegModel()
+# unfreeze to train the whole model instead of just the head
 combi_model.mmb.unfreeze()
 
-wandb_logger = WandbLogger(project='combi-solu', dir='/results/')
-wandb_logger.experiment.config.update(cfg)
+dagslogger = DAGsHubLogger(
+    metrics_path="/workspace/results/combi-solu/metrics.csv",
+    hparams_path="/workspace/scripts/combi_config.json"
+)
 
 trainer = pl.Trainer(
     max_epochs=cfg['n_epochs'],
     accelerator='gpu',
     gpus=1,
     precision=16,
-    logger=wandb_logger,
+    logger=dagslogger,
+    default_save_path='/workspace/results/combi-solu',
     auto_lr_find=True,
 )
 

@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import WandbLogger
 
 from rdkit import Chem, rdBase
 from rdkit.Chem import Draw, AllChem
@@ -14,19 +13,15 @@ import numpy as np
 import pandas as pd
 import os
 import glob
+import json
 import itertools
 
 from src.dataloader import CombiSoluDataset
 from src.model import CombiRegModel
 from src.explainer import ColorMapper
 
-cfg = {
-    'n_batch': 32,
-    'seed': 42,
-    'temp_test': False,
-    'split': 0.9,
-    'scale_logS': True,
-}
+with open('/workspace/scripts/combi_config.json', 'r') as f:
+    cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
 

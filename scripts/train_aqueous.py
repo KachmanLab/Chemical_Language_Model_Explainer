@@ -2,17 +2,13 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import WandbLogger
+import json
+from dagshub.pytorch_lightning import DAGsHubLogger
 from src.dataloader import AqSolDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
 
-cfg = {
-    'n_batch': 48,
-    'seed': 42,
-    'n_epochs': 50,
-    'acc_test': True,
-    'split': 0.9,
-}
+with open('/workspace/scripts/aqueous_config.json', 'r') as f:
+    cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
 
@@ -35,15 +31,18 @@ ft_model = AqueousRegModel()
 # unfreeze to train the whole model instead of just the head
 ft_model.mmb.unfreeze() 
 
-wandb_logger = WandbLogger(project='aqueous-solu', dir='/results/')
-wandb_logger.experiment.config.update(cfg)
+dagslogger = DAGsHubLogger(
+    metrics_path="/workspace/results/aqueous-solu/metrics.csv",
+    hparams_path="/workspace/scripts/aqueous_config.json",
+    # default_save_path='/workspace/results/aqueous-solu',
+)
 
 trainer = pl.Trainer(
     max_epochs=cfg['n_epochs'],
     accelerator='gpu',
     gpus=1,
     precision=16,
-    logger=wandb_logger,
+    logger=dagslogger,
     auto_lr_find=True,
 )
 

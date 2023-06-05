@@ -11,19 +11,15 @@ import numpy as np
 import pandas as pd
 import os
 import glob
+import json
 from sklearn import linear_model
 
 from src.dataloader import AqSolDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
 from src.explainer import ColorMapper 
 
-cfg = {
-    'n_batch': 32,
-    'seed': 42,
-    'acc_test': True,
-    'split': 0.9,
-    'model': 'reg',
-}
+with open('/workspace/scripts/aqueous_config.json', 'r') as f:
+    cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
 test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test', 
@@ -31,15 +27,15 @@ test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)
 
-subfolders = [f.path for f in os.scandir('/results/aqueous-solu/') if f.is_dir()]
+subfolders = [f.path for f in os.scandir('/workspace/results/aqueous-solu/') if f.is_dir()]
 subfolders = max(subfolders, key=os.path.getmtime)
 
 if cfg['model'] == 'reg':
-    # subfolders = '/results/aqueous-solu/xxxxxxx'  # pick a specific run / ckpt
+    # subfolders = '/workspace/results/aqueous-solu/xxxxxxx'  # pick a specific run / ckpt
     ft_model = AqueousRegModel()
     xai = f"reg"
 elif cfg['model'] == 'baseline':
-    # subfolders = '/results/aqueous-solu/xxxxxxx'  # pick a specific run / ckpt
+    # subfolders = '/workspace/results/aqueous-solu/xxxxxxx'  # pick a specific run / ckpt
     ft_model = BaselineAqueousModel()
     xai = f"sal"
 
