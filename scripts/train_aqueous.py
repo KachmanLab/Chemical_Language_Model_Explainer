@@ -32,8 +32,10 @@ ft_model = AqueousRegModel()
 ft_model.mmb.unfreeze() 
 
 dagslogger = DAGsHubLogger(
-    metrics_path="/workspace/results/aqueous-solu/metrics.csv",
-    hparams_path="/workspace/scripts/aqueous_config.json",
+    name='results/aqueous-solu',
+    metrics_path="/workspace/results/aqueous-solu/aqueous_metrics.csv",
+    hparams_path="/workspace/results/aqueous-solu/aqueous_config.json",
+    version='aqueous-v1'
     # default_save_path='/workspace/results/aqueous-solu',
 )
 

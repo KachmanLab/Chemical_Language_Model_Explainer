@@ -31,8 +31,10 @@ combi_model = CombiRegModel()
 combi_model.mmb.unfreeze()
 
 dagslogger = DAGsHubLogger(
-    metrics_path="/workspace/results/combi-solu/metrics.csv",
-    hparams_path="/workspace/scripts/combi_config.json"
+    name='results/combi-solu',
+    metrics_path="/workspace/results/combi-solu/combi_metrics.csv",
+    hparams_path="/workspace/results/combi-solu/combi_config.json",
+    version='combi-v1'
 )
 
 trainer = pl.Trainer(
@@ -41,7 +43,6 @@ trainer = pl.Trainer(
     gpus=1,
     precision=16,
     logger=dagslogger,
-    default_save_path='/workspace/results/combi-solu',
     auto_lr_find=True,
 )
 
