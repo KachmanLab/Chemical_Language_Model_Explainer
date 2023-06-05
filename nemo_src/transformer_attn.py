@@ -1,5 +1,3 @@
-# cp /workspace/otherSrc/mmb_transformer.py /opt/conda/lib/python3.8/site-packages/nemo/collections/nlp/modules/common/megatron/transformer.py
-
 # coding=utf-8
 # Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
 #
