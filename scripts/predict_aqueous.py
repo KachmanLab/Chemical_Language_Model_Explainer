@@ -39,7 +39,7 @@ ckpt_path = glob.glob(os.path.join(
 print(ckpt_path)
 
 ft_model = AqueousRegModel()
-ft_model.load_from_checkpoint(ckpt_path)
+ft_model = ft_model.load_from_checkpoint(ckpt_path)
 ft_model.unfreeze()
 ft_model.eval()
 
