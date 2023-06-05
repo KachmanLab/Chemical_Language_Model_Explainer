@@ -59,7 +59,7 @@ masks = [f.get('masks') for f in all]
 
 if cfg['model'] == 'reg':
     rel_weights = [f.get('rel_weights') for f in all]
-    atom_colors = [f.get('atom_colors') for f in all]
+    rdkit_colors = [f.get('rdkit_colors') for f in all]
 elif cfg['model'] == 'baseline':
     salience_colors = [f.get('salience_colors') for f in all]
 
@@ -155,7 +155,7 @@ for b_nr, b_ix in zip(b_nr, b_ix):
     pred = preds[b_nr][b_ix]
     
     if cfg['model'] == 'reg':
-        atom_color = atom_colors[b_nr][b_ix]
+        atom_color = rdkit_colors[b_nr][b_ix]
     elif cfg['model'] == 'baseline':
         atom_color = salience_colors[b_nr][b_ix]
 

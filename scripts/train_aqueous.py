@@ -4,6 +4,8 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 import json
 from dagshub.pytorch_lightning import DAGsHubLogger
+import dagshub
+import mlflow
 from src.dataloader import AqSolDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
 
@@ -36,8 +38,13 @@ dagslogger = DAGsHubLogger(
     metrics_path="/workspace/results/aqueous-solu/aqueous_metrics.csv",
     hparams_path="/workspace/results/aqueous-solu/aqueous_config.json",
     version='aqueous-v1'
-    # default_save_path='/workspace/results/aqueous-solu',
 )
+
+dagshub.init("Chemical_Language_Model_Explainer", "stefanhoedl", mlflow=True)
+
+mlflow.set_tracking_uri('https://dagshub.com/stefanhoedl/Chemical_Language_Model_Explainer.mlflow')
+mlflow.pytorch.autolog(log_models=True)
+mlflow.log_params(cfg)
 
 trainer = pl.Trainer(
     max_epochs=cfg['n_epochs'],
@@ -50,3 +57,5 @@ trainer = pl.Trainer(
 
 trainer.fit(ft_model, train_loader, val_loader)
 trainer.test(ft_model, test_loader)
+
+# mlflow.log_artifact('/workspace/results/aqueous-solu/aqueous-v1')

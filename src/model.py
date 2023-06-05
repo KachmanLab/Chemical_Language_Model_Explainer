@@ -196,12 +196,15 @@ class AqueousRegModel(pl.LightningModule):
         # extract weights & map colors for all samples in batch:
         rel_weights = [self.explainer(attn[i], attn_grads[i], masks[i], tokens[i]) \
             for i in range(len(inputs))]
-        atom_colors = [self.cmapper(rel_weights[i], tokens[i]) \
+        atom_weights = [self.cmapper(rel_weights[i], tokens[i]) \
+            for i in range(len(inputs))]
+        rdkit_colors = [self.cmapper.to_rdkit_cmap(atom_weights[i]) \
             for i in range(len(inputs))]
 
         return {"preds": preds, "labels": labels, 
             "smiles": inputs, "tokens": tokens, "masks": masks, 
-            "rel_weights": rel_weights, "atom_colors": atom_colors,
+            "rel_weights": rel_weights, "atom_weights": atom_weights,
+            "rdkit_colors": rdkit_colors,
         }
 
     def collect_attn_grads(self):

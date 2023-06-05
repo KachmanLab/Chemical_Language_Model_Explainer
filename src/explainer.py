@@ -90,9 +90,13 @@ class ColorMapper():
         return [weight[i] for i, t in enumerate(token) if t in self.atoms]
 
     def __call__(self, weight, token):
+        ''' filter relevance weights for atom-only tokens
+            and scale by its own min/max'''
         self.norm = Normalize(self.vmin, self.vmax)
-        weight = self.norm(self.filter_atoms(weight, token))
-        # map to shape shape required by RDkit to visualize
+        return self.norm(self.filter_atoms(weight, token))
+   
+    def to_rdkit_cmap(self, weight):
+        '''helper to map to shape required by RDkit to visualize '''
         return {i: [tuple(self.cmap(w))] for i, w in enumerate(weight)}
 
 def make_legend():
