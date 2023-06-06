@@ -274,12 +274,15 @@ class CombiRegModel(AqueousRegModel):
         # extract weights & map colors for all samples in batch:
         rel_weights = [self.explainer(attn[i], attn_grads[i], masks[i]) \
             for i in range(len(solu_smi))]
-        atom_colors = [self.cmapper(rel_weights[i], tokens[i]) \
+        atom_weights = [self.cmapper(rel_weights[i], tokens[i]) \
             for i in range(len(solu_smi))]
- 
+        rdkit_colors = [self.cmapper.to_rdkit_cmap(atom_weights[i]) \
+            for i in range(len(solu_smi))]
+        
         return {"preds": preds, "labels": labels, "tokens": tokens, 
                 "solu_smi": solu_smi, "solv_smi": solv_smi, "masks": masks, 
-                "rel_weights": rel_weights, "atom_colors": atom_colors}   
+                "rel_weights": rel_weights, "atom_weights": atom_weights,
+                "rdkit_colors": rdkit_colors}   
 
 
 class BaselineAqueousModel(AqueousRegModel):

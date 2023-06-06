@@ -2,10 +2,12 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-from dagshub.pytorch_lightning import DAGsHubLogger
+import json
+import dagshub
+# from dagshub.pytorch_lightning import DAGsHubLogger
+import mlflow
 from src.dataloader import CombiSoluDataset
 from src.model import CombiRegModel
-import json
 
 with open('/workspace/scripts/combi_config.json', 'r') as f:
     cfg = json.load(f)
@@ -30,21 +32,24 @@ combi_model = CombiRegModel()
 # unfreeze to train the whole model instead of just the head
 combi_model.mmb.unfreeze()
 
-dagslogger = DAGsHubLogger(
-    name='results/combi-solu',
-    metrics_path="/workspace/results/combi-solu/combi_metrics.csv",
-    hparams_path="/workspace/results/combi-solu/combi_config.json",
-    version='combi-v1'
-)
+
+dagshub.init("Chemical_Language_Model_Explainer", "stefanhoedl", mlflow=True)
 
 trainer = pl.Trainer(
     max_epochs=cfg['n_epochs'],
     accelerator='gpu',
     gpus=1,
     precision=16,
-    logger=dagslogger,
     auto_lr_find=True,
 )
 
-trainer.fit(combi_model, train_loader, val_loader)
-trainer.test(combi_model, test_loader)
+with mlflow.start_run() as run:
+    mlflow.pytorch.autolog(log_models=False)
+    mlflow.log_params(cfg)
+    
+    trainer.fit(combi_model, train_loader, val_loader)
+    trainer.test(combi_model, test_loader)
+
+    modelpath = f'/workspace/results/combi-solu/combi_{run.info.run_id}.pt'
+    trainer.save_checkpoint(modelpath)
+    mlflow.log_artifact(modelpath)

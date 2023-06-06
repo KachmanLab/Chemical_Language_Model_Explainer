@@ -33,15 +33,13 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
 # logS is scaled to [0, 1] for stability, so we need to unscale it for plotting
 unscale = test_dataset.unscale if cfg['scale_logS'] else lambda x: x
 
-subfolders = [f.path for f in os.scandir('/workspace/results/combi-solu/') if f.is_dir()]
-subfolders = max(subfolders, key=os.path.getmtime)
-# subfolders = '/workspace/results/combi-solu/xxxxxxxx' # pick a specific run / ckpt
-
-ckpt_path = glob.glob(os.path.join(f'{subfolders}/checkpoints/', "*"))[0]
-print(subfolders, ckpt_path)
+subfolders = [f.path for f in os.scandir('/workspace/results/combi-solu/') \
+    if f.path.endswith('.pt')]
+ckpt_path = max(subfolders, key=os.path.getmtime)
 
 combi_model = CombiRegModel()
-combi_model.load_from_checkpoint(ckpt_path)
+# combi_model = combi_model.load_from_checkpoint(ckpt_path)
+combi_model = combi_model.load_from_checkpoint(ckpt_path)
 combi_model.mmb.unfreeze()
 
 trainer = pl.Trainer(
@@ -50,7 +48,7 @@ trainer = pl.Trainer(
     precision=16,
 )
 # predict with trained model (ckpt_path)
-all = trainer.predict(combi_model, test_loader, ckpt_path=ckpt_path)
+all = trainer.predict(combi_model, test_loader)
 
 solu_smiles = [f.get('solu_smi') for f in all]
 solv_smiles = [f.get('solv_smi') for f in all]
@@ -59,7 +57,8 @@ preds = [f.get('preds') for f in all]
 labels = [f.get('labels') for f in all]
 masks = [f.get('masks') for f in all]
 rel_weights = [f.get('rel_weights') for f in all]
-atom_colors = [f.get('atom_colors') for f in all]
+atom_weights = [f.get('atom_weights') for f in all]
+rdkit_colors = [f.get('rdkit_colors') for f in all]
 
 ###################################
 # parity plot
@@ -120,7 +119,7 @@ def plot_weighted_molecule_pair(
 
     mol = Chem.MolFromSmiles(smiles)
     mol = Draw.PrepareMolForDrawing(mol)
-    d = Draw.rdMolDraw2D.MolDraw2DCairo(550, 520)#, 700, 700)
+    d = Draw.rdMolDraw2D.MolDraw2DCairo(700, 700)
     d.drawOptions().padding = 0.0  # No extra whitespace
 
     if int(mol.GetNumAtoms()) != len(atom_colors.keys()):
@@ -130,7 +129,7 @@ def plot_weighted_molecule_pair(
         bond_colors, h_rads, h_lw_mult, -1)
     d.FinishDrawing()
 
-    with open(file=f'/workspace/results/combi-solu/{prefix}_MolViz.png',
+    with open(file=f'/workspace/results/combi-solu/viz/{prefix}_MolViz.png',
         mode = 'wb') as f:
         f.write(d.GetDrawingText())
 
@@ -156,7 +155,7 @@ for b_nr, b_ix in zip(b_nr, b_ix):
     solv_smi = solv_smiles[b_nr][b_ix]
     lab = unscale(labels[b_nr][b_ix])
     pred = unscale(preds[b_nr][b_ix])
-    atom_color = atom_colors[b_nr][b_ix]
+    atom_color = rdkit_colors[b_nr][b_ix]
     plot_weighted_molecule_pair(
         atom_color, solu_smi, solv_smi, token, lab, pred, f"{b_nr}_{b_ix}"
     )
