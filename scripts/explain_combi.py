@@ -33,12 +33,11 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
 # logS is scaled to [0, 1] for stability, so we need to unscale it for plotting
 unscale = test_dataset.unscale if cfg['scale_logS'] else lambda x: x
 
-subfolders = [f.path for f in os.scandir('/workspace/results/combi-solu/') \
-    if f.path.endswith('.pt')]
+subfolders = [f.path for f in os.scandir('/workspace/results/combi/models/') \
+    if (f.path.endswith('.pt') or f.path.endswith('.ckpt'))]
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
 combi_model = CombiRegModel()
-# combi_model = combi_model.load_from_checkpoint(ckpt_path)
 combi_model = combi_model.load_from_checkpoint(ckpt_path)
 combi_model.mmb.unfreeze()
 
@@ -101,7 +100,7 @@ p.fig.tight_layout()
 txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nSlope = {slo} \nn = {len(y)} \n{nSolu}, {nSolv} "
 plt.text(1.5, -5.75,
          txt, ha="right", va="bottom", fontsize=14)
-p.savefig(f'/workspace/results/combi-solu/CombiSolu_parity_{tmp}.png')
+p.savefig(f'/workspace/results/combi/CombiSolu_parity_{tmp}.png')
 
 ###################################
 #molecule visualizations
@@ -120,7 +119,7 @@ def plot_weighted_molecule_pair(
     mol = Chem.MolFromSmiles(smiles)
     mol = Draw.PrepareMolForDrawing(mol)
     d = Draw.rdMolDraw2D.MolDraw2DCairo(700, 700)
-    d.drawOptions().padding = 0.0  # No extra whitespace
+    d.drawOptions().padding = 0.0
 
     if int(mol.GetNumAtoms()) != len(atom_colors.keys()):
         cnt = int(mol.GetNumAtoms()) - len(atom_colors.keys())
@@ -129,33 +128,23 @@ def plot_weighted_molecule_pair(
         bond_colors, h_rads, h_lw_mult, -1)
     d.FinishDrawing()
 
-    with open(file=f'/workspace/results/combi-solu/viz/{prefix}_MolViz.png',
+    with open(file=f'/workspace/results/combi/viz/{prefix}_MolViz.png',
         mode = 'wb') as f:
         f.write(d.GetDrawingText())
 
+###################
+# plot entire test set:
+for b_nr, _ in enumerate(all):
+    for b_ix in range(len(solu_smiles[b_nr])):
+        token = tokens[b_nr][b_ix][1:]
+        mask = masks[b_nr][b_ix]
+        solu_smi = solu_smiles[b_nr][b_ix]
+        solv_smi = solv_smiles[b_nr][b_ix]
+        lab = unscale(labels[b_nr][b_ix])
+        pred = unscale(preds[b_nr][b_ix])
+        atom_color = rdkit_colors[b_nr][b_ix]
+        uid = b_nr * cfg['n_batch'] + b_ix
 
-b_nr = [0]*cfg['n_batch']
-b_ix = list(range(cfg['n_batch']))
-
-# find smiles string indices
-target_smiles = ['C1=CC=C2C(=C1)C(=NO2)CS(=O)(=O)N',
-                 'COO',
-                 'CC1=CC=CC=C1']
-for nr in range(len(solu_smiles)):
-    for ix in range(len(solu_smiles[nr])):
-        solu = solu_smiles[nr][ix]
-        if solu in target_smiles:
-            b_nr.append(nr)
-            b_ix.append(ix)
-
-for b_nr, b_ix in zip(b_nr, b_ix):
-    token = tokens[b_nr][b_ix][1:]
-    mask = masks[b_nr][b_ix]
-    solu_smi = solu_smiles[b_nr][b_ix]
-    solv_smi = solv_smiles[b_nr][b_ix]
-    lab = unscale(labels[b_nr][b_ix])
-    pred = unscale(preds[b_nr][b_ix])
-    atom_color = rdkit_colors[b_nr][b_ix]
-    plot_weighted_molecule_pair(
-        atom_color, solu_smi, solv_smi, token, lab, pred, f"{b_nr}_{b_ix}"
-    )
+        plot_weighted_molecule_pair(
+            atom_color, solu_smi, solv_smi, token, lab, pred, f"{uid}"
+        )

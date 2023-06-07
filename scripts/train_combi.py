@@ -32,7 +32,6 @@ combi_model = CombiRegModel()
 # unfreeze to train the whole model instead of just the head
 combi_model.mmb.unfreeze()
 
-
 dagshub.init("Chemical_Language_Model_Explainer", "stefanhoedl", mlflow=True)
 
 trainer = pl.Trainer(
@@ -50,6 +49,6 @@ with mlflow.start_run() as run:
     trainer.fit(combi_model, train_loader, val_loader)
     trainer.test(combi_model, test_loader)
 
-    modelpath = f'/workspace/results/combi-solu/combi_{run.info.run_id}.pt'
+    modelpath = f'/workspace/results/combi/models/combi_{run.info.run_id}.pt'
     trainer.save_checkpoint(modelpath)
-    mlflow.log_artifact(modelpath)
+    # mlflow.log_artifact(modelpath)

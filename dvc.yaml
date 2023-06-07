@@ -42,4 +42,35 @@ stages:
     - results/aqueous/models/
     - results/aqueous/viz/
     - results/aqueous/AqueousSolu_predictions.csv
+
+
+  train_combi:
+    cmd: python3 scripts/train_combi.py
+    deps:
+    - data/CombiSolu-Exp.csv
+    - scripts/train_combi.py
+    - src/model.py
+    - src/dataloader.py
+    - scripts/combi_config.json
+    outs:
+    - results/combi/models/:
+        persist: true
   
+  plot_combi:
+    cmd: python3 scripts/explain_combi.py
+    deps:
+    - data/CombiSolu-Exp.csv
+    - src/model.py
+    - src/dataloader.py
+    - scripts/explain_combi.py
+    - results/combi/models/
+    - scripts/combi_config.json
+    outs:
+    - results/combi/viz/:
+        persist: true
+
+  combi:
+    cmd: echo "Finished full combi solubility pipeline"
+    deps:
+    - results/combi/models/
+    - results/combi/viz/

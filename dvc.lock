@@ -90,3 +90,64 @@ stages:
       md5: 6c8b11923caa259602c5356db452408c.dir
       size: 26754643
       nfiles: 575
+  train_combi:
+    cmd: python3 scripts/train_combi.py
+    deps:
+    - path: data/CombiSolu-Exp.csv
+      md5: b249b75582a9ca5e7a374648b81993be
+      size: 1623266
+    - path: scripts/combi_config.json
+      md5: c16f95d9d61dff44470face9e47952ac
+      size: 123
+    - path: scripts/train_combi.py
+      md5: e1f77c3bb17a6fd8a21f4a17533ba7de
+      size: 1900
+    - path: src/dataloader.py
+      md5: 93db22cf89b1216e0372a8c1987de690
+      size: 7477
+    - path: src/model.py
+      md5: dd61320f74f218659e501d58e46ef4f2
+      size: 13068
+    outs:
+    - path: results/combi/models/
+      md5: 49d97cb1b6c7c7909b63f212eddd991d.dir
+      size: 235939805
+      nfiles: 2
+  plot_combi:
+    cmd: python3 scripts/explain_combi.py
+    deps:
+    - path: data/CombiSolu-Exp.csv
+      md5: b249b75582a9ca5e7a374648b81993be
+      size: 1623266
+    - path: results/combi/models/
+      md5: 49d97cb1b6c7c7909b63f212eddd991d.dir
+      size: 235939805
+      nfiles: 2
+    - path: scripts/combi_config.json
+      md5: c16f95d9d61dff44470face9e47952ac
+      size: 123
+    - path: scripts/explain_combi.py
+      md5: e8179f9e59c2381bc18703d741e881ab
+      size: 5001
+    - path: src/dataloader.py
+      md5: 93db22cf89b1216e0372a8c1987de690
+      size: 7477
+    - path: src/model.py
+      md5: dd61320f74f218659e501d58e46ef4f2
+      size: 13068
+    outs:
+    - path: results/combi/viz/
+      md5: 5e1fb28bb5fa0312af78438394adf8ff.dir
+      size: 29300564
+      nfiles: 494
+  combi:
+    cmd: echo "Finished full combi solubility pipeline"
+    deps:
+    - path: results/combi/models/
+      md5: 49d97cb1b6c7c7909b63f212eddd991d.dir
+      size: 235939805
+      nfiles: 2
+    - path: results/combi/viz/
+      md5: 5e1fb28bb5fa0312af78438394adf8ff.dir
+      size: 29300564
+      nfiles: 494
