@@ -1,3 +1,5 @@
+[core]
+    autostage = true
 ['remote "origin"']
     url = https://dagshub.com/stefanhoedl/Chemical_Language_Model_Explainer.dvc
     read_timeout = 300

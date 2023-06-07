@@ -3,8 +3,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 import json
-from dagshub.pytorch_lightning import DAGsHubLogger
 import dagshub
+# from dagshub.pytorch_lightning import DAGsHubLogger
 import mlflow
 from src.dataloader import AqSolDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
@@ -33,29 +33,23 @@ ft_model = AqueousRegModel()
 # unfreeze to train the whole model instead of just the head
 ft_model.mmb.unfreeze() 
 
-dagslogger = DAGsHubLogger(
-    name='results/aqueous-solu',
-    metrics_path="/workspace/results/aqueous-solu/aqueous_metrics.csv",
-    hparams_path="/workspace/results/aqueous-solu/aqueous_config.json",
-    version='aqueous-v1'
-)
-
 dagshub.init("Chemical_Language_Model_Explainer", "stefanhoedl", mlflow=True)
-
-mlflow.set_tracking_uri('https://dagshub.com/stefanhoedl/Chemical_Language_Model_Explainer.mlflow')
-mlflow.pytorch.autolog(log_models=True)
-mlflow.log_params(cfg)
 
 trainer = pl.Trainer(
     max_epochs=cfg['n_epochs'],
     accelerator='gpu',
     gpus=1,
     precision=16,
-    logger=dagslogger,
     auto_lr_find=True,
 )
 
-trainer.fit(ft_model, train_loader, val_loader)
-trainer.test(ft_model, test_loader)
+with mlflow.start_run() as run:
+    mlflow.pytorch.autolog(log_models=False)
+    mlflow.log_params(cfg)
 
-# mlflow.log_artifact('/workspace/results/aqueous-solu/aqueous-v1')
+    trainer.fit(ft_model, train_loader, val_loader)
+    trainer.test(ft_model, test_loader)
+
+    modelpath = f'/workspace/results/aqueous/models/aqueous_{run.info.run_id}.pt'
+    trainer.save_checkpoint(modelpath)
+    # mlflow.log_artifact(modelpath)

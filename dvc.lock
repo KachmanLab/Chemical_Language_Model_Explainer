@@ -1,0 +1,92 @@
+schema: '2.0'
+stages:
+  train_aqueous:
+    cmd: python3 scripts/train_aqueous.py
+    deps:
+    - path: data/AqueousSolu.csv
+      md5: a971c59bbbee6dbe768d3bdb60c7f7f6
+      size: 2415802
+    - path: scripts/aqueous_config.json
+      md5: 22417d2500a4b8c8282e0ce01367f167
+      size: 118
+    - path: scripts/train_aqueous.py
+      md5: 5aa39f8e557f10018b18c6f812d818b1
+      size: 1852
+    - path: src/dataloader.py
+      md5: 93db22cf89b1216e0372a8c1987de690
+      size: 7477
+    - path: src/model.py
+      md5: dd61320f74f218659e501d58e46ef4f2
+      size: 13068
+    outs:
+    - path: results/aqueous/models/
+      md5: 3ca7805fe8f4f17cccb0827dcaa6df54.dir
+      size: 235939037
+      nfiles: 2
+  plot_aqueous:
+    cmd: python3 scripts/explain_aqueous.py
+    deps:
+    - path: data/AqueousSolu.csv
+      md5: a971c59bbbee6dbe768d3bdb60c7f7f6
+      size: 2415802
+    - path: results/aqueous/models/
+      md5: 3ca7805fe8f4f17cccb0827dcaa6df54.dir
+      size: 235939037
+      nfiles: 2
+    - path: scripts/aqueous_config.json
+      md5: 22417d2500a4b8c8282e0ce01367f167
+      size: 118
+    - path: scripts/explain_aqueous.py
+      md5: e1aca82f4e82e68369f120793c6e46ec
+      size: 5106
+    - path: src/dataloader.py
+      md5: 93db22cf89b1216e0372a8c1987de690
+      size: 7477
+    - path: src/model.py
+      md5: dd61320f74f218659e501d58e46ef4f2
+      size: 13068
+    outs:
+    - path: results/aqueous/viz/
+      md5: 6c8b11923caa259602c5356db452408c.dir
+      size: 26754643
+      nfiles: 575
+  predict_aqueous:
+    cmd: python3 scripts/predict_aqueous.py
+    deps:
+    - path: data/AqueousSolu.csv
+      md5: a971c59bbbee6dbe768d3bdb60c7f7f6
+      size: 2415802
+    - path: results/aqueous/models/
+      md5: 3ca7805fe8f4f17cccb0827dcaa6df54.dir
+      size: 235939037
+      nfiles: 2
+    - path: scripts/aqueous_config.json
+      md5: 22417d2500a4b8c8282e0ce01367f167
+      size: 118
+    - path: scripts/predict_aqueous.py
+      md5: 3ef7e717b82020bc9010e1cd3296f386
+      size: 2758
+    - path: src/dataloader.py
+      md5: 93db22cf89b1216e0372a8c1987de690
+      size: 7477
+    - path: src/model.py
+      md5: dd61320f74f218659e501d58e46ef4f2
+      size: 13068
+    outs:
+    - path: results/aqueous/AqueousSolu_predictions.csv
+      md5: dc897539a9e434383ebfcd9cf6943ed8
+      size: 5099078
+  aqueous:
+    cmd: echo "Finished full aqueous solubility pipeline"
+    deps:
+    - path: results/aqueous/AqueousSolu_predictions.csv
+      md5: dc897539a9e434383ebfcd9cf6943ed8
+      size: 5099078
+    - path: results/aqueous/models/
+      md5: 3ca7805fe8f4f17cccb0827dcaa6df54.dir
+      size: 235939037
+      nfiles: 2
+    - path: results/aqueous/viz/
+      md5: 6c8b11923caa259602c5356db452408c.dir
+      size: 26754643
+      nfiles: 575

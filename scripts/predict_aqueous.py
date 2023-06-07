@@ -33,15 +33,13 @@ val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'],
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)
 
-ckpt_path = glob.glob(os.path.join(
-    f'/workspace/results/aqueous-solu/aqueous-v1/checkpoints/', "*"
-))[0]
-print(ckpt_path)
+subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
+    if (f.path.endswith('.pt') or f.path.endswith('.ckpt'))]
+ckpt_path = max(subfolders, key=os.path.getmtime)
 
 ft_model = AqueousRegModel()
 ft_model = ft_model.load_from_checkpoint(ckpt_path)
 ft_model.unfreeze()
-ft_model.eval()
 
 trainer = pl.Trainer(
     accelerator='gpu',
@@ -56,8 +54,8 @@ test = trainer.predict(ft_model, test_loader)
 results = pd.DataFrame(
     columns=['SMILES', 'Tokens', 'logS_pred', 'logS_exp', 'Atom_weights', 'Split']
 )
-for split, all in list(zip(['train', 'val', 'test'], [train, val, test])):
-    
+for split, all in list(zip(['test', 'val', 'train'], [test, val, train])):
+    # reverse order for consistency with plotting
     smiles = list(chain(*[f.get('smiles') for f in all]))
     tokens = list(chain(*[f.get('tokens') for f in all]))
     atom_weights = list(chain(*[f.get('atom_weights') for f in all]))
@@ -74,5 +72,7 @@ for split, all in list(zip(['train', 'val', 'test'], [train, val, test])):
         })
     results = pd.concat([results, res], axis=0)
 
+# reset index to correspond to visualization UID
 results = results.reset_index(drop=True)
-results.to_csv('/workspace/data/predicted/AqueousSolu_predictions.csv')
+results = results.reset_index().rename(columns={'index':'uid'})
+results.to_csv('/workspace/results/aqueous/AqueousSolu_predictions.csv', index=False)
