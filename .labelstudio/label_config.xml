@@ -1,0 +1,9 @@
+<View>
+  <Header>
+	How well does the visualization correspond to importance towards aqueous solubility?
+    Does the model attribute relevance (green highlights) to the correct relevant atoms?
+	
+       </Header>
+  <Image name="image1" value="$image1" zoom="true" zoomControl="true"/>
+  <Rating name="rating" toName="image1" strokeWidth="1"/>
+</View>
