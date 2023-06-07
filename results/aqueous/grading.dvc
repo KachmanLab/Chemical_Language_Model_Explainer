@@ -1,0 +1,5 @@
+outs:
+- md5: 44cef88120af1b9bd546a51291583b40.dir
+  size: 6994000
+  nfiles: 150
+  path: grading
