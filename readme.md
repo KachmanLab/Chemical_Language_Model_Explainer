@@ -2,23 +2,35 @@
 This repository accompanies the paper 'Explainability Techniques for Chemical Language Models' with code to reproduce the results and apply the technique to other self-attention encoder architectures.
 The paper can be found on Arxiv: https://arxiv.org/abs/2305.16192
 
+Fully reproducible runs using dvc & mlflow with model checkpoints and all test set visualizations can be explored at https://dagshub.com/stefanhoedl/Chemical_Language_Model_Explainer.
+
 The repository is split into the following:
 ```
 src/
-    model.py			- AqueousRegModel, CombiRegModel & <REG> tokenizer
-    dataloader.py		- AqueousSolu & CombiSolu-Exp Dataloaders (SolProp)
-    explainer.py 		- Explainability code to attribute atom relevance
+    model.py            - AqueousRegModel, CombiRegModel & <REG> tokenizer
+    dataloader.py       - AqueousSolu & CombiSolu-Exp Dataloaders (SolProp)
+    explainer.py        - Explainability code to attribute atom relevance
 
 scripts/
     train_aqueous.py	- training script for AqueousSolu
     explain_aqueous.py 	- inference script + plots + visualization
-    train_combi.py 		- training script for CombiSolu-Exp
-    explain_aqueous.py 	- inference script + plots + visualization
+    predict_aqueous.py  - train+val+test predition + atom weights to .csv
+    aqueous_config.json - Aqueous config parameters
+
+    train_combi.py      - training script for CombiSolu-Exp
+    explain_combi.py 	- inference script + plots + visualization
+    combi_config.json   - Combi config parameters
 
 nemo_src/
     transformer_attn.py - MegaMolBART source augmented with code to extract attention + grads
     infer.py            - MegaMolBART source to load model
     regex_tokenizer.py  - MegaMolBART source for the tokenzier
+
+results/{aqueous, combi}/
+    models/             - model checkpoint file produced by training script
+    viz/                - visualizations for test set produced by explain script
+
+dvc.yaml                - dvc stages to reproduce results with 'dvc repro {aqueous, combi}'
 ```
 
 # Setup:
@@ -33,7 +45,6 @@ docker run \
     -p 8888:8888 \
     --detach \
     --volume $PWD:/workspace \
-    --env WANDB_API_KEY='' \
     nvcr.io/nvidia/clara/megamolbart_v0.2:0.2.0
 ```
 
@@ -78,9 +89,16 @@ cp /workspace/nemo_src/transformer_attn.py /opt/conda/lib/python3.8/site-package
         self.save_attn(attention_probs)
         attention_probs.register_hook(self.save_attn_gradients)
 ```
-### Run train + explain scripts
+
+### Reproduce everything with DVC
 ```
-# run scripts with
+# run 
+dvc repro aqueous
+dvc repro combi
+```
+
+### or run train + explain scripts individually
+```
 python scripts/train_aqueous.py
 ...
 python scripts/explain_combi.py

@@ -1,0 +1,9 @@
+data/AqueousSolu.csv
+data/CombiSolu-Exp.csv
+results/combi/models
+results/combi/viz
+results/combi/CombiSolu_parity_rnd.png
+results/aqueous/viz
+results/aqueous/models
+results/aqueous/AqueousSolu_predictions.csv
+results/aqueous/Aqueous_parity_accurate_reg.png
