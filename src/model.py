@@ -290,7 +290,7 @@ class BaselineAqueousModel(AqueousRegModel):
         """ uses average pooling instead of <REG> token """
         super().__init__()
         self.init_molbart()
-        self.head = RegressionHead()
+        self.head = RegressionHead().cuda()
         self.cmapper = ColorMapper()
 
         self.criterion = nn.HuberLoss()
@@ -311,11 +311,12 @@ class BaselineAqueousModel(AqueousRegModel):
         return self.salience.detach().cpu()
      
     def forward(self, inputs):
+        # print("in:", inputs)
         solu, mask = self._tokenize(inputs)
         solu = self.mmb.encode(solu, mask)
         
-        if not self.training:
-            solu.register_hook(self.save_salience)
+        # if not self.training:
+        #     solu.register_hook(self.save_salience)
         
         solu = solu * mask.unsqueeze(-1)
         solu = torch.mean(solu, dim=1)
@@ -355,3 +356,39 @@ class BaselineAqueousModel(AqueousRegModel):
         return {"preds": preds, "labels": labels, 
             "smiles": inputs, "tokens": tokens, "masks": masks, 
             "salience_colors": salience_colors}
+
+    def mask_forward(self, token, mask):
+        """ forward without tokenizer"""
+        # solu, mask = self._tokenize(tokens)
+        solu = self.mmb.encode(solu, mask)
+        solu = solu * mask.unsqueeze(-1)
+        solu = torch.mean(solu, dim=1)
+        return self.head(solu)
+
+    def __call__(self, inputs):
+        print("call in:", inputs)
+        # solu, mask = self._tokenize(inputs)
+        # print([type(i) for i in inputs ])
+        # inputs = [i.replace(' ', ',') for i in inputs]
+        inputs = [i.split(' ') for i in inputs]
+
+        print("call 2:", inputs)
+        token_ids = self.tokenizer.tokens_to_ids(inputs)
+        
+        print(token_ids)
+        solu = torch.tensor(token_ids, dtype=torch.int64).cuda()
+        mask = torch.ones_like(solu).cuda()
+        # if len(inputs) == 1:
+        #     inputs.unsqueeze(0)
+        print('solu', solu.shape, solu.device)
+        print('mask', mask.shape, mask.device)
+
+        solu = self.mmb.encode(solu, mask)
+        # if not self.training:
+        #     solu.register_hook(self.save_salience)
+        
+        solu = solu * mask.unsqueeze(-1)
+        solu = torch.mean(solu, dim=1)
+        print(solu.shape, type(solu), solu.dtype)
+        solu = solu.to(torch.float32)
+        return self.head(solu)
