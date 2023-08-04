@@ -146,3 +146,36 @@ def save_heat(rel, ml, token, prefix=""):
     plt.savefig(f'/workspace/results/aqueous-solu/{prefix}_Aqueous_heatmap_raw.png',
         bbox_inches='tight', pad_inches=0)
     plt.clf()
+
+def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix="", savedir=""):
+    atom_colors = atom_colors
+    bond_colors = {}
+    h_rads = {} #?
+    h_lw_mult = {} #?
+
+    label = f'Exp logS: {logS:.2f}, predicted: {pred:.2f}\n{smiles}'
+
+    mol = Chem.MolFromSmiles(smiles)
+    mol = Draw.PrepareMolForDrawing(mol)
+    d = Draw.rdMolDraw2D.MolDraw2DCairo(700, 700)
+    d.drawOptions().padding = 0.0 
+
+    # some plotting issues for 'C@@H' and 'C@H' tokens since 
+    # another H atom is rendered explicitly. 
+    # Might break for ultra long SMILES using |c:1:| notation
+    # vocab = ft_model.cmapper.atoms + ft_model.cmapper.nonatoms
+    # if int(mol.GetNumAtoms()) != len(atom_colors.keys()):
+    #     print(f"Warning: {int(mol.GetNumAtoms()) - len(atom_colors.keys())}")
+    #     print(f"count mismatch for {smiles}:\
+    #          {[t for t in token if t  not in vocab]}")
+    #     print(f'{token}')
+
+    d.DrawMoleculeWithHighlights(
+        mol, label, atom_colors, bond_colors, h_rads, h_lw_mult, -1
+    )
+    # todo legend
+    d.FinishDrawing()
+    
+    with open(file=f'{savedir}/{prefix}_MolViz.png',
+        mode = 'wb') as f:
+        f.write(d.GetDrawingText())

@@ -28,8 +28,10 @@ val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'],
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)
 
-ft_model = AqueousRegModel()
-# ft_model = BaselineAqueousModel()
+if cfg['model'] == 'reg':
+    ft_model = AqueousRegModel()
+elif cfg['model'] == 'shap':
+    ft_model = BaselineAqueousModel()
 # unfreeze to train the whole model instead of just the head
 ft_model.mmb.unfreeze() 
 
@@ -50,6 +52,7 @@ with mlflow.start_run() as run:
     trainer.fit(ft_model, train_loader, val_loader)
     trainer.test(ft_model, test_loader)
 
-    modelpath = f'/workspace/results/aqueous/models/aqueous_{run.info.run_id}.pt'
+    mdir = 'aqueous' if cfg['model'] == 'reg' else 'shap'
+    modelpath = f'/workspace/results/{mdir}/models/aqueous_{run.info.run_id}.pt'
     trainer.save_checkpoint(modelpath)
     # mlflow.log_artifact(modelpath)

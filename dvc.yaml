@@ -74,3 +74,31 @@ stages:
     deps:
     - results/combi/models/
     - results/combi/viz/
+
+
+  train_shap:
+    cmd: python3 scripts/train_aqueous.py
+    deps:
+    - data/AqueousSolu.csv
+    - scripts/train_aqueous.py
+    - src/model.py
+    - src/dataloader.py
+    - scripts/shap_config.json
+    outs:
+    - results/shap/models/:
+        persist: true
+
+  plot_shap:
+    cmp: python3 scripts/explain_shap.py
+    deps: 
+    - data/AqueousSolu.csv
+    - src/model.py
+    - src/explainer.py
+    - scripts/explain_shap.py
+    - results/shap/models/
+
+  shap:
+    cmd: echo "Finished full SHAP aqueous solubility pipeline"
+    deps:
+    - results/shap/models/
+    - results/shap/viz/
