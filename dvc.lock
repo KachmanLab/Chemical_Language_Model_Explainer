@@ -151,3 +151,61 @@ stages:
       md5: 5e1fb28bb5fa0312af78438394adf8ff.dir
       size: 29300564
       nfiles: 494
+  train_shap:
+    cmd: python3 scripts/train_aqueous.py
+    deps:
+    - path: data/AqueousSolu.csv
+      md5: a971c59bbbee6dbe768d3bdb60c7f7f6
+      size: 2415802
+    - path: scripts/aqueous_config.json
+      md5: ad60becfccc50a2cd9761056997aeafb
+      size: 119
+    - path: scripts/train_aqueous.py
+      md5: c6a4179a1a6007b93ef420b9a00568c1
+      size: 1970
+    - path: src/dataloader.py
+      md5: 93db22cf89b1216e0372a8c1987de690
+      size: 7477
+    - path: src/model.py
+      md5: 7e5343a96d7684960206ec2c277c8c70
+      size: 14260
+    outs:
+    - path: results/shap/models/
+      md5: efa6710e3112aebc873601e15a39a20f.dir
+      size: 235939037
+      nfiles: 1
+  shap:
+    cmd: echo "Finished full SHAP aqueous solubility pipeline"
+    deps:
+    - path: results/shap/models/
+      md5: efa6710e3112aebc873601e15a39a20f.dir
+      size: 235939037
+      nfiles: 1
+    - path: results/shap/viz/
+      md5: bcfa35117ce3dc3b5d56a8c4b349c04a.dir
+      size: 27310046
+      nfiles: 574
+  plot_shap:
+    cmd: python3 scripts/explain_shap.py
+    deps:
+    - path: data/AqueousSolu.csv
+      md5: a971c59bbbee6dbe768d3bdb60c7f7f6
+      size: 2415802
+    - path: results/shap/models/
+      md5: efa6710e3112aebc873601e15a39a20f.dir
+      size: 235939037
+      nfiles: 1
+    - path: scripts/explain_shap.py
+      md5: a642fa70b3c13245c4e832c004f89104
+      size: 4514
+    - path: src/explainer.py
+      md5: f8c2026326c3139ef120cfbd79c5f6fe
+      size: 6419
+    - path: src/model.py
+      md5: 7e5343a96d7684960206ec2c277c8c70
+      size: 14260
+    outs:
+    - path: results/shap/viz/
+      md5: bcfa35117ce3dc3b5d56a8c4b349c04a.dir
+      size: 27310046
+      nfiles: 574

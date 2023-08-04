@@ -304,11 +304,11 @@ class BaselineAqueousModel(AqueousRegModel):
         self.mmb.enc_dec_model.enc_dec_model.decoder = None
         self.tokenizer = molbart_model.tokenizer
     
-    def save_salience(self, grad):
-        self.salience = torch.pow(grad, 2)
+    # def save_salience(self, grad):
+    #     self.salience = torch.pow(grad, 2)
     
-    def get_salience(self):
-        return self.salience.detach().cpu()
+    # def get_salience(self):
+    #     return self.salience.detach().cpu()
      
     def forward(self, inputs):
         # print("in:", inputs)
@@ -320,6 +320,7 @@ class BaselineAqueousModel(AqueousRegModel):
         
         solu = solu * mask.unsqueeze(-1)
         solu = torch.mean(solu, dim=1)
+        solu = solu.to(torch.float32)
         return self.head(solu)
 
     def _tokenize(self, smis: List[str]):
@@ -366,14 +367,20 @@ class BaselineAqueousModel(AqueousRegModel):
     #     return self.head(solu)
 
     def __call__(self, inputs):
-        inputs = [i.split(' ') for i in inputs]
+        try:
+            if 'MASK' in inputs[0]:
+                print(inputs)
+                raise TypeError
+            else:
+                solu, mask = self._tokenize(inputs)
+        except:
+            inputs = [i.split(' ') for i in inputs]
+            token_ids = self.tokenizer.tokens_to_ids(inputs)
 
-        token_ids = self.tokenizer.tokens_to_ids(inputs)
-        
-        solu = torch.tensor(token_ids, dtype=torch.int64).cuda()
-        mask = torch.where(
-            solu == self.tokenizer.mask_id, 0, 1
-        ).cuda()
+            solu = torch.tensor(token_ids, dtype=torch.int64).cuda()
+            mask = torch.where(
+                solu == self.tokenizer.mask_id, 0, 1
+            ).cuda()
 
         solu = self.mmb.encode(solu, mask)
 

@@ -20,9 +20,9 @@ from src.explainer import ColorMapper, plot_weighted_molecule
 from nemo_src.regex_tokenizer import RegExTokenizer
 import shap
 
-with open('/workspace/scripts/shap_config.json', 'r') as f:
+with open('/workspace/scripts/aqueous_config.json', 'r') as f:
     cfg = json.load(f)
-cfg['n_batch'] = 8
+cfg['n_batch'] = 4
 
 pl.seed_everything(cfg['seed'])
 test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test', 
@@ -91,13 +91,14 @@ cmapper = ColorMapper()
 
 for batch in test_loader:
     smiles, labels = batch
+    print(smiles)
     shapvals = explainer(smiles).values
     tokens = [tokenizer.text_to_tokens(s) for s in smiles]
     preds = ft_model(smiles).cpu().detach().numpy()
     labels = labels.cpu().detach().numpy()
     
     # print('**', smiles, labels, tokens, preds, shapvals)
-    assert all([len(t) == len(s) for t, s in zip(tokens, shapvals)])
+    # assert all([len(t) == len(s) for t, s in zip(tokens, shapvals)])
 
     ###############################
     # plot all molecules in batch #

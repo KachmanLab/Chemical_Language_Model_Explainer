@@ -4,5 +4,5 @@
     "n_epochs": 30,
     "acc_test": true,
     "split": 0.9,
-    "model": "reg"
+    "model": "shap"
 }
