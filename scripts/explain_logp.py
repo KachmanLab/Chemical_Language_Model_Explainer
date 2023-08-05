@@ -159,7 +159,7 @@ for b_nr, _ in enumerate(all):
             atom_color = salience_colors[b_nr][b_ix]
         
         # segmentation fault, likely due to weird structure?
-        if uid not in [39, 94, 210, 217]:
+        if uid not in [39, 94, 210, 217, 252]:
             plot_weighted_molecule(atom_color, smi, token, lab, pred, 
                 f"{uid}_{xai}", f'/workspace/results/logp/viz_ours')
 
