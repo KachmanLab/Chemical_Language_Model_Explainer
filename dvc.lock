@@ -209,3 +209,75 @@ stages:
       md5: bcfa35117ce3dc3b5d56a8c4b349c04a.dir
       size: 27310046
       nfiles: 574
+  train_logp:
+    cmd: python3 scripts/train_logp.py
+    deps:
+    - path: data/logp_dataset.csv
+      md5: 75b14bb0a736a67a5f89508e8420c415
+      size: 246951
+    - path: scripts/logp_config.json
+      md5: aafe4564dfa9e70d14653161dc93f341
+      size: 100
+    - path: scripts/train_logp.py
+      md5: 6ca4a38708535b53e97397f22448969f
+      size: 1913
+    - path: src/model.py
+      md5: 7e5343a96d7684960206ec2c277c8c70
+      size: 14260
+    - path: src/prop_loader.py
+      md5: 27f739a707f74622a13a5b04fe4dc5a4
+      size: 1907
+    outs:
+    - path: results/logp/models/
+      md5: 92611c76440c2b9dd87e6438b58091c6.dir
+      size: 471878074
+      nfiles: 2
+  plot_logp:
+    cmd: python3 scripts/explain_logp.py
+    deps:
+    - path: data/logp_dataset.csv
+      md5: 75b14bb0a736a67a5f89508e8420c415
+      size: 246951
+    - path: results/logp/models/
+      md5: 92611c76440c2b9dd87e6438b58091c6.dir
+      size: 471878074
+      nfiles: 2
+    - path: scripts/explain_logp.py
+      md5: eb8f40ea79d267a531c877034b6f4031
+      size: 5517
+    - path: scripts/logp_config.json
+      md5: aafe4564dfa9e70d14653161dc93f341
+      size: 100
+    - path: src/explainer.py
+      md5: f8c2026326c3139ef120cfbd79c5f6fe
+      size: 6419
+    - path: src/model.py
+      md5: 7e5343a96d7684960206ec2c277c8c70
+      size: 14260
+    - path: src/prop_loader.py
+      md5: 27f739a707f74622a13a5b04fe4dc5a4
+      size: 1907
+    outs:
+    - path: results/logp/viz_crippen/
+      md5: e6134b5dbcb8471b4d3e1fcd4d2656ba.dir
+      size: 45899162
+      nfiles: 1457
+    - path: results/logp/viz_ours/
+      md5: 6dd1a19e9c09d6de7f68ecdcc65f4330.dir
+      size: 22281056
+      nfiles: 727
+  logp:
+    cmd: echo "Finished full logP explainability pipeline"
+    deps:
+    - path: results/logp/models/
+      md5: 92611c76440c2b9dd87e6438b58091c6.dir
+      size: 471878074
+      nfiles: 2
+    - path: results/logp/viz_crippen/
+      md5: e6134b5dbcb8471b4d3e1fcd4d2656ba.dir
+      size: 45899162
+      nfiles: 1457
+    - path: results/logp/viz_ours/
+      md5: 6dd1a19e9c09d6de7f68ecdcc65f4330.dir
+      size: 22281056
+      nfiles: 727

@@ -105,3 +105,39 @@ stages:
     deps:
     - results/shap/models/
     - results/shap/viz/
+
+
+  train_logp:
+    cmd: python3 scripts/train_logp.py
+    deps:
+    - data/logp_dataset.csv
+    - scripts/train_logp.py
+    - src/model.py
+    - src/prop_loader.py
+    - scripts/logp_config.json
+    outs:
+    - results/logp/models/:
+        persist: true 
+
+  plot_logp:
+    cmd: python3 scripts/explain_logp.py
+    deps: 
+    - data/logp_dataset.csv
+    - src/prop_loader.py
+    - src/model.py
+    - src/explainer.py
+    - scripts/logp_config.json
+    - scripts/explain_logp.py
+    - results/logp/models/
+    outs:
+    - results/logp/viz_ours/:
+        persist: true
+    - results/logp/viz_crippen/:
+        persist: true
+
+  logp:
+    cmd: echo "Finished full logP + crippen explainability pipeline"
+    deps:
+    - results/logp/models/
+    - results/logp/viz_ours/
+    - results/logp/viz_crippen/

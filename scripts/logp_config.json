@@ -1,0 +1,7 @@
+{
+    "n_batch": 48,
+    "seed": 9042,
+    "n_epochs": 70,
+    "split": 0.95,
+    "model": "logp"
+}
