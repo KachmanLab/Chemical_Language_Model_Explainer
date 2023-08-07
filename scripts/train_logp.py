@@ -52,7 +52,7 @@ with mlflow.start_run() as run:
     trainer.fit(ft_model, train_loader, val_loader)
     trainer.test(ft_model, test_loader)
 
-    # mdir = 'aqueous' if cfg['model'] == 'reg' else 'shap'
-    modelpath = f'/workspace/results/logp/models/logp_{run.info.run_id}.pt'
+    mdir = 'logp' if cfg['model'] == 'logp' else 'shap'
+    modelpath = f'/workspace/results/logp/models/{mdir}_{run.info.run_id}.pt'
     trainer.save_checkpoint(modelpath)
     # mlflow.log_artifact(modelpath)

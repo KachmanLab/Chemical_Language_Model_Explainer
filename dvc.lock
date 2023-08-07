@@ -216,11 +216,11 @@ stages:
       md5: 75b14bb0a736a67a5f89508e8420c415
       size: 246951
     - path: scripts/logp_config.json
-      md5: aafe4564dfa9e70d14653161dc93f341
+      md5: f7de1a7f5cefe925558db9f4ec6c013b
       size: 100
     - path: scripts/train_logp.py
-      md5: 6ca4a38708535b53e97397f22448969f
-      size: 1913
+      md5: c75038340328ddf869b079d5b9a9e39a
+      size: 1911
     - path: src/model.py
       md5: 7e5343a96d7684960206ec2c277c8c70
       size: 14260
@@ -229,9 +229,9 @@ stages:
       size: 1907
     outs:
     - path: results/logp/models/
-      md5: 92611c76440c2b9dd87e6438b58091c6.dir
-      size: 471878074
-      nfiles: 2
+      md5: 6a65348a8355a84575341a55ecd13fcb.dir
+      size: 707817111
+      nfiles: 3
   plot_logp:
     cmd: python3 scripts/explain_logp.py
     deps:
@@ -243,8 +243,8 @@ stages:
       size: 471878074
       nfiles: 2
     - path: scripts/explain_logp.py
-      md5: 7ba74727ed31dd529edde068e7cc97c3
-      size: 5522
+      md5: 888dbe84b24d640e8e315c4d74268199
+      size: 6387
     - path: scripts/logp_config.json
       md5: aafe4564dfa9e70d14653161dc93f341
       size: 100
@@ -258,6 +258,9 @@ stages:
       md5: 27f739a707f74622a13a5b04fe4dc5a4
       size: 1907
     outs:
+    - path: results/logp/logp_predictions.csv
+      md5: a8b2b472b8fc794535f597bb07a6f673
+      size: 421364
     - path: results/logp/viz_crippen/
       md5: 1c30afed6ba264e835c8df03facc725d.dir
       size: 23100055
@@ -281,3 +284,36 @@ stages:
       md5: 03486896f91aefb80d9b0de9fb735e48.dir
       size: 23053456
       nfiles: 731
+  shap_logp:
+    cmd: python3 scripts/explain_shap_logp.py
+    deps:
+    - path: data/logp_dataset.csv
+      md5: 75b14bb0a736a67a5f89508e8420c415
+      size: 246951
+    - path: results/logp/models/
+      md5: 6a65348a8355a84575341a55ecd13fcb.dir
+      size: 707817111
+      nfiles: 3
+    - path: scripts/explain_shap_logp.py
+      md5: ea261e35ed9c3d26616dc8514cd76697
+      size: 4463
+    - path: scripts/logp_config.json
+      md5: f7de1a7f5cefe925558db9f4ec6c013b
+      size: 100
+    - path: src/explainer.py
+      md5: dd65fb3ccd43f56d3a95a98dc60899fe
+      size: 6821
+    - path: src/model.py
+      md5: 7e5343a96d7684960206ec2c277c8c70
+      size: 14260
+    - path: src/prop_loader.py
+      md5: 27f739a707f74622a13a5b04fe4dc5a4
+      size: 1907
+    outs:
+    - path: results/logp/logp_shap_predictions.csv
+      md5: 801fd61211205905cbd3ae940abba0ff
+      size: 148871
+    - path: results/logp/viz_shap/
+      md5: f7979bc24ae772c2a60c8e353f5cf323.dir
+      size: 23288533
+      nfiles: 730

@@ -29,7 +29,8 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
     shuffle=False, num_workers=8)
     
 subfolders = [f.path for f in os.scandir('/workspace/results/logp/models/') \
-    if (f.path.endswith('.pt') or f.path.endswith('.ckpt'))]
+    if (f.path.endswith('.pt') and ('logp' in os.path.split(f)[1]))]
+print(subfolders)
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
 if cfg['model'] == 'logp':
@@ -37,8 +38,8 @@ if cfg['model'] == 'logp':
     xai = f"logp"
 elif cfg['model'] == 'shap':
     raise NotImplementedError
-    ft_model = BaselineAqueousModel()
-    xai = f"shap"
+    # ft_model = BaselineAqueousModel()
+    # xai = f"shap"
 
 ft_model = ft_model.load_from_checkpoint(ckpt_path)
 ft_model.mmb.unfreeze()
@@ -128,7 +129,8 @@ split = f"{int(round(1.-cfg['split'], 2)*100)}%"
 # plot a hexagonal parity plot
 p = sns.jointplot(x=y, y=yhat, kind='hex', color='g',
                  xlim=[-4, 5.], ylim=[-4, 5.])
-sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint, color='grey', ci=None, scatter=False)
+sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint, color='grey',
+    ci=None, scatter=False)
 p.fig.suptitle(f"Crippen's logP prediction parity plot")
 p.set_axis_labels('Experimental log(P)', 'Model log(P)')
 p.fig.subplots_adjust(top=0.95)
@@ -138,6 +140,28 @@ plt.text(4, -4.,
          txt, ha="right", va="bottom", fontsize=14)
 p.savefig(f'/workspace/results/logp/logp_parity_plot_crippen.png')
 
+##################################
+## predict & write to csv for further analysis
+alltokens = list(itertools.chain(*[f.get('tokens') for f in all]))
+atom_weights = list(itertools.chain(*[f.get('atom_weights') for f in all]))
+allpreds = torch.concat([f.get('preds') for f in all]).cpu().numpy()
+alllabels = torch.concat([f.get('labels') for f in all]).cpu().numpy()
+
+results = pd.DataFrame({
+    'SMILES': allsmiles,
+    'Tokens': alltokens,
+    'logP_pred': allpreds,
+    'logP_crippen': crippen_preds,
+    'logP_exp': alllabels,
+    'Atom_weights': atom_weights,
+    'Crippen_weights': crippen_colors,
+    'Split': 'test'
+    })
+
+# reset index to correspond to visualization UID
+results = results.reset_index(drop=True)
+results = results.reset_index().rename(columns={'index':'uid'})
+results.to_csv('/workspace/results/logp/logp_predictions.csv', index=False)
 ###################################
 # plot entire test set:
 b_indices = list(range(cfg['n_batch']))

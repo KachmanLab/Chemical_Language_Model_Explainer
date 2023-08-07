@@ -3,34 +3,41 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
-from rdkit.Chem import Draw, AllChem
+from matplotlib.colors import Normalize
+from rdkit.Chem import Draw, AllChem, rdMolDescriptors
 from rdkit import Chem, rdBase
-
+import itertools
 import seaborn as sns
 import numpy as np
 import pandas as pd
 import os
 import glob
 import json
-from typing import List
+from sklearn import linear_model
 
-from src.dataloader import AqSolDataset
-from src.model import BaselineAqueousModel
+from src.prop_loader import LogPDataset
+from src.model import AqueousRegModel, BaselineAqueousModel
 from src.explainer import ColorMapper, plot_weighted_molecule 
 from nemo_src.regex_tokenizer import RegExTokenizer
 import shap
 
-with open('/workspace/scripts/aqueous_config.json', 'r') as f:
+with open('/workspace/scripts/logp_config.json', 'r') as f:
     cfg = json.load(f)
-cfg['n_batch'] = 4
 
-pl.seed_everything(cfg['seed'])   
-subfolders = [f.path for f in os.scandir('/workspace/results/shap/models/') \
-    if (f.path.endswith('.pt') or f.path.endswith('.ckpt'))]
+pl.seed_everything(cfg['seed'])
+test_dataset = LogPDataset('/workspace/data/logp_dataset.csv', 'test',
+    cfg['split'], data_seed=cfg['seed'])
+test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
+    shuffle=False, num_workers=8)
+
+subfolders = [f.path for f in os.scandir('/workspace/results/logp/models/') \
+    if (f.path.endswith('.pt') and ('shap' in os.path.split(f)[1]))]
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
 ft_model = BaselineAqueousModel().load_from_checkpoint(ckpt_path)
-ft_model.unfreeze()
+xai = f"shap"
+
+ft_model.mmb.unfreeze()
 mmb_tokenizer = ft_model.tokenizer
 
 class ShapTokenizer(RegExTokenizer):
@@ -67,6 +74,7 @@ class ShapTokenizer(RegExTokenizer):
         return {'input_ids': token_ids.tolist(),
                 'input_masks': token_masks}
 
+
 tokenizer = ShapTokenizer()
 masker = shap.maskers.Text(tokenizer)
 explainer = shap.Explainer(
@@ -74,19 +82,13 @@ explainer = shap.Explainer(
     masker
 )
 
-test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test', 
-    cfg['acc_test'], cfg['split'], data_seed=cfg['seed'])
-test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
-    shuffle=False, num_workers=8)
-
 results = pd.DataFrame(
-    columns=['SMILES', 'Tokens', 'logS_pred', 'logS_exp', 'SHAP_weights', 'Split']
+    columns=['SMILES', 'Tokens', 'logP_pred', 'logP_exp', 'SHAP_weights', 'Split']
 )
 cmapper = ColorMapper()
 
 for batch in test_loader:
     smiles, labels = batch
-    print(smiles)
     shapvals = explainer(smiles).values
     tokens = [tokenizer.text_to_tokens(s) for s in smiles]
     preds = ft_model(smiles).cpu().detach().numpy()
@@ -107,10 +109,14 @@ for batch in test_loader:
         atom_color = cmapper(shapvals[b_ix], tokens[b_ix])
         atom_color = cmapper.to_rdkit_cmap(atom_color)
         
-        if uid not in [39, 94, 210, 217]:
-            # segmentation fault, likely due to weird structure?
-            plot_weighted_molecule(atom_color, smi, token, lab, pred, 
-            f"{uid}_shap", f'/workspace/results/shap/viz')
+        print(uid)
+        if uid not in [252]:
+            try:
+                # segmentation fault, likely due to weird structure?
+                plot_weighted_molecule(atom_color, smi, token, lab, pred, 
+                f"{uid}_shap", f'/workspace/results/logp/viz_shap')
+            except:
+                print(f'** {uid} failed to plot')
     ###############################
     
     res = pd.DataFrame({
@@ -130,4 +136,4 @@ print('token/shap equal len', all([len(t) == len(s) for t, s in zip(
 
 results = results.reset_index(drop=True)
 results = results.reset_index().rename(columns={'index':'uid'})
-results.to_csv('/workspace/results/shap/AqueousSolu_SHAP.csv', index=False)
+results.to_csv('/workspace/results/logp/logp_shap_predictions.csv', index=False)

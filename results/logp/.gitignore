@@ -1,3 +1,6 @@
 /models
 /viz_ours
 /viz_crippen
+/logp_predictions.csv
+/logp_shap_predictions.csv
+/viz_shap
