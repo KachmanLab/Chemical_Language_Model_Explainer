@@ -14,11 +14,11 @@ with open('/workspace/scripts/logp_config.json', 'r') as f:
 
 pl.seed_everything(cfg['seed'])
 
-train_dataset = LogPDataset('/workspace/data/logp_dataset.csv', 'train', 
+train_dataset = LogPDataset('/workspace/data/opera_logp.csv', 'train', 
     cfg['split'], data_seed=cfg['seed'], augment=False)
-val_dataset = LogPDataset('/workspace/data/logp_dataset.csv', 'valid',
+val_dataset = LogPDataset('/workspace/data/opera_logp.csv', 'valid',
     cfg['split'], data_seed=cfg['seed'])
-test_dataset = LogPDataset('/workspace/data/logp_dataset.csv', 'test',
+test_dataset = LogPDataset('/workspace/data/opera_logp.csv', 'test',
     cfg['split'], data_seed=cfg['seed'])
 
 train_loader = DataLoader(train_dataset, batch_size=cfg['n_batch'], 

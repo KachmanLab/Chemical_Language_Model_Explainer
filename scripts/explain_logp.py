@@ -23,7 +23,7 @@ with open('/workspace/scripts/logp_config.json', 'r') as f:
     cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
-test_dataset = LogPDataset('/workspace/data/logp_dataset.csv', 'test',
+test_dataset = LogPDataset('/workspace/data/opera_logp.csv', 'test',
     cfg['split'], data_seed=cfg['seed'])
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)

@@ -212,39 +212,39 @@ stages:
   train_logp:
     cmd: python3 scripts/train_logp.py
     deps:
-    - path: data/logp_dataset.csv
-      md5: 75b14bb0a736a67a5f89508e8420c415
-      size: 246951
+    - path: data/opera_logp.csv
+      md5: 2b10b2d996b900b9fb9027a78b736853
+      size: 1372348
     - path: scripts/logp_config.json
-      md5: f7de1a7f5cefe925558db9f4ec6c013b
+      md5: aafe4564dfa9e70d14653161dc93f341
       size: 100
     - path: scripts/train_logp.py
-      md5: c75038340328ddf869b079d5b9a9e39a
-      size: 1911
+      md5: 1ea7f4ea03a3afa3ff1102dd933cd8c3
+      size: 1906
     - path: src/model.py
       md5: 7e5343a96d7684960206ec2c277c8c70
       size: 14260
     - path: src/prop_loader.py
-      md5: 27f739a707f74622a13a5b04fe4dc5a4
-      size: 1907
+      md5: 06ce4fcf7cba3571ce0a62b313e4d599
+      size: 1984
     outs:
     - path: results/logp/models/
-      md5: 6a65348a8355a84575341a55ecd13fcb.dir
-      size: 707817111
-      nfiles: 3
+      md5: 1d1f7373bc6e1b3819db2d698d39afd1.dir
+      size: 315464640
+      nfiles: 2
   plot_logp:
     cmd: python3 scripts/explain_logp.py
     deps:
-    - path: data/logp_dataset.csv
-      md5: 75b14bb0a736a67a5f89508e8420c415
-      size: 246951
+    - path: data/opera_logp.csv
+      md5: 2b10b2d996b900b9fb9027a78b736853
+      size: 1372348
     - path: results/logp/models/
-      md5: 92611c76440c2b9dd87e6438b58091c6.dir
-      size: 471878074
+      md5: 1d1f7373bc6e1b3819db2d698d39afd1.dir
+      size: 315464640
       nfiles: 2
     - path: scripts/explain_logp.py
-      md5: 888dbe84b24d640e8e315c4d74268199
-      size: 6387
+      md5: 0e033c5edc996f88f481bb0e300ca530
+      size: 6416
     - path: scripts/logp_config.json
       md5: aafe4564dfa9e70d14653161dc93f341
       size: 100
@@ -255,20 +255,20 @@ stages:
       md5: 7e5343a96d7684960206ec2c277c8c70
       size: 14260
     - path: src/prop_loader.py
-      md5: 27f739a707f74622a13a5b04fe4dc5a4
-      size: 1907
+      md5: 06ce4fcf7cba3571ce0a62b313e4d599
+      size: 1984
     outs:
     - path: results/logp/logp_predictions.csv
-      md5: a8b2b472b8fc794535f597bb07a6f673
-      size: 421364
+      md5: 42edcd9d122caca25866395d21b74970
+      size: 1074692
     - path: results/logp/viz_crippen/
-      md5: 1c30afed6ba264e835c8df03facc725d.dir
-      size: 23100055
-      nfiles: 731
+      md5: 700a5c6cde4d40306333646fd597a37c.dir
+      size: 34806459
+      nfiles: 692
     - path: results/logp/viz_ours/
-      md5: 03486896f91aefb80d9b0de9fb735e48.dir
-      size: 23053456
-      nfiles: 731
+      md5: 6924f6add266b477aded028c63090615.dir
+      size: 34540150
+      nfiles: 692
   logp:
     cmd: echo "Finished full logP + crippen explainability pipeline"
     deps:

@@ -110,7 +110,7 @@ stages:
   train_logp:
     cmd: python3 scripts/train_logp.py
     deps:
-    - data/logp_dataset.csv
+    - data/opera_logp.csv
     - scripts/train_logp.py
     - src/model.py
     - src/prop_loader.py
@@ -122,7 +122,7 @@ stages:
   plot_logp:
     cmd: python3 scripts/explain_logp.py
     deps: 
-    - data/logp_dataset.csv
+    - data/opera_logp.csv
     - src/prop_loader.py
     - src/model.py
     - src/explainer.py
@@ -151,7 +151,7 @@ stages:
   shap_logp:
     cmd: python3 scripts/explain_shap_logp.py
     deps: 
-    - data/logp_dataset.csv
+    - data/opera_logp.csv
     - src/prop_loader.py
     - src/model.py
     - src/explainer.py
