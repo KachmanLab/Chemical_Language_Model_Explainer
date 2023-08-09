@@ -60,11 +60,19 @@ labels = [f.get('labels') for f in all]
 masks = [f.get('masks') for f in all]
 
 if cfg['model'] == 'logp':
-    rel_weights = [f.get('rel_weights') for f in all]
+    # raw_weights = [f.get('rel_weights') for f in all]
+    atom_weights = [f.get('atom_weights') for f in all]
     rdkit_colors = [f.get('rdkit_colors') for f in all]
 elif cfg['model'] == 'shap':
     raise NotImplementedError
     # shap_colors = [f.get('shap_colors') for f in all]
+
+# print(type(rel_weights[0][0]))
+print(type(atom_weights[0][0]))
+print(atom_weights[0])
+# print(rel_weights[0])
+print(atom_weights[0][0].shape)
+# print(rel_weights[0][0].shape)
 
 ##################################
 cmapper = ColorMapper()
@@ -77,8 +85,9 @@ def calc_crippen(smi):
 allsmiles = list(itertools.chain(*smiles))
 crippen = [calc_crippen(smi) for smi in allsmiles]
 crippen_preds = [sum(x) for x in crippen]
+crippen_norm = [Normalize()(x) for x in crippen]
 crippen_colors = [
-    cmapper.to_rdkit_cmap(Normalize()(x)) for x in crippen
+    cmapper.to_rdkit_cmap(x) for x in crippen_norm
 ]
 
 ###################################
@@ -143,27 +152,44 @@ p.savefig(f'/workspace/results/logp/logp_parity_plot_crippen.png')
 ##################################
 ## predict & write to csv for further analysis
 alltokens = list(itertools.chain(*[f.get('tokens') for f in all]))
-atom_weights = list(itertools.chain(*[f.get('atom_weights') for f in all]))
+all_atom_weights = list(itertools.chain(*atom_weights))
+# all_rel_weights = list(itertools.chain(*rel_weights))
+all_rdkit_colors = list(itertools.chain(*rdkit_colors))
 allpreds = torch.concat([f.get('preds') for f in all]).cpu().numpy()
 alllabels = torch.concat([f.get('labels') for f in all]).cpu().numpy()
+# print(type(all_rel_weights[0]))
+print(type(all_atom_weights[0]))
+print(type(crippen[0]))
+print(type(crippen_norm[0]))
 
 results = pd.DataFrame({
-    'SMILES': allsmiles,
-    'Tokens': alltokens,
-    'logP_pred': allpreds,
-    'logP_crippen': crippen_preds,
-    'logP_exp': alllabels,
-    'Atom_weights': atom_weights,
-    'Crippen_weights': crippen_colors,
-    'Split': 'test'
+    'smiles': allsmiles,
+    'tokens': alltokens,
+    'logp_pred': allpreds,
+    'logp_crippen': crippen_preds,
+    'logp_exp': alllabels,
+    # 'ours_raw': [np.array(x) for x in all_rel_weights],
+    'ours_weights': all_atom_weights,
+    'ours_colors': all_rdkit_colors,
+    'crippen_raw': crippen, 
+    'crippen_weights': crippen_norm,
+    'crippen_colors': crippen_colors,
+    'split': 'test'
     })
+# results['ours_weights'] = results['ours_weights'].astype(str)
+# # results['all_rdkit_colors'] = results['all_rdkit_colors'].astype(str)
+# results['crippen_raw'] = results['crippen_raw'].astype(str)
+# results['crippen_weights'] = results['crippen_weights'].astype(str)
+# results['crippen_colors'] = results['crippen_colors'].astype(str)
 
 # reset index to correspond to visualization UID
 results = results.reset_index(drop=True)
 results = results.reset_index().rename(columns={'index':'uid'})
-results.to_csv('/workspace/results/logp/logp_predictions.csv', index=False)
+with np.printoptions(linewidth=9000):
+    results.to_csv('/workspace/results/logp/logp_predictions.csv', index=False)
 ###################################
 # plot entire test set:
+print('plotting!')
 b_indices = list(range(cfg['n_batch']))
 for b_nr, _ in enumerate(all):
     for b_ix in range(len(smiles[b_nr])):

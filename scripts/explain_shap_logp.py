@@ -25,7 +25,7 @@ with open('/workspace/scripts/logp_config.json', 'r') as f:
     cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
-test_dataset = LogPDataset('/workspace/data/logp_dataset.csv', 'test',
+test_dataset = LogPDataset('/workspace/data/opera_logp.csv', 'test',
     cfg['split'], data_seed=cfg['seed'])
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)
@@ -83,19 +83,24 @@ explainer = shap.Explainer(
 )
 
 results = pd.DataFrame(
-    columns=['SMILES', 'Tokens', 'logP_pred', 'logP_exp', 'SHAP_weights', 'Split']
+    columns=['smiles', 'tokens', 'logp_pred', 'logp_exp', 'shap_raw', 
+    'shap_weights', 'shap_colors', 'split']
 )
 cmapper = ColorMapper()
 
 for batch in test_loader:
     smiles, labels = batch
-    shapvals = explainer(smiles).values
+    shap_vals = explainer(smiles).values
     tokens = [tokenizer.text_to_tokens(s) for s in smiles]
     preds = ft_model(smiles).cpu().detach().numpy()
     labels = labels.cpu().detach().numpy()
     
     # print('**', smiles, labels, tokens, preds, shapvals)
     # assert all([len(t) == len(s) for t, s in zip(tokens, shapvals)])
+
+    shap_raw = [cmapper.filter_atoms(v,t) for v,t in zip(shap_vals, tokens)]
+    shap_weights = [cmapper(v,t) for v,t in zip(shap_vals, tokens)]
+    shap_colors = [cmapper.to_rdkit_cmap(x) for x in shap_weights]
 
     ###############################
     # plot all molecules in batch #
@@ -104,34 +109,34 @@ for batch in test_loader:
         smi = smiles[b_ix]
         lab = labels[b_ix]
         pred = preds[b_ix]
+        shap_color = shap_colors[b_ix]
         uid = len(results) + b_ix
-
-        atom_color = cmapper(shapvals[b_ix], tokens[b_ix])
-        atom_color = cmapper.to_rdkit_cmap(atom_color)
         
         print(uid)
         if uid not in [252]:
             try:
                 # segmentation fault, likely due to weird structure?
-                plot_weighted_molecule(atom_color, smi, token, lab, pred, 
+                plot_weighted_molecule(shap_color, smi, token, lab, pred, 
                 f"{uid}_shap", f'/workspace/results/logp/viz_shap')
             except:
                 print(f'** {uid} failed to plot')
     ###############################
     
     res = pd.DataFrame({
-        'SMILES': smiles,
-        'Tokens': tokens,
-        'logS_pred': preds,
-        'logS_exp': labels,
-        'SHAP_weights': shapvals,
-        'Split': 'test'
+        'smiles': smiles,
+        'tokens': tokens,
+        'logp_pred': preds,
+        'logp_exp': labels,
+        'shap_raw': shap_raw,
+        'shap_weights': shap_weights,
+        'shap_colors': shap_colors,
+        'split': 'test'
         })
     print(res)
     results = pd.concat([results, res], axis=0)
 
 print('token/shap equal len', all([len(t) == len(s) for t, s in zip(
-    results.Tokens, results.SHAP_weights
+    results.tokens, results.shap_weights
 )]))
 
 results = results.reset_index(drop=True)
