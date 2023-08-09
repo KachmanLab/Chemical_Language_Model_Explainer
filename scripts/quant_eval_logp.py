@@ -62,7 +62,7 @@ shap_crip, shap_crip_sd = mrmse(
     merged['shap_weights'], merged['crippen_weights']
 )
 
-print(f"Ours vs SHAP   : mean {ours_shap:.4f}, \tsd {ours_shap_sd:.4f}")
+print(f"Ours vs SHAP: mean {ours_shap:.4f}, \tsd {ours_shap_sd:.4f}")
 print(f"Ours vs Crip: mean {ours_crip:.4f}, \tsd {ours_crip_sd:.4f}")
 print(f"SHAP vs Crip: mean {shap_crip:.4f}, \tsd {shap_crip_sd:.4f}")
 

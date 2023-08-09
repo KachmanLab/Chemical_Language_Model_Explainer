@@ -3,5 +3,5 @@
     "seed": 9042,
     "n_epochs": 70,
     "split": 0.95,
-    "model": "shap"
+    "model": "logp"
 }

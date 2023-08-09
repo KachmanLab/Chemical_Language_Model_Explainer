@@ -349,14 +349,15 @@ class BaselineAqueousModel(AqueousRegModel):
         _, masks = self._tokenize(inputs)
         tokens = [self.tokenizer.text_to_tokens(s) for s in inputs]
             
-        salience = self.get_salience()
-        salience = salience.mean(axis=-1)
-        salience_colors = [self.cmapper(salience[i], tokens[i]) \
-            for i in range(len(inputs))]
+        # salience = self.get_salience()
+        # salience = salience.mean(axis=-1)
+        # salience_colors = [self.cmapper(salience[i], tokens[i]) \
+        #     for i in range(len(inputs))]
 
         return {"preds": preds, "labels": labels, 
-            "smiles": inputs, "tokens": tokens, "masks": masks, 
-            "salience_colors": salience_colors}
+            "smiles": inputs, "tokens": tokens, "masks": masks, }
+            # "salience_colors": salience_colors
+            # }
 
     # def mask_forward(self, token, mask):
     #     """ forward without tokenizer"""

@@ -109,14 +109,14 @@ slo = f"{reg.coef_[0]:.3f}"
 split = f"{int(round(1.-cfg['split'], 2)*100)}%"
 # plot a hexagonal parity plot
 p = sns.jointplot(x=y, y=yhat, kind='hex', color='g',
-                 xlim=[-4, 5.], ylim=[-4, 5.])
+                 xlim=[-4, 6.5], ylim=[-4, 6.5])
 sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint, color='grey', ci=None, scatter=False)
-p.fig.suptitle(f"logP parity plot")
+p.fig.suptitle(f"logP parity plot: MegaMolBART + <REG> token head")
 p.set_axis_labels('Experimental log(P)', 'Model log(P)')
 p.fig.subplots_adjust(top=0.95)
 p.fig.tight_layout()
 txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo} "
-plt.text(4, -4.,
+plt.text(6, -4.,
          txt, ha="right", va="bottom", fontsize=14)
 p.savefig(f'/workspace/results/logp/logp_parity_plot_{xai}.png')
 
@@ -137,7 +137,7 @@ slo = f"{reg.coef_[0]:.3f}"
 split = f"{int(round(1.-cfg['split'], 2)*100)}%"
 # plot a hexagonal parity plot
 p = sns.jointplot(x=y, y=yhat, kind='hex', color='g',
-                 xlim=[-4, 5.], ylim=[-4, 5.])
+                 xlim=[-4, 6.5], ylim=[-4, 6.5])
 sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint, color='grey',
     ci=None, scatter=False)
 p.fig.suptitle(f"Crippen's logP prediction parity plot")
@@ -145,7 +145,7 @@ p.set_axis_labels('Experimental log(P)', 'Model log(P)')
 p.fig.subplots_adjust(top=0.95)
 p.fig.tight_layout()
 txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo} "
-plt.text(4, -4.,
+plt.text(6, -4.,
          txt, ha="right", va="bottom", fontsize=14)
 p.savefig(f'/workspace/results/logp/logp_parity_plot_crippen.png')
 
