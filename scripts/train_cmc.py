@@ -6,19 +6,19 @@ import json
 import dagshub
 # from dagshub.pytorch_lightning import DAGsHubLogger
 import mlflow
-from src.prop_loader import LogPDataset
+from src.prop_loader import CMCDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
 
-with open('/workspace/scripts/logp_config.json', 'r') as f:
+with open('/workspace/scripts/cmc_config.json', 'r') as f:
     cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
 
-train_dataset = LogPDataset('/workspace/data/opera_logp.csv', 'train', 
+train_dataset = CMCDataset('/workspace/data/cmc_dataset_1235.csv', 'train', 
     cfg['split'], data_seed=cfg['seed'], augment=False)
-val_dataset = LogPDataset('/workspace/data/opera_logp.csv', 'valid',
+val_dataset = CMCDataset('/workspace/data/cmc_dataset_1235.csv', 'valid',
     cfg['split'], data_seed=cfg['seed'])
-test_dataset = LogPDataset('/workspace/data/opera_logp.csv', 'test',
+test_dataset = CMCDataset('/workspace/data/cmc_dataset_1235.csv', 'test',
     cfg['split'], data_seed=cfg['seed'])
 
 train_loader = DataLoader(train_dataset, batch_size=cfg['n_batch'], 
@@ -28,11 +28,11 @@ val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'],
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)
 
-if cfg['model'] == 'logp':
+if cfg['model'] == 'cmc':
     ft_model = AqueousRegModel()
 elif cfg['model'] == 'shap':
     ft_model = BaselineAqueousModel()
-# unfreeze to train the whole model instead of just the head
+# optionally unfreeze to train the whole model instead of just the head
 # ft_model.mmb.unfreeze()
 
 dagshub.init("Chemical_Language_Model_Explainer", "stefanhoedl", mlflow=True)
@@ -52,7 +52,7 @@ with mlflow.start_run() as run:
     trainer.fit(ft_model, train_loader, val_loader)
     trainer.test(ft_model, test_loader)
 
-    mdir = 'logp' if cfg['model'] == 'logp' else 'shap'
-    modelpath = f'/workspace/results/logp/models/{mdir}_{run.info.run_id}.pt'
+    mdir = 'cmc' if cfg['model'] == 'cmc' else 'shap'
+    modelpath = f'/workspace/results/cmc/models/{mdir}_{run.info.run_id}.pt'
     trainer.save_checkpoint(modelpath)
     # mlflow.log_artifact(modelpath)

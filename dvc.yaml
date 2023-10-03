@@ -107,66 +107,67 @@ stages:
     - results/shap/viz/
 
 
-  train_logp:
-    cmd: python3 scripts/train_logp.py
+###############################################################
+########################### CMC ###############################
+# mkdir results/cmc/{models, viz_ours, viz_shap}
+  train_cmc:
+    cmd: python3 scripts/train_cmc.py
     deps:
-    - data/opera_logp.csv
-    - scripts/train_logp.py
+    - data/cmc_dataset_1235.csv
+    - scripts/train_cmc.py
     - src/model.py
     - src/prop_loader.py
-    - scripts/logp_config.json
+    - scripts/cmc_config.json
     outs:
-    - results/logp/models/:
+    - results/cmc/models/:
         persist: true 
 
-  plot_logp:
-    cmd: python3 scripts/explain_logp.py
+  plot_cmc:
+    cmd: python3 scripts/explain_cmc.py
     deps: 
-    - data/opera_logp.csv
+    - data/cmc_dataset_1235.csv
     - src/prop_loader.py
     - src/model.py
     - src/explainer.py
-    - scripts/logp_config.json
-    - scripts/explain_logp.py
-    - results/logp/models/
+    - scripts/cmc_config.json
+    - scripts/explain_cmc.py
+    - results/cmc/models/
     outs:
-    - results/logp/logp_predictions.csv
-    - results/logp/viz_ours/:
-        persist: true
-    - results/logp/viz_crippen/:
+    - results/cmc/cmc_predictions.csv
+    - results/cmc/viz_ours/:
         persist: true
   
-  # train_logp_shap:
-  #   cmd: python3 scripts/train_shap_logp.py 
+  # REPLACED BY train_cmc with config:shap?
+  # train_cmc_shap:
+  #   cmd: python3 scripts/train_shap_cmc.py 
   #   deps:
-  #   - data/logp_dataset.csv
-  #   - scripts/train_shap_logp.py
+  #   - data/cmc_dataset.csv
+  #   - scripts/train_shap_cmc.py
   #   - src/model.py
   #   - src/prop_loader.py
-  #   - scripts/logp_config.json
+  #   - scripts/cmc_config.json
   #   outs:
-  #   - results/logp/models_shap/:
+  #   - results/cmc/models_shap/:
   #       persist: true
 
-  shap_logp:
-    cmd: python3 scripts/explain_shap_logp.py
+  shap_cmc:
+    cmd: python3 scripts/explain_shap_cmc.py
     deps: 
-    - data/opera_logp.csv
+    - data/cmc_dataset_1235.csv
     - src/prop_loader.py
     - src/model.py
     - src/explainer.py
-    - scripts/logp_config.json
-    - scripts/explain_shap_logp.py
-    - results/logp/models/
+    - scripts/cmc_config.json
+    - scripts/explain_shap_cmc.py
+    - results/cmc/models/
     outs:
-    - results/logp/logp_shap_predictions.csv
-    - results/logp/viz_shap/:
+    - results/cmc/cmc_shap_predictions.csv
+    - results/cmc/viz_shap/:
         persist: true
 
-  logp:
-    cmd: echo "Finished full logP + crippen + shap explainability pipeline"
+  cmc:
+    cmd: echo "Finished full cmc + shap explainability pipeline"
     deps:
-    - results/logp/models/
-    - results/logp/viz_ours/
-    - results/logp/viz_crippen/
-    - results/logp/viz_shap/
+    - results/cmc/models/
+    - results/cmc/viz_ours/
+    - results/cmc/viz_shap/

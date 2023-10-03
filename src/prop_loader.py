@@ -4,18 +4,22 @@ from rdkit import Chem
 import pandas as pd
 import numpy as np
 
-class LogPDataset(Dataset):
+class CMCDataset(Dataset):
     def __init__(self, file_path, subset, split, data_seed=42, augment=False):
         self.subset = subset
         self.data_seed = data_seed
         self.augment = augment # not implemented
 
-        # load & split data into accurate test set according to SolProp specifications
+        # load & split data
         df = pd.read_csv(file_path)
-        df = df[~pd.isna(df['LogP'])]
+        df = df[~pd.isna(df['log(CMC)'])]
+        df = df[(df['log(CMC)'] > -6.6) & (df['log(CMC)'] < 5.5)]
 
-        #test_idx = (df['LogP'] > -4.) & (df['LogP'] < 6.3)
-        test_idx = (df['LogP'] > -20.)
+        # drop line 1173: logCMC = 23.3
+        # CCCCCCCCCCOCC(COCCC[N+](C)(C)C)(COCCCCCCCCCC)COCCC[N+](C)(C)C.[I-].[I-]
+
+        #test_idx = (df['log(CMC)'] > -4.) & (df['log(CMC)'] < 6.3)
+        test_idx = (df['log(CMC)'] < np.inf)
         ntest = round(len(df) * (1-split))
         test_idx[:ntest] = True
         test_idx[ntest:] = False
@@ -27,24 +31,24 @@ class LogPDataset(Dataset):
         total = df.shape[0]
         split_index = int(total * split)
 
-        # df = df[df['LogP'] < 2.05]
-        self.min = df['LogP'].min()
-        self.max = df['LogP'].max()
-        print('minmax', self.min, self.max)
+        # df = df[df['log(CMC)'] < 2.05]
+        self.min = df['log(CMC)'].min()
+        self.max = df['log(CMC)'].max()
+        print('min', self.min, 'max', self.max)
 
         if self.subset == 'train':
-            self.smiles = df['smiles'][:split_index].to_list()
-            labels = df['LogP'][:split_index].to_list()
+            self.smiles = df['SMILES'][:split_index].to_list()
+            labels = df['log(CMC)'][:split_index].to_list()
             self.labels = torch.tensor(labels, dtype=torch.float32)
 
         elif self.subset == 'valid':
-            self.smiles = df['smiles'][:split_index].to_list()
-            val_labels = df['LogP'][:split_index].to_list()
+            self.smiles = df['SMILES'][:split_index].to_list()
+            val_labels = df['log(CMC)'][:split_index].to_list()
             self.labels = torch.tensor(val_labels, dtype=torch.float32)
 
         elif self.subset == 'test':
-            self.smiles = test_df['smiles'][:split_index].to_list()
-            test_labels = test_df['LogP'][:split_index].to_list()
+            self.smiles = test_df['SMILES'][:split_index].to_list()
+            test_labels = test_df['log(CMC)'][:split_index].to_list()
             self.labels = torch.tensor(test_labels, dtype=torch.float32)
 
     def __len__(self):

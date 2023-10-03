@@ -89,12 +89,24 @@ class RegressionHead(pl.LightningModule):
         return x.squeeze(1)
 
 
+class LinearRegressionHead(pl.LightningModule):
+    def __init__(self):
+        super().__init__()
+        # self.norm = nn.LayerNorm(normalized_shape=[512])
+        self.fc1 = nn.Linear(512, 1)
+        
+    def forward(self, x):
+        # x = self.norm(x)
+        x = self.fc1(x)
+        return x.squeeze(1)
+
+
 class AqueousRegModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
         self.init_molbart()
         self.tokenizer = REGRegExTokenizer()
-        self.head = RegressionHead()
+        self.head = LinearRegressionHead()
         self.explainer = MolecularSelfAttentionViz(save_heatmap=False)
         self.cmapper = ColorMapper()
 
@@ -290,7 +302,7 @@ class BaselineAqueousModel(AqueousRegModel):
         """ uses average pooling instead of <REG> token """
         super().__init__()
         self.init_molbart()
-        self.head = RegressionHead().cuda()
+        self.head = LinearRegressionHead().cuda()
         self.cmapper = ColorMapper()
 
         self.criterion = nn.HuberLoss()

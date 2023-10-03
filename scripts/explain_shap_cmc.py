@@ -15,22 +15,22 @@ import glob
 import json
 from sklearn import linear_model
 
-from src.prop_loader import LogPDataset
+from src.prop_loader import CMCDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
 from src.explainer import ColorMapper, plot_weighted_molecule 
 from nemo_src.regex_tokenizer import RegExTokenizer
 import shap
 
-with open('/workspace/scripts/logp_config.json', 'r') as f:
+with open('/workspace/scripts/cmc_config.json', 'r') as f:
     cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
-test_dataset = LogPDataset('/workspace/data/opera_logp.csv', 'test',
+test_dataset = CMCDataset('/workspace/data/cmc_dataset_1235.csv', 'test',
     cfg['split'], data_seed=cfg['seed'])
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)
 
-subfolders = [f.path for f in os.scandir('/workspace/results/logp/models/') \
+subfolders = [f.path for f in os.scandir('/workspace/results/cmc/models/') \
     if (f.path.endswith('.pt') and ('shap' in os.path.split(f)[1]))]
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
@@ -83,7 +83,7 @@ explainer = shap.Explainer(
 )
 
 results = pd.DataFrame(
-    columns=['smiles', 'tokens', 'logp_pred', 'logp_exp', 'shap_raw', 
+    columns=['smiles', 'tokens', 'cmc_pred', 'cmc_exp', 'shap_raw', 
     'shap_weights', 'shap_colors', 'split']
 )
 cmapper = ColorMapper()
@@ -112,7 +112,7 @@ for batch in test_loader:
         if uid not in [252]:
             try:
                 plot_weighted_molecule(shap_color, smi, token, lab, pred, 
-                f"{uid}_shap", f'/workspace/results/logp/viz_shap')
+                f"{uid}_shap", f'/workspace/results/cmc/viz_shap')
             except:
                 print(f'** {uid} failed to plot')
     ###############################
@@ -120,8 +120,8 @@ for batch in test_loader:
     res = pd.DataFrame({
         'smiles': smiles,
         'tokens': tokens,
-        'logp_pred': preds,
-        'logp_exp': labels,
+        'cmc_pred': preds,
+        'cmc_exp': labels,
         'shap_raw': shap_raw,
         'shap_weights': shap_weights,
         'shap_colors': shap_colors,
@@ -136,7 +136,7 @@ print('token/shap equal len', all([len(t) == len(s) for t, s in zip(
 
 results = results.reset_index(drop=True)
 results = results.reset_index().rename(columns={'index':'uid'})
-results.to_csv('/workspace/results/logp/logp_shap_predictions.csv', index=False)
+results.to_csv('/workspace/results/cmc/cmc_shap_predictions.csv', index=False)
 
 
 # PLOT
@@ -174,11 +174,11 @@ p = sns.jointplot(x=y, y=yhat, kind='hex', color='g',
                     xlim=[-4, 6.5], ylim=[-4, 6.5])
 sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint, color='grey', ci=None,                       
             scatter=False)
-p.fig.suptitle(f"logP parity plot: SHAP + average-pooling")
+p.fig.suptitle(f"log(CMC) parity plot: SHAP + average-pooling")
 p.set_axis_labels('Experimental log(P)', 'Model log(P)')
 p.fig.subplots_adjust(top=0.95)
 p.fig.tight_layout()
 txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo} "                        
 plt.text(6, -4.,
         txt, ha="right", va="bottom", fontsize=14)
-p.savefig(f'/workspace/results/logp/logp_parity_plot_{xai}.png')
+p.savefig(f'/workspace/results/cmc/cmc_parity_plot_{xai}.png')
