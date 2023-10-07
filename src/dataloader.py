@@ -59,6 +59,18 @@ class AqSolDataset(Dataset):
         return smiles_data, labels
 
 
+class AqSolDeepChem(Dataset):
+    def __init__(self, file_path, subset, acc_test, split, data_seed=42):
+
+        loader = dc.data.CSVLoader(
+                    tasks = 'logS_aq_avg',
+                    feature_field = "smiles solute",
+                    featurizer = 'ECFP'
+        )
+        loader.create_dataset(file_path, shard_size=8192)
+        return loader.load_dataset('AqueousSolu-Exp')
+
+
 class CombiSoluDataset(Dataset):
     def __init__(self, file_path, subset, temp_test, split, augment=False, 
             data_seed=42, scale_logS=True):
