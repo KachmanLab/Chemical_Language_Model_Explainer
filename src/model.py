@@ -106,7 +106,7 @@ class AqueousRegModel(pl.LightningModule):
         super().__init__()
         self.init_molbart()
         self.tokenizer = REGRegExTokenizer()
-        self.head = LinearRegressionHead()
+        self.head = RegressionHead()
         self.explainer = MolecularSelfAttentionViz(save_heatmap=False)
         self.cmapper = ColorMapper()
 
@@ -302,7 +302,7 @@ class BaselineAqueousModel(AqueousRegModel):
         """ uses average pooling instead of <REG> token """
         super().__init__()
         self.init_molbart()
-        self.head = LinearRegressionHead().cuda()
+        self.head = RegressionHead().cuda()
         self.cmapper = ColorMapper()
 
         self.criterion = nn.HuberLoss()

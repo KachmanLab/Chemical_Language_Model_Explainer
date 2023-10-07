@@ -83,12 +83,12 @@ def calc_crippen(smi):
     return cmc
 
 allsmiles = list(itertools.chain(*smiles))
-crippen = [calc_crippen(smi) for smi in allsmiles]
-crippen_preds = [sum(x) for x in crippen]
-crippen_norm = [Normalize()(x) for x in crippen]
-crippen_colors = [
-    cmapper.to_rdkit_cmap(x) for x in crippen_norm
-]
+#crippen = [calc_crippen(smi) for smi in allsmiles]
+#crippen_preds = [sum(x) for x in crippen]
+#crippen_norm = [Normalize()(x) for x in crippen]
+#crippen_colors = [
+#    cmapper.to_rdkit_cmap(x) for x in crippen_norm
+#]
 
 ###################################
 
@@ -108,15 +108,14 @@ slo = f"{reg.coef_[0]:.3f}"
 # text formatting for plot
 split = f"{int(round(1.-cfg['split'], 2)*100)}%"
 # plot a hexagonal parity plot
-p = sns.jointplot(x=y, y=yhat, kind='hex', color='g',
-                 xlim=[-4, 6.5], ylim=[-4, 6.5])
+p = sns.jointplot(x=y, y=yhat, kind='hex', color='g', xlim=[-6, 0], ylim=[-6, 0])
 sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint, color='grey', ci=None, scatter=False)
 p.fig.suptitle(f"log(CMC) parity plot: MegaMolBART + <REG> token head")
-p.set_axis_labels('Experimental log(P)', 'Model log(P)')
+p.set_axis_labels('Experimental log(CMC)', 'Model log(CMC)')
 p.fig.subplots_adjust(top=0.95)
 p.fig.tight_layout()
 txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo} "
-plt.text(6, -4.,
+plt.text(-0, -6.,
          txt, ha="right", va="bottom", fontsize=14)
 p.savefig(f'/workspace/results/cmc/cmc_parity_plot_{xai}.png')
 

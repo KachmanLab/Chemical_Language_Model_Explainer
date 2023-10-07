@@ -35,7 +35,8 @@ elif cfg['model'] == 'shap':
 # optionally unfreeze to train the whole model instead of just the head
 # ft_model.mmb.unfreeze()
 
-dagshub.init("Chemical_Language_Model_Explainer", "stefanhoedl", mlflow=True)
+# mlflow.set_tracking_uri("http://localhost:5555")
+dagshub.init("Chemical_Language_Model_Explainer", "stefanhoedl", mlflow=False)
 
 trainer = pl.Trainer(
     max_epochs=cfg['n_epochs'],

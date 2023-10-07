@@ -229,8 +229,8 @@ stages:
       size: 1984
     outs:
     - path: results/logp/models/
-      md5: 1d1f7373bc6e1b3819db2d698d39afd1.dir
-      size: 315464640
+      md5: b63c8f9ba5e97833e1427452153539c9.dir
+      size: 471878074
       nfiles: 2
   plot_logp:
     cmd: python3 scripts/explain_logp.py
@@ -239,18 +239,18 @@ stages:
       md5: 2b10b2d996b900b9fb9027a78b736853
       size: 1372348
     - path: results/logp/models/
-      md5: 1d1f7373bc6e1b3819db2d698d39afd1.dir
-      size: 315464640
+      md5: b63c8f9ba5e97833e1427452153539c9.dir
+      size: 471878074
       nfiles: 2
     - path: scripts/explain_logp.py
-      md5: 0e033c5edc996f88f481bb0e300ca530
-      size: 6416
+      md5: 1e50bad7188de0a169be4a25cceda5a6
+      size: 7468
     - path: scripts/logp_config.json
       md5: aafe4564dfa9e70d14653161dc93f341
       size: 100
     - path: src/explainer.py
-      md5: dd65fb3ccd43f56d3a95a98dc60899fe
-      size: 6821
+      md5: 178193b2961e9cce86bc8fee08a19514
+      size: 6829
     - path: src/model.py
       md5: 7e5343a96d7684960206ec2c277c8c70
       size: 14260
@@ -259,16 +259,16 @@ stages:
       size: 1984
     outs:
     - path: results/logp/logp_predictions.csv
-      md5: 42edcd9d122caca25866395d21b74970
-      size: 1074692
+      md5: 31ffcf88fc0de56856327ddc86177b4f
+      size: 2115034
     - path: results/logp/viz_crippen/
-      md5: 700a5c6cde4d40306333646fd597a37c.dir
-      size: 34806459
-      nfiles: 692
+      md5: e694658da9480e3726973930e73a5bef.dir
+      size: 36029637
+      nfiles: 731
     - path: results/logp/viz_ours/
-      md5: 6924f6add266b477aded028c63090615.dir
-      size: 34540150
-      nfiles: 692
+      md5: 595462959f6bf37f6d1d668c6ee496b2.dir
+      size: 35751902
+      nfiles: 731
   logp:
     cmd: echo "Finished full logP + crippen explainability pipeline"
     deps:
@@ -317,3 +317,59 @@ stages:
       md5: f7979bc24ae772c2a60c8e353f5cf323.dir
       size: 23288533
       nfiles: 730
+  train_cmc:
+    cmd: python3 scripts/train_cmc.py
+    deps:
+    - path: data/cmc_dataset_1235.csv
+      md5: fdef3b6e89bff73a93f9501b73d5a49a
+      size: 558577
+    - path: scripts/cmc_config.json
+      md5: cfa9016dcbbb66c7064ec004b7a20288
+      size: 97
+    - path: scripts/train_cmc.py
+      md5: 0414cab9f181f686b44983b82316e0ba
+      size: 1978
+    - path: src/model.py
+      md5: e4b80e905dc13b2d4750d823b83073da
+      size: 14598
+    - path: src/prop_loader.py
+      md5: 8954c0f62ea4396f044b6beee336d981
+      size: 2159
+    outs:
+    - path: results/cmc/models/
+      md5: b6a7d7b25c269abbd83eeb0af8c7c967.dir
+      size: 1649743563
+      nfiles: 7
+  plot_cmc:
+    cmd: python3 scripts/explain_cmc.py
+    deps:
+    - path: data/cmc_dataset_1235.csv
+      md5: fdef3b6e89bff73a93f9501b73d5a49a
+      size: 558577
+    - path: results/cmc/models/
+      md5: f9254f534f0d1c1f0d19dd1c46cf1df5.dir
+      size: 235481613
+      nfiles: 1
+    - path: scripts/cmc_config.json
+      md5: 922994080ed707af4379a322de2311de
+      size: 98
+    - path: scripts/explain_cmc.py
+      md5: 61203c5f0dba99d38a88cc6ff89d8c98
+      size: 7552
+    - path: src/explainer.py
+      md5: 178193b2961e9cce86bc8fee08a19514
+      size: 6829
+    - path: src/model.py
+      md5: 1f08d5a5c49dcc5723a45dae51b45b60
+      size: 14609
+    - path: src/prop_loader.py
+      md5: 8954c0f62ea4396f044b6beee336d981
+      size: 2159
+    outs:
+    - path: results/cmc/cmc_predictions.csv
+      md5: 8a151eba0ca6d58e74303f5e2665f94f
+      size: 354259
+    - path: results/cmc/viz_ours/
+      md5: 854b0e3f9e3ae9e02726c26b7c20ef9c.dir
+      size: 4883626
+      nfiles: 115
