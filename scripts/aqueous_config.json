@@ -4,5 +4,7 @@
     "n_epochs": 30,
     "acc_test": true,
     "split": 0.9,
-    "model": "shap"
+    "featurizer": "ECFP",
+    "model": "SVR",
+    "dataset": "logs"
 }

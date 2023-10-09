@@ -3,6 +3,7 @@ from torch.utils.data import Dataset, DataLoader
 from rdkit import Chem
 import pandas as pd
 import numpy as np
+import deepchem as dc
 
 class AqSolDataset(Dataset):
     def __init__(self, file_path, subset, acc_test, split, data_seed=42, 
@@ -59,16 +60,22 @@ class AqSolDataset(Dataset):
         return smiles_data, labels
 
 
-class AqSolDeepChem(Dataset):
+class AqSolDeepChem(dc.data.NumpyDataset):
     def __init__(self, file_path, subset, acc_test, split, data_seed=42):
 
         loader = dc.data.CSVLoader(
-                    tasks = 'logS_aq_avg',
+                    tasks = ['logS_aq_avg'],
+                    # id_field = "smiles solute",
                     feature_field = "smiles solute",
-                    featurizer = 'ECFP'
+                    featurizer = dc.feat.CircularFingerprint(),
+                    # featurizer = 'ECFP'
         )
-        loader.create_dataset(file_path, shard_size=8192)
-        return loader.load_dataset('AqueousSolu-Exp')
+        dataset = loader.create_dataset(file_path)
+        print(type(dataset))
+        print(dataset)
+        return dataset#.load_dataset('/workspace/data/AqueousSolu-Exp.csv')
+
+    # def 
 
 
 class CombiSoluDataset(Dataset):

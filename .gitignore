@@ -16,7 +16,11 @@ results/aqueous/grading
 .local
 mlruns
 lightning_logs
-
+.dgl
+.jupyter
+.ssh
+.vscode-server
+.bash_history
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

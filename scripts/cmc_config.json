@@ -3,5 +3,8 @@
     "seed": 41,
     "n_epochs": 50,
     "split": 0.90,
-    "model": "cmc"
+    "model": "Weave",
+    "featurizer": "Weave",
+    // "skmodel": "Reg",
+    "dataset": "logs"
 }
