@@ -158,8 +158,8 @@ allpreds = torch.concat([f.get('preds') for f in all]).cpu().numpy()
 alllabels = torch.concat([f.get('labels') for f in all]).cpu().numpy()
 # print(type(all_rel_weights[0]))
 print(type(all_atom_weights[0]))
-print(type(crippen[0]))
-print(type(crippen_norm[0]))
+# print(type(crippen[0]))
+# print(type(crippen_norm[0]))
 
 results = pd.DataFrame({
     'smiles': allsmiles,
