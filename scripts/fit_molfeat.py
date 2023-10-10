@@ -29,7 +29,8 @@ pl.seed_everything(cfg['seed'])
 
 
 # load preprocessed representations
-reps = pickle.load('/workspace/data/prep/aqueous_prep.pickle',)
+with open('/workspace/data/prep/aqueous_prep.pickle', 'rb') as f:
+    reps = pickle.load(f)
 
 smiles, y_true = reps.pop(['smiles', 'labels'])
 # Train a model

@@ -44,7 +44,7 @@ def scaffold_split(smiles):
     splitter = GroupShuffleSplit(n_splits=1, test_size=0.1, random_state=42)
     return next(splitter.split(smiles, groups=scaffolds))
 
-class AqueousDataMolSet(augment=False):
+class AqueousDataMolSet():
     def __init__(self) -> None:
         smiles, y_true = load_dataset(
             "/workspace/data/AqueousSolu.csv", "smiles solute", "logS_aq_avg"

@@ -52,10 +52,10 @@ trans_mordred = FPVecTransformer(kind="mordred", replace_nan=True, n_jobs=-1,
 
 feats_ecfp, ind_ecfp = trans_ecfp(smiles, ignore_errors=True)
 print(feats_ecfp.shape)
-feats_ecfp6, ind_ecfp6 = trans_ecfp6(smiles, ignore_errors=True)
-print(feats_ecfp6.shape)
-feats_mordred, ind_mordred = trans_mordred(smiles, ignore_errors=True)
-print(feats_mordred.shape)
+#feats_ecfp6, ind_ecfp6 = trans_ecfp6(smiles, ignore_errors=True)
+#print(feats_ecfp6.shape)
+#feats_mordred, ind_mordred = trans_mordred(smiles, ignore_errors=True)
+#print(feats_mordred.shape)
 #feats_chemberta, ind_chemberta = trans_chemberta(smiles, ignore_errors=True)
 #print(feats_chemberta.shape)
 #feats_jtvae, ind_jtvae = trans_jtvae(smiles, ignore_errors=True)
@@ -65,14 +65,15 @@ reps = {
     "smiles": smiles,
     "target": y_true,
     "ecfp": feats_ecfp[ind_ecfp],
-    "ecfp6": feats_ecfp6[ind_ecfp6],
-    "mordred": feats_mordred[ind_mordred],
+    #"ecfp6": feats_ecfp6[ind_ecfp6],
+    #"mordred": feats_mordred[ind_mordred],
     #"jtvae": feats_jtvae[ind_jtvae],
     #"chemberta": feats_chemberta[ind_chemberta],
 }
 print(reps)
 
-pickle.dump(reps, '/workspace/data/prep/aqueous_prep.pickle',)
+with open('/workspace/data/prep/aqueous_prep.pickle', 'wb') as f:
+    pickle.dump(reps, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 train_ind, test_ind = scaffold_split(smiles)
 print(smiles[test_ind][:5])
