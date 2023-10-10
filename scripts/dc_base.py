@@ -14,6 +14,11 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 
+import molfeat
+import datamol as dm
+# https://molfeat-docs.datamol.io/stable/usage.html#quick-api-tour
+
+
 # from deepchem.models.torch_models.grover import GroverModel
 # from deepchem.feat.vocabulary_builders import (GroverAtomVocabularyBuilder, GroverBondVocabularyBuilder)
 
