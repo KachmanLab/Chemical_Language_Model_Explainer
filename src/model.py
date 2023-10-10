@@ -322,6 +322,14 @@ class BaselineAqueousModel(AqueousRegModel):
     # def get_salience(self):
     #     return self.salience.detach().cpu()
      
+    # def featurize(sef, inputs):
+    #     solu, mask = self._tokenize(inputs)
+    #     solu = self.mmb.encode(solu, mask)
+        
+    #     solu = solu * mask.unsqueeze(-1)
+    #     solu = torch.mean(solu, dim=1)
+    #     return solu.detach().cpu().numpy()
+
     def forward(self, inputs):
         # print("in:", inputs)
         solu, mask = self._tokenize(inputs)
@@ -404,3 +412,75 @@ class BaselineAqueousModel(AqueousRegModel):
         solu = torch.mean(solu, dim=1)
         solu = solu.to(torch.float32)
         return self.head(solu)
+
+class MMBFeaturizer(BaselineAqueousModel):
+    def __init__(self):
+        super().__init__()
+
+    def featurize(sef, inputs):
+        solu, mask = self._tokenize(inputs)
+        solu = self.mmb.encode(solu, mask)
+        
+        solu = solu * mask.unsqueeze(-1)
+        solu = torch.mean(solu, dim=1)
+        return solu.detach().cpu().numpy()
+
+    def predict(self, batch, batch_idx):
+        
+        inputs, labels = batch  
+        return self.featurize(inputs)
+    
+# from molfeat.trans.pretrained import PretrainedMolTransformer
+
+# class MegaMolBartModel(PretrainedMolTransformer):
+#     """
+#     In this dummy example, we train a RF model to predict the cLogP
+#     then use the feature importance of the RF model as the embedding.
+#     """
+
+#     def __init__(self):
+#         super().__init__(dtype=np.float32)
+#         self._featurizer = MoleculeTransformer("maccs", dtype=np.float32)
+#         self._model = RandomForestRegressor()
+#         self.train_dummy_model()
+
+#     def train_dummy_model(self):
+#         """
+#         Load the pretrained model.
+#         In this dummy example, we train a RF model to predict the cLogP
+#         """
+#         data = dm.data.freesolv().smiles.values
+#         X = self._featurizer(data)
+#         y = np.array([dm.descriptors.clogp(dm.to_mol(smi)) for smi in data])
+#         self._model.fit(X, y)
+
+#     # def featurize(sef, inputs):
+#     #     solu, mask = self._tokenize(inputs)
+#     #     solu = self.mmb.encode(solu, mask)
+        
+#     #     solu = solu * mask.unsqueeze(-1)
+#     #     solu = torch.mean(solu, dim=1)
+#     #     return solu.detach().cpu().numpy()
+
+#     def _embed(self, inputs, **kwargs):
+#         solu, mask = self._tokenize(inputs)
+#         return [solu, mask]
+        
+#     def _convert(self, inputs: list, **kwargs):
+#         solu, mask = inputs
+#         solu = self.mmb.encode(solu, mask)
+        
+#         solu = solu * mask.unsqueeze(-1)
+#         solu = torch.mean(solu, dim=1)
+#         return solu
+    
+#     # def _convert(self, inputs: list, **kwargs):
+#     #     """Convert the molecule to a format that the model expects"""
+#     #     return self._featurizer(inputs)
+
+#     # def _embed(self,  mols: list, **kwargs):
+#     #     """
+#     #     Embed the molecules using the pretrained model
+#     #     In this dummy example, we simply multiply the features by the importance of the feature
+#     #     """
+#     #     return [feats * self._model.feature_importances_ for feats in mols]

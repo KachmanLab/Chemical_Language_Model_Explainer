@@ -75,7 +75,6 @@ class AqSolDeepChem(dc.data.NumpyDataset):
         print(dataset)
         return dataset#.load_dataset('/workspace/data/AqueousSolu-Exp.csv')
 
-    # def 
 
 
 class CombiSoluDataset(Dataset):
