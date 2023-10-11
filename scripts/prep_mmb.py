@@ -16,8 +16,8 @@ from sklearn.model_selection import GroupShuffleSplit
 from molfeat.trans.fp import FPVecTransformer
 
 import sklearn
-import molfeat
-import datamol as dm
+# import molfeat
+# import datamol as dm
 # https://molfeat-docs.datamol.io/stable/usage.html#quick-api-tour
 
 with open('/workspace/scripts/aqueous_config.json', 'r') as f:
@@ -25,41 +25,37 @@ with open('/workspace/scripts/aqueous_config.json', 'r') as f:
 
 pl.seed_everything(cfg['seed'])
 
-# smiles, y_true = AqueousDataMolSet()
-smiles, y_true = load_dataset(
-    "/workspace/data/AqueousSolu.csv", "smiles solute", "logS_aq_avg"
-)
-smiles = np.array([preprocess_smiles(smi) for smi in smiles])
-smiles = np.array([smi for smi in smiles if dm.to_mol(smi) is not None])
-# smiles = smiles[:32]
+#smiles, y_true = load_dataset(
+    #"/workspace/data/AqueousSolu.csv", "smiles solute", "logS_aq_avg"
+#)
+#smiles = np.array([preprocess_smiles(smi) for smi in smiles])
+#smiles = np.array([smi for smi in smiles if dm.to_mol(smi) is not None])
+smiles = all_dataset.smiles
+y_true = all_dataset.labels.numpy()
 
 print('loading mmb')
 model = MMBFeaturizer()
-feats_mmb = model.featurize(smiles)
-print(feats_mmb.shape)
 
 all_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train', False, 
-    0., data_seed=cfg['seed'], augment=False)
-all_loader = DataLoader(all_dataset, batch_size=cfg['n_batch'], 
+    1., data_seed=cfg['seed'], augment=False)
+all_loader = DataLoader(all_dataset, batch_size=32,
     shuffle=False, num_workers=8)
 
 trainer = pl.Trainer(
-    accelerator='cpu',
+    accelerator='gpu',
     gpus=1,
     precision=16,
 )
+
 feats_mmb = trainer.predict(model, all_loader)
 feats_mmb = torch.cat(feats_mmb).numpy()
-print(feats_mmb.shape)
 
-
-# Setup the featurizers
+# Setup the ECFP featurizers
 trans_ecfp = FPVecTransformer(kind="ecfp:4", length = 512,
                               n_jobs=-1, dtype=np.float32)
 feats_ecfp, ind_ecfp = trans_ecfp(smiles, ignore_errors=True)
-print(feats_ecfp.shape)
-print(ind_ecfp)
-print(ind_ecfp.shape)
+
+assert feats_mmb.shape == feats_ecfp.shape
 
 reps = {
     "smiles": smiles,
@@ -68,12 +64,14 @@ reps = {
     "ecfp": feats_ecfp[ind_ecfp],
 }
 
-print(reps)
-
-pickle.dump(reps, '/workspace/data/prep/aqueous_mmb.pickle',)
+with open('/workspace/data/prep/aqueous_mmb.pickle', 'wb') as f: 
+    pickle.dump(reps, f)
 
 train_ind, test_ind = scaffold_split(smiles)
-print(smiles[test_ind][:5])
+
+print(feats_mmb[train_ind].shape, feats_mmb[test_ind].shape)
+print(feats_ecfp[train_ind].shape, feats_ecfp[test_ind].shape)
+
 
 
 

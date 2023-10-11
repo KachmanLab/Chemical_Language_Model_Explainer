@@ -417,25 +417,28 @@ class MMBFeaturizer(BaselineAqueousModel):
     def __init__(self):
         super().__init__()
 
-    def featurize(sef, inputs):
+    def featurize(self, inputs):
         solu, mask = self._tokenize(inputs)
         solu = self.mmb.encode(solu, mask)
         
         solu = solu * mask.unsqueeze(-1)
         solu = torch.mean(solu, dim=1)
-        return solu.detach().cpu().numpy()
+        return solu #.detach().cpu().numpy()
 
-    def predict(self, batch, batch_idx):
+    def predict_step(self, batch, batch_idx):
         
         inputs, labels = batch  
-        return self.featurize(inputs)
-    
+        with torch.set_grad_enabled(True):
+            self.zero_grad()
+            feats = self.featurize(inputs)
+        return feats 
+
 # from molfeat.trans.pretrained import PretrainedMolTransformer
 
 # class MegaMolBartModel(PretrainedMolTransformer):
 #     """
 #     In this dummy example, we train a RF model to predict the cLogP
-#     then use the feature importance of the RF model as the embedding.
+##     then use the feature importance of the RF model as the embedding.
 #     """
 
 #     def __init__(self):
