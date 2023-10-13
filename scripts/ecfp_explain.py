@@ -4,6 +4,7 @@ from rdkit.Chem import AllChem
 from rdkit.Chem.Draw import SimilarityMaps
 from rdkit.Chem.Draw import rdMolDraw2D
 import numpy as np
+from rdkit.Chem.Draw import IPythonConsole
 
 #drawOptions = Draw.rdMolDraw2D.MolDrawOptions()
 #drawOptions.prepareMolsBeforeDrawing = False
@@ -77,11 +78,12 @@ print(bits_dict)
 
 p = Draw.DrawMorganBits(bits_dict.values(), molsPerRow=4, 
                     legends=get_weights(bits_dict.keys(), weights))
+
 #plt.show()
 print(type(p))
-#p.save('/workspace/results/aqueous/ecfp/morgan_bits.png')
-p.savefig('/workspace/results/aqueous/ecfp/morgan_bits.png',
-    bbox_inches='tight')
+p.save('/workspace/results/aqueous/ecfp/morgan_bits.png')
+#p.savefig('/workspace/results/aqueous/ecfp/morgan_bits.png',
+    #bbox_inches='tight')
                     #drawOptions=drawOptions)
                     #legends=dict_bits.keys())  
 #p.save("/workspace/results/aqueous/ecfp/morgan_bits.png")
