@@ -24,7 +24,10 @@ class MolecularSelfAttentionViz():
 
     def avg_heads(self, attn, grad):
         """ identical, increased readability """
+        #print('pre', attn.shape)
+        #print('permuted', attn.permute(0,2,1).shape)
         attn = grad.permute(0, 2, 1) * attn.permute(0, 2, 1)
+        #print('post', attn.shape)
         return attn.clamp(min=0).mean(dim=0)
 
     def agg_relevance(self, attn, grad, ml, token=None):
@@ -195,7 +198,7 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix="", sa
 # draw aggregated ECFP4 fragments, aggregated & weighted by
 # regression head weights for each (?top-n) fragments
 # https://github.com/rdkit/rdkit/blob/0e7871dc5ed7a690cae9607de0ce866e49a886b4/rdkit/Chem/Draw/__init__.py#L736
-submol = Chem.MolFromSmiles(Chem.MolFragmentToSmiles(mol, atomsToUse=atomsToUse))
+#submol = Chem.MolFromSmiles(Chem.MolFragmentToSmiles(mol, atomsToUse=atomsToUse))
 
 # TODO OURS
 # split regression head backprop into [512] features,

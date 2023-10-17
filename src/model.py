@@ -90,13 +90,38 @@ class RegressionHead(pl.LightningModule):
 
 
 class LinearRegressionHead(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, fids=None):
         super().__init__()
         # self.norm = nn.LayerNorm(normalized_shape=[512])
         self.fc1 = nn.Linear(512, 1)
-        
+        self.fids = fids
+
+    def mask_features(self, x, fids=None):
+        ''' mask fids in calculation of feature attribution
+            fids: feature_ids, list of ints'''
+        if self.fids:
+            fids = self.fids
+        elif not fids:
+            fids = [int(torch.argmax(torch.abs(self.fc1.weight))),
+                ]
+
+        print('feature ids to consider:', fids)
+        mask = torch.zeros_like(x, dtype=torch.int64)
+        mask[:, fids] = 1
+
+        return x * mask 
+
+        # TODO: adapt sort_dict fromfids = sorted   
+        # bits_dict = {k: bits_dict.get(k) for k in sorted(
+        #     bits_dict.keys(), key=lambda bid: weight_vector[int(bid)], 
+        #     reverse=True
+        # )}        
+
     def forward(self, x):
-        # x = self.norm(x)
+        ''' mask out all features excluding [fids]'''
+        x = self.mask_features(x)
+        x.register_hook(self.mask_features)
+
         x = self.fc1(x)
         return x.squeeze(1)
 
