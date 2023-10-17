@@ -82,7 +82,7 @@ p = Draw.DrawMorganBits(bits_dict.values(), molsPerRow=4,
 
 #plt.show()
 print(type(p))
-p.save('/workspace/results/aqueous/ecfp/morgan_bits.svg')
+p.save('/workspace/results/aqueous/ecfp/morgan_bits.png')
 #p.savefig('/workspace/results/aqueous/ecfp/morgan_bits.png',
     #bbox_inches='tight')
                     #drawOptions=drawOptions)
@@ -93,11 +93,11 @@ p.save('/workspace/results/aqueous/ecfp/morgan_bits.svg')
     #plt.save(f)
     #f.write(d.GetDrawingText())
 
-key = list(bits_dict.keys())[0]
-tpl = bits_dict.get(key)
-print(tpl)
-mol, bitId, bitInfo = tpl
-atomId = bitInfo[bitId]
-submol = Chem.MolFromSmiles(Chem.MolFragmentToSmiles(mol, atomsToUse=atomId))
+# key = list(bits_dict.keys())[0]
+# tpl = bits_dict.get(key)
+# print(tpl)
+# mol, bitId, bitInfo = tpl
+# atomId = bitInfo[bitId]
+# submol = Chem.MolFromSmiles(Chem.MolFragmentToSmiles(mol, atomsToUse=atomId))
 
 

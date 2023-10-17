@@ -102,10 +102,20 @@ class LinearRegressionHead(pl.LightningModule):
         if self.fids:
             fids = self.fids
         elif not fids:
-            fids = [int(torch.argmax(torch.abs(self.fc1.weight))),
-                ]
+            #fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
+            #print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])            #[237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
+            vec = torch.abs(self.fc1.weight[0]).cpu().detach().numpy()
+            fids = [ix for ix, val in sorted(
+                enumerate(vec),
+                key=lambda a: a[1],
+                reverse=True
+            )]
 
-        print('feature ids to consider:', fids)
+            print(fids[:10])
+            fids = fids[-2]
+        self.fids = fids
+
+        #print('feature ids to consider:', fids)
         mask = torch.zeros_like(x, dtype=torch.int64)
         mask[:, fids] = 1
 

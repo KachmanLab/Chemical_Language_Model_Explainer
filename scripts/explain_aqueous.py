@@ -32,14 +32,14 @@ subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
 if cfg['model'] == 'reg':
-    ft_model = AqueousRegModel()
+    model = AqueousRegModel()
     xai = f"reg"
 elif cfg['model'] == 'baseline':
-    ft_model = BaselineAqueousModel()
+    model = BaselineAqueousModel()
     xai = f"sal"
 
-ft_model = ft_model.load_from_checkpoint(ckpt_path)
-ft_model.mmb.unfreeze()
+model = model.load_from_checkpoint(ckpt_path)
+model.mmb.unfreeze()
 
 trainer = pl.Trainer(
     accelerator='gpu',
@@ -48,7 +48,7 @@ trainer = pl.Trainer(
 )
 
 # predict with trained model (ckpt_path)
-all = trainer.predict(ft_model, test_loader, ckpt_path=ckpt_path)
+all = trainer.predict(model, test_loader, ckpt_path=ckpt_path)
 
 smiles = [f.get('smiles') for f in all]
 tokens = [f.get('tokens') for f in all]
@@ -113,7 +113,7 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix=""):
     # some plotting issues for 'C@@H' and 'C@H' tokens since 
     # another H atom is rendered explicitly. 
     # Might break for ultra long SMILES using |c:1:| notation
-    vocab = ft_model.cmapper.atoms + ft_model.cmapper.nonatoms
+    vocab = model.cmapper.atoms + model.cmapper.nonatoms
     if int(mol.GetNumAtoms()) != len(atom_colors.keys()):
         print(f"Warning: {int(mol.GetNumAtoms()) - len(atom_colors.keys())}")
         print(f"count mismatch for {smiles}:\
@@ -131,6 +131,8 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix=""):
         f.write(d.GetDrawingText())
 
 ###################
+
+fid = model.head.fids
 
 # plot entire test set:
 b_indices = list(range(cfg['n_batch']))
@@ -150,4 +152,4 @@ for b_nr, _ in enumerate(all):
         
         if uid not in [39, 94, 210, 217]:
             # segmentation fault, likely due to weird structure?
-            plot_weighted_molecule(atom_color, smi, token, lab, pred, f"{uid}_{xai}")
+            plot_weighted_molecule(atom_color, smi, token, lab, pred, f"{uid}_{xai}_{fid}")
