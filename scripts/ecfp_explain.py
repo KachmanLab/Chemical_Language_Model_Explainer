@@ -45,7 +45,7 @@ for bitid in rdkbi:
 #legends = [str(x) for x in fp.GetOnBits()]
 #Draw.DrawMorganBits(list_bits, molsPerRow=4,legends=legends)
 
-def sort_dict_by_weight_vector(bits_dict, weight_vector):
+def sort_dict_by_weight(bits_dict, weight_vector):
     ''' sort (bit_id: (mol, bit, bit info) dict by regression weight of bit_id)
         args: 
             bits_dict:  dictionary of (bit: (mol, bit, bitinfo))
@@ -69,19 +69,20 @@ bi = {}
 fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, bitInfo=bi, nBits=512)
 print(fp)
 bits_dict = {str(x):(mol, x, bi) for x in fp.GetOnBits()}
-bits_dict = sort_dict_by_weight_vector(bits_dict, weights)
+bits_dict = sort_dict_by_weight(bits_dict, weights)
 print(bits_dict)
 #p = Draw.DrawMorganBits(bits_dict.values(), molsPerRow=4, 
 #                            legends=get_weights(bits_dict.keys(), weights),
 #                        )
 #p.save(f"/workspace/results/aqueous/ecfp/morgan_bits_{smi}.png")
 
+#drawer = rdMolDraw2D.MolDraw2DSVG(molSize[0], molSize[1])
 p = Draw.DrawMorganBits(bits_dict.values(), molsPerRow=4, 
                     legends=get_weights(bits_dict.keys(), weights))
 
 #plt.show()
 print(type(p))
-p.save('/workspace/results/aqueous/ecfp/morgan_bits.png')
+p.save('/workspace/results/aqueous/ecfp/morgan_bits.svg')
 #p.savefig('/workspace/results/aqueous/ecfp/morgan_bits.png',
     #bbox_inches='tight')
                     #drawOptions=drawOptions)
@@ -91,3 +92,12 @@ p.save('/workspace/results/aqueous/ecfp/morgan_bits.png')
     #f.write(drawer.GetDrawingText())
     #plt.save(f)
     #f.write(d.GetDrawingText())
+
+key = list(bits_dict.keys())[0]
+tpl = bits_dict.get(key)
+print(tpl)
+mol, bitId, bitInfo = tpl
+atomId = bitInfo[bitId]
+submol = Chem.MolFromSmiles(Chem.MolFragmentToSmiles(mol, atomsToUse=atomId))
+
+

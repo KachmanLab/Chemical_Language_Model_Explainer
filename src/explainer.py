@@ -185,3 +185,20 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix="", sa
     with open(file=f'{savedir}/{prefix}_MolViz.png',
         mode = 'wb') as f:
         f.write(d.GetDrawingText())
+
+
+        
+# TODO
+# draw full molecule in the corner
+# draw ecfp4 fragments for whole dataset 
+
+# draw aggregated ECFP4 fragments, aggregated & weighted by
+# regression head weights for each (?top-n) fragments
+# https://github.com/rdkit/rdkit/blob/0e7871dc5ed7a690cae9607de0ce866e49a886b4/rdkit/Chem/Draw/__init__.py#L736
+submol = Chem.MolFromSmiles(Chem.MolFragmentToSmiles(mol, atomsToUse=atomsToUse))
+
+# TODO OURS
+# split regression head backprop into [512] features,
+# obtain individual attribution weight
+
+# show sum(per-feature-attrib) == total-feature-attrib
