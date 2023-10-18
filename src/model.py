@@ -90,6 +90,16 @@ class RegressionHead(pl.LightningModule):
 
 
 class LinearRegressionHead(pl.LightningModule):
+    def __init__(self):
+        super().__init__()
+        # self.norm = nn.LayerNorm(normalized_shape=[512])
+        self.fc1 = nn.Linear(512, 1)
+
+    def forward(self, x):
+        return self.fc1(x)
+
+
+class MaskedLinearRegressionHead(pl.LightningModule):
     def __init__(self, fids=None):
         super().__init__()
         # self.norm = nn.LayerNorm(normalized_shape=[512])
@@ -121,12 +131,6 @@ class LinearRegressionHead(pl.LightningModule):
 
         return x * mask 
 
-        # TODO: adapt sort_dict fromfids = sorted   
-        # bits_dict = {k: bits_dict.get(k) for k in sorted(
-        #     bits_dict.keys(), key=lambda bid: weight_vector[int(bid)], 
-        #     reverse=True
-        # )}        
-
     def forward(self, x):
         ''' mask out all features excluding [fids]'''
         x = self.mask_features(x)
@@ -137,14 +141,17 @@ class LinearRegressionHead(pl.LightningModule):
 
 
 class AqueousRegModel(pl.LightningModule):
-    def __init__(self, linear=True):
+    def __init__(self, head='linear'):
         super().__init__()
         self.init_molbart()
         self.tokenizer = REGRegExTokenizer()
-        if linear:
+        if head == 'linear':
             self.head = LinearRegressionHead()
+        elif head == 'masked':
+            self.head = MaskedLinearRegressionHead()
         else:
             self.head = RegressionHead()
+
         self.explainer = MolecularSelfAttentionViz(save_heatmap=False)
         self.cmapper = ColorMapper()
 
@@ -335,6 +342,86 @@ class CombiRegModel(AqueousRegModel):
                 "rdkit_colors": rdkit_colors}   
 
 
+class ECFPLinear(pl.LightningModule):
+    def __init__(self, head='linear'):
+        super().__init__()
+        if head == 'linear':
+            self.head = LinearRegressionHead()
+        elif head == 'masked':
+            raise NotImplementedError
+        else:
+            self.head = RegressionHead()
+ 
+        self.criterion = nn.HuberLoss()
+        self.criterion_mse = nn.MSELoss()
+        self.criterion_mae = nn.L1Loss()
+        self.learning_rate = 1e-5
+ 
+    def configure_optimizers(self):
+        return optim.AdamW(self.parameters(), lr = self.learning_rate, \
+            betas=(0.9, 0.999))
+
+    def forward(self, ecfp):
+        """ tokenize SMILES and prepend <REG> token.
+            encode using MegaMolBART to obtain latent representation.
+            use <REG> token to aggregate into static shape
+            apply regression head to obtain logS
+        """
+        # apply regression head and return logS prediction
+        return self.head(ecfp)
+
+    def training_step(self, batch, batch_idx):
+        inputs, labels = batch
+        outputs = self(inputs)
+        loss = self.criterion(outputs, labels)
+        mae = self.criterion_mae(outputs, labels)
+        mse = self.criterion_mse(outputs, labels)
+        metrics = {
+            'loss': loss, 
+            'train_mae': mae, 
+            'train_mse': mse, 
+        }
+        self.log_dict(metrics)
+        return metrics
+
+    def validation_step(self, batch, batch_idx):
+        inputs, labels = batch
+        with torch.set_grad_enabled(False):
+            outputs = self(inputs)
+        val_loss = self.criterion(outputs, labels)
+        val_mae = self.criterion_mae(outputs, labels)
+        val_mse = self.criterion_mse(outputs, labels)
+        metrics = {
+            'val_loss': val_loss, 
+            'val_mae': val_mae, 
+            'val_mse': val_mse, 
+        }
+        self.log_dict(metrics)
+        return metrics
+    
+    def test_step(self, batch, batch_idx):
+        inputs, labels = batch
+        with torch.set_grad_enabled(False):
+            outputs = self(inputs)
+        test_mae = self.criterion_mae(outputs, labels)
+        test_mse = self.criterion_mse(outputs, labels)
+        metrics = {
+        'test_mae': test_mae, 
+            'test_mse': test_mse, 
+        }
+        self.log_dict(metrics)
+        return metrics
+
+    def predict_step(self, batch, batch_idx):
+        inputs, labels = batch
+        #with torch.set_grad_enabled(True):
+        with torch.set_grad_enabled(False):
+            preds = self(inputs)
+        return {"preds": preds, "labels": labels}
+
+
+
+##########################################
 class BaselineAqueousModel(AqueousRegModel):
     def __init__(self):
         """ uses average pooling instead of <REG> token """
@@ -471,81 +558,6 @@ class MMBFeaturizer(BaselineAqueousModel):
             self.zero_grad()
             feats = self.featurize(inputs)
         return feats 
-
-
-class ECFPLinear(pl.LightningModule):
-    def __init__(self):
-        super().__init__()
-        self.head = LinearRegressionHead()
-
-        self.criterion = nn.HuberLoss()
-        self.criterion_mse = nn.MSELoss()
-        self.criterion_mae = nn.L1Loss()
-        self.learning_rate = 1e-5
- 
-    def configure_optimizers(self):
-        return optim.AdamW(self.parameters(), lr = self.learning_rate, \
-            betas=(0.9, 0.999))
-
-    def forward(self, ecfp):
-        """ tokenize SMILES and prepend <REG> token.
-            encode using MegaMolBART to obtain latent representation.
-            use <REG> token to aggregate into static shape
-            apply regression head to obtain logS
-        """
-        # apply regression head and return logS prediction
-        return self.head(ecfp)
-
-    def training_step(self, batch, batch_idx):
-        inputs, labels = batch
-        outputs = self(inputs)
-        loss = self.criterion(outputs, labels)
-        mae = self.criterion_mae(outputs, labels)
-        mse = self.criterion_mse(outputs, labels)
-        metrics = {
-            'loss': loss, 
-            'train_mae': mae, 
-            'train_mse': mse, 
-        }
-        self.log_dict(metrics)
-        return metrics
-
-    def validation_step(self, batch, batch_idx):
-        inputs, labels = batch
-        with torch.set_grad_enabled(True):
-            outputs = self(inputs)
-        val_loss = self.criterion(outputs, labels)
-        val_mae = self.criterion_mae(outputs, labels)
-        val_mse = self.criterion_mse(outputs, labels)
-        metrics = {
-            'val_loss': val_loss, 
-            'val_mae': val_mae, 
-            'val_mse': val_mse, 
-        }
-        self.log_dict(metrics)
-        return metrics
-    
-    def test_step(self, batch, batch_idx):
-        inputs, labels = batch
-        with torch.set_grad_enabled(True):
-            outputs = self(inputs)
-        test_mae = self.criterion_mae(outputs, labels)
-        test_mse = self.criterion_mse(outputs, labels)
-        metrics = {
-            'test_mae': test_mae, 
-            'test_mse': test_mse, 
-        }
-        self.log_dict(metrics)
-        return metrics
-
-
-    def predict_step(self, batch, batch_idx):
-        inputs, labels = batch
-        with torch.set_grad_enabled(True):
-            preds = self(inputs)
-        return {"preds": preds, "labels": labels}
-
-
 
 
 # from molfeat.trans.pretrained import PretrainedMolTransformer

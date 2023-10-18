@@ -28,15 +28,15 @@ val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'],
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)
 
-model = ECFPLinear()
+model = ECFPLinear(head=cfg['head'])
 
 dagshub.init("Chemical_Language_Model_Explainer", "stefanhoedl", mlflow=True)
 
 trainer = pl.Trainer(
     max_epochs=cfg['n_epochs'],
-    accelerator='gpu',
-    gpus=1,
-    precision=16,
+    accelerator='cpu',
+    # gpus=1,
+    # precision=16,
     auto_lr_find=True,
 )
 

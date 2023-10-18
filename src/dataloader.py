@@ -69,6 +69,7 @@ class AqSolECFP(AqSolDataset):
                     Chem.MolFromSmiles(smi), radius=2, nBits=512
                ) for smi in self.smiles]
         self.ecfp = torch.tensor(ecfp, dtype=torch.float32)#, device='cuda') 
+        
         assert len(self.ecfp) == len(self.smiles)
         
     def __getitem__(self, idx):
