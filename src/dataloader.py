@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 from rdkit import Chem
+from rdkit.Chem import AllChem
 import pandas as pd
 import numpy as np
 import deepchem as dc
@@ -60,20 +61,35 @@ class AqSolDataset(Dataset):
         return smiles_data, labels
 
 
-class AqSolDeepChem(dc.data.NumpyDataset):
+class AqSolECFP(AqSolDataset):
     def __init__(self, file_path, subset, acc_test, split, data_seed=42):
+        super().__init__(file_path, subset, acc_test, split, data_seed)
+    
+        ecfp = [AllChem.GetMorganFingerprintAsBitVect(
+                    Chem.MolFromSmiles(smi), radius=2, nBits=512
+               ) for smi in self.smiles]
+        self.ecfp = torch.tensor(ecfp, dtype=torch.float32)#, device='cuda') 
+        assert len(self.ecfp) == len(self.smiles)
+        
+    def __getitem__(self, idx):
+        ecfp = self.ecfp[idx]
+        labels = self.labels[idx]
+        return ecfp, labels
 
-        loader = dc.data.CSVLoader(
-                    tasks = ['logS_aq_avg'],
-                    # id_field = "smiles solute",
-                    feature_field = "smiles solute",
-                    featurizer = dc.feat.CircularFingerprint(),
-                    # featurizer = 'ECFP'
-        )
-        dataset = loader.create_dataset(file_path)
-        print(type(dataset))
-        print(dataset)
-        return dataset#.load_dataset('/workspace/data/AqueousSolu-Exp.csv')
+    #     loader = dc.data.CSVLoader(
+    #                 tasks = ['logS_aq_avg'],
+    #                 # id_field = "smiles solute",
+    #                 feature_field = "smiles solute",
+    #                 featurizer = dc.feat.CircularFingerprint(),
+    #                 # featurizer = 'ECFP'
+    #     )
+    #     dataset = loader.create_dataset(file_path)
+    #     print(type(dataset))
+    #     print(dataset)
+    #     return dataset#.load_dataset('/workspace/data/AqueousSolu-Exp.csv')
+    # 
+
+
 
 
 

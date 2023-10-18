@@ -448,6 +448,7 @@ class BaselineAqueousModel(AqueousRegModel):
         solu = solu.to(torch.float32)
         return self.head(solu)
 
+
 class MMBFeaturizer(BaselineAqueousModel):
     def __init__(self):
         super().__init__()
@@ -467,6 +468,82 @@ class MMBFeaturizer(BaselineAqueousModel):
             self.zero_grad()
             feats = self.featurize(inputs)
         return feats 
+
+
+class ECFPLinear(pl.LightningModule):
+    def __init__(self):
+        super().__init__()
+        self.head = LinearRegressionHead()
+
+        self.criterion = nn.HuberLoss()
+        self.criterion_mse = nn.MSELoss()
+        self.criterion_mae = nn.L1Loss()
+        self.learning_rate = 1e-5
+ 
+    def configure_optimizers(self):
+        return optim.AdamW(self.parameters(), lr = self.learning_rate, \
+            betas=(0.9, 0.999))
+
+    def forward(self, ecfp):
+        """ tokenize SMILES and prepend <REG> token.
+            encode using MegaMolBART to obtain latent representation.
+            use <REG> token to aggregate into static shape
+            apply regression head to obtain logS
+        """
+        # apply regression head and return logS prediction
+        return self.head(ecfp)
+
+    def training_step(self, batch, batch_idx):
+        inputs, labels = batch
+        outputs = self(inputs)
+        loss = self.criterion(outputs, labels)
+        mae = self.criterion_mae(outputs, labels)
+        mse = self.criterion_mse(outputs, labels)
+        metrics = {
+            'loss': loss, 
+            'train_mae': mae, 
+            'train_mse': mse, 
+        }
+        self.log_dict(metrics)
+        return metrics
+
+    def validation_step(self, batch, batch_idx):
+        inputs, labels = batch
+        with torch.set_grad_enabled(True):
+            outputs = self(inputs)
+        val_loss = self.criterion(outputs, labels)
+        val_mae = self.criterion_mae(outputs, labels)
+        val_mse = self.criterion_mse(outputs, labels)
+        metrics = {
+            'val_loss': val_loss, 
+            'val_mae': val_mae, 
+            'val_mse': val_mse, 
+        }
+        self.log_dict(metrics)
+        return metrics
+    
+    def test_step(self, batch, batch_idx):
+        inputs, labels = batch
+        with torch.set_grad_enabled(True):
+            outputs = self(inputs)
+        test_mae = self.criterion_mae(outputs, labels)
+        test_mse = self.criterion_mse(outputs, labels)
+        metrics = {
+            'test_mae': test_mae, 
+            'test_mse': test_mse, 
+        }
+        self.log_dict(metrics)
+        return metrics
+
+
+    def predict_step(self, batch, batch_idx):
+        inputs, labels = batch
+        with torch.set_grad_enabled(True):
+            preds = self(inputs)
+        return {"preds": preds, "labels": labels}
+
+
+
 
 # from molfeat.trans.pretrained import PretrainedMolTransformer
 
