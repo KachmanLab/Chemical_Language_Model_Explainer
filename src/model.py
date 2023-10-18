@@ -137,11 +137,14 @@ class LinearRegressionHead(pl.LightningModule):
 
 
 class AqueousRegModel(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, linear=True):
         super().__init__()
         self.init_molbart()
         self.tokenizer = REGRegExTokenizer()
-        self.head = LinearRegressionHead()
+        if linear:
+            self.head = LinearRegressionHead()
+        else:
+            self.head = RegressionHead()
         self.explainer = MolecularSelfAttentionViz(save_heatmap=False)
         self.cmapper = ColorMapper()
 

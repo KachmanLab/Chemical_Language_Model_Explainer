@@ -29,7 +29,8 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
     shuffle=False, num_workers=8)
 
 if cfg['model'] == 'reg':
-    ft_model = AqueousRegModel()
+    print(cfg['linear'])
+    ft_model = AqueousRegModel(cfg['linear'])
 elif cfg['model'] == 'shap':
     ft_model = BaselineAqueousModel()
 # unfreeze to train the whole model instead of just the head
