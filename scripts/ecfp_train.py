@@ -52,3 +52,4 @@ with mlflow.start_run() as run:
 
     trainer.save_checkpoint(modelpath)
  
+print(model.head.fc1.weight)

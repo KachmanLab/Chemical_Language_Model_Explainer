@@ -7,9 +7,11 @@ import numpy as np
 from rdkit.Chem.Draw import IPythonConsole
 import json
 import matplotlib.pyplot as plt
+import os
 
 import pytorch_lightning as pl
 from src.dataloader import AqSolDataset
+from src.model import ECFPLinear
 #drawOptions = Draw.rdMolDraw2D.MolDrawOptions()
 #drawOptions.prepareMolsBeforeDrawing = False
 
@@ -21,18 +23,40 @@ test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
     cfg['acc_test'], cfg['split'], data_seed=cfg['seed'])
 
 smiles = test_dataset.smiles
-fp_ = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, bitInfo=bi, nBits=512)
+#mol = Chem.MolFromSmiles(smi)
+#fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, bitInfo=bi, nBits=512)
 
 
+#try:
+load=True
+if load:
+    subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
+    if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith('ecfp'))]
+    ckpt_path = max(subfolders, key=os.path.getmtime)
 
-weights_path = None
-if weights_path:
-    # todo load weights weights.
+    model = ECFPLinear(head=cfg['head']).load_from_checkpoint(ckpt_path)
+    weights = model.head.fc1.weight[0].cpu().detach().numpy()
+    weights = np.abs(weights[:, None])
+    # TODO ADD torch.ABS() for pos/neg attrib
+
+    print('using trained model weights', ckpt_path)
+    print(weights.shape)
+    assert weights.shape[0] == 512
+
+    # vec = torch.abs(self.fc1.weight[0]).cpu().detach().numpy()
+    # fids = [ix for ix, val in sorted(
+    #     enumerate(vec),
+    #     key=lambda a: a[1],
+    #     reverse=True
+    # )]
+    # print(fids[:8])
+
+#except:
 else:
     weights = np.random.rand(512, 1)
+    print('using random weights')
 
 #smi = 'c1ccccc1CC1CC1'
-#mol = Chem.MolFromSmiles(smi)
 
 #ECFP (Morgan)
 # fpgen = AllChem.GetMorganGenerator(radius=2)

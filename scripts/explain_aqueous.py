@@ -28,7 +28,7 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
     shuffle=False, num_workers=8)
     
 subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
-    if (f.path.endswith('.pt') or f.path.endswith('.ckpt'))]
+    if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith('reg'))]
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
 if cfg['model'] == 'reg':
