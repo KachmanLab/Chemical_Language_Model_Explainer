@@ -114,9 +114,9 @@ class MaskedLinearRegressionHead(pl.LightningModule):
         elif not fids:
             #fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
             #print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])            #[237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
-            vec = torch.abs(self.fc1.weight[0]).cpu().detach().numpy()
+            vec = self.fc1.weight[0].cpu().detach().numpy()
             fids = [ix for ix, val in sorted(
-                enumerate(vec),
+                enumerate(np.abs(vec)),
                 key=lambda a: a[1],
                 reverse=True
             )]
@@ -158,14 +158,14 @@ class MaskedRegressionHead(pl.LightningModule):
         elif not fids:
             #fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
             #print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])            #[237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
-            vec = torch.abs(self.fc1.weight[0]).cpu().detach().numpy()
+            vec = self.fc2.weight[0].cpu().detach().numpy()
             fids = [ix for ix, val in sorted(
-                enumerate(vec),
+                enumerate(np.abs(vec)),
                 key=lambda a: a[1],
                 reverse=True
             )]
 
-            print(fids[:10])
+            print(list(zip(fids[:10], vec[fids[:10]])))
             fids = fids[-2]
         self.fids = fids
 
@@ -397,8 +397,8 @@ class ECFPLinear(pl.LightningModule):
         super().__init__()
         if head == 'linear':
             self.head = LinearRegressionHead()
-        elif head == 'masked':
-            raise NotImplementedError
+        # elif head == 'masked':
+        #     raise NotImplementedError
         else:
             self.head = RegressionHead()
  
