@@ -36,7 +36,7 @@ if load:
 
     model = ECFPLinear(head=cfg['head']).load_from_checkpoint(ckpt_path)
     weights = model.head.fc1.weight[0].cpu().detach().numpy()
-    weights = np.abs(weights[:, None])
+    weights = weights[:, None]
     # TODO ADD torch.ABS() for pos/neg attrib
 
     print('using trained model weights', ckpt_path)
@@ -76,7 +76,7 @@ def sort_dict_by_weight(bits_dict, weight_vector, topk=None):
             bits_dict, sorted descending by bits with highest weight
     '''
     bits_dict = {k: bits_dict.get(k) for k in sorted(
-        bits_dict.keys(), key=lambda bid: weight_vector[int(bid)], 
+        bits_dict.keys(), key=lambda bid:  np.abs(weight_vector)[int(bid)], 
         reverse=True
     )}
     if topk:

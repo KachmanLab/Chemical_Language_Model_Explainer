@@ -28,17 +28,19 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
     shuffle=False, num_workers=8)
     
 subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
-    if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith('reg'))]
+    if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith('aqueous'))]
 ckpt_path = max(subfolders, key=os.path.getmtime)
+print(ckpt_path)
 
 if cfg['model'] == 'reg':
-    model = AqueousRegModel()
+    print(cfg['head'])
+    model = AqueousRegModel(head=cfg['head'])
     xai = f"reg"
 elif cfg['model'] == 'baseline':
     model = BaselineAqueousModel()
     xai = f"sal"
 
-model = model.load_from_checkpoint(ckpt_path)
+#model = model.load_from_checkpoint(ckpt_path)
 model.mmb.unfreeze()
 
 trainer = pl.Trainer(
