@@ -114,7 +114,7 @@ def attribute_morgan(smi, bits_dict, weights_vec, norm=True):
                 atomsToUse.update(extend_morgan(mol, atomId, radius))
                 #print(_bit, "\t", atomId, "\t", atomsToUse)
             if norm:
-                n = len(atom_weights)
+                n = len(atomsToUse)
                 atom_weights[list(atomsToUse)] += w_x/n
             else:
                 atom_weights[list(atomsToUse)] += w_x
