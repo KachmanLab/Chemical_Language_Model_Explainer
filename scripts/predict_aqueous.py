@@ -37,9 +37,9 @@ subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
     if (f.path.endswith('.pt') or f.path.endswith('.ckpt'))]
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
-ft_model = AqueousRegModel()
-ft_model = ft_model.load_from_checkpoint(ckpt_path)
-ft_model.unfreeze()
+model = AqueousRegModel()
+model = model.load_from_checkpoint(ckpt_path, head=cfg['head'])
+model.unfreeze()
 
 trainer = pl.Trainer(
     accelerator='gpu',
@@ -47,9 +47,9 @@ trainer = pl.Trainer(
     precision=16,
 )
 
-train = trainer.predict(ft_model, train_loader)
-val = trainer.predict(ft_model, val_loader)
-test = trainer.predict(ft_model, test_loader)
+train = trainer.predict(model, train_loader)
+val = trainer.predict(model, val_loader)
+test = trainer.predict(model, test_loader)
 
 results = pd.DataFrame(
     columns=['SMILES', 'Tokens', 'logS_pred', 'logS_exp', 'Atom_weights', 'Split']

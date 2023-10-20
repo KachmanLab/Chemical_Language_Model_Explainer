@@ -12,35 +12,37 @@ import pytorch_lightning as pl
 import seaborn as sns
 from matplotlib.colors import Normalize
 
-from src.dataloader import AqSolDataset
+from src.dataloader import AqSolECFP
 from src.model import ECFPLinear
 
 with open('/workspace/scripts/aqueous_config.json', 'r') as f:
     cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
-test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test', 
-    cfg['acc_test'], cfg['split'], data_seed=cfg['seed'])
+test_dataset = AqSolECFP('/workspace/data/AqueousSolu.csv', 'test',
+    cfg['acc_test'], cfg['split'], cfg['seed'], cfg['nbits'])
 
 smiles = test_dataset.smiles
-#fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, bitInfo=bi, nBits=512)
-
 
 #try:
 load=True
 if load:
+    head = 'linear' if cfg['head']=='linear' else ''
+    mname = f"ecfp_{cfg['nbits']}{head}"
     subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
-    if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith('ecfp'))]
+    if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith(mname))]
     ckpt_path = max(subfolders, key=os.path.getmtime)
-
-    model = ECFPLinear(head=cfg['head']).load_from_checkpoint(ckpt_path)
+    print(ckpt_path)
+    model = ECFPLinear(head=cfg['head'], dim=cfg['nbits'])
+    model = model.load_from_checkpoint(ckpt_path, 
+                head=cfg['head'], dim=cfg['nbits'])
     weights = model.head.fc1.weight[0].cpu().detach().numpy()
     weights = weights[:, None]
     # TODO ADD torch.ABS() for pos/neg attrib
 
     print('using trained model weights', ckpt_path)
     print(weights.shape)
-    assert weights.shape[0] == 512
+    assert weights.shape[0] == cfg['nbits']
     bias = model.head.fc1.bias[0].cpu().detach().numpy()
     print('bias', bias)
     # vec = torch.abs(self.fc1.weight[0]).cpu().detach().numpy()
@@ -53,7 +55,7 @@ if load:
 
 #except:
 else:
-    weights = np.random.rand(512, 1)
+    weights = np.random.rand(cfg['nbits'], 1)
     print('using random weights')
 
 def sort_dict_by_weight(bits_dict, weight_vector, topk=9):
@@ -76,7 +78,7 @@ def sort_dict_by_weight(bits_dict, weight_vector, topk=9):
 def get_weights(bits, weight_vector):
     return [f"{weight_vector[int(b)][0]:.3f}\t#{b}" for b in bits]
 
-def make_morgan_dict(smi, nbits=512):
+def make_morgan_dict(smi, nbits=cfg['nbits']):
     mol = Chem.MolFromSmiles(smi)
     bi = {}
     fp = AllChem.GetMorganFingerprintAsBitVect(
@@ -109,8 +111,8 @@ def attribute_morgan(smi, bits_dict, weights_vec, norm=True):
         assert Chem.MolToSmiles(mol) == Chem.MolToSmiles(_mol)
         w_x = weights_vec[int(x)]
         for _bid, tuples in bi.items():
-            atomsToUse = set()
             for (atomId, radius) in tuples:
+                atomsToUse = set()
                 atomsToUse.update(extend_morgan(mol, atomId, radius))
                 #print(_bit, "\t", atomId, "\t", atomsToUse)
             if norm:
@@ -167,19 +169,20 @@ def plot_weighted_mol(atom_colors, smiles, logS, pred, uid=""):
     return d
 
 # plot entire test set:
-smiles = test_dataset.smiles
-for uid, smi in enumerate(smiles):
+smiles = test_dataset.smiles[:100]
+labels = test_dataset.labels[:100]
+ecfp = test_dataset.ecfp[:100]
+for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfp)):
 
-    #smi = 'CCCCCCCCCCCCCCO'
-    bits_dict = make_morgan_dict(smi, nbits=512)  
-    bits_dict = sort_dict_by_weight(bits_dict, weights, topk=16)
+    bits_dict = make_morgan_dict(smi, nbits=cfg['nbits'])  
+    bits_dict = sort_dict_by_weight(bits_dict, weights, topk=cfg['topk'])
 
     _ = draw_morgan_bits(bits_dict, uid=uid)
 
     morgan_weights = attribute_morgan(smi, bits_dict, weights)
     morgan_cols = to_rdkit_cmap(morgan_weights)
 
-    logs = 0. 
+    #pred = model(ecfp)
     pred = 0.
     _ = plot_weighted_mol(morgan_cols, smi, logs, pred, uid)
 

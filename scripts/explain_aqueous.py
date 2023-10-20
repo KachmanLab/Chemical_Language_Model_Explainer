@@ -35,12 +35,12 @@ print(ckpt_path)
 if cfg['model'] == 'reg':
     print(cfg['head'])
     model = AqueousRegModel(head=cfg['head'])
+    model = model.load_from_checkpoint(ckpt_path, head=cfg['head'])
     xai = f"reg"
 elif cfg['model'] == 'baseline':
     model = BaselineAqueousModel()
     xai = f"sal"
 
-#model = model.load_from_checkpoint(ckpt_path)
 model.mmb.unfreeze()
 
 trainer = pl.Trainer(

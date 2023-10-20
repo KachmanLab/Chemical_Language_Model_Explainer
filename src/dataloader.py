@@ -62,13 +62,14 @@ class AqSolDataset(Dataset):
 
 
 class AqSolECFP(AqSolDataset):
-    def __init__(self, file_path, subset, acc_test, split, data_seed=42):
+    def __init__(self, file_path, subset, acc_test, split, data_seed=42,
+                 nbits=512):
         super().__init__(file_path, subset, acc_test, split, data_seed)
     
         ecfp = [AllChem.GetMorganFingerprintAsBitVect(
-                    Chem.MolFromSmiles(smi), radius=2, nBits=512
+                    Chem.MolFromSmiles(smi), radius=2, nBits=nbits
                ) for smi in self.smiles]
-        self.ecfp = torch.tensor(ecfp, dtype=torch.float32)#, device='cuda') 
+        self.ecfp = torch.tensor(ecfp, dtype=torch.float32)
         
         assert len(self.ecfp) == len(self.smiles)
         

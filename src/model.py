@@ -74,10 +74,11 @@ class REGRegExTokenizer(RegExTokenizer):
 
 
 class RegressionHead(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, dim=512):
         super().__init__()
-        self.norm = nn.LayerNorm(normalized_shape=[512])
-        self.fc1 = nn.Linear(512, 64)
+        self.dim = dim
+        self.norm = nn.LayerNorm(normalized_shape=[dim])
+        self.fc1 = nn.Linear(dim, 64)
         self.fc2 = nn.Linear(64, 64)
         self.fc3 = nn.Linear(64, 1)
 
@@ -90,10 +91,11 @@ class RegressionHead(pl.LightningModule):
 
 
 class LinearRegressionHead(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, dim=512):
         super().__init__()
+        self.dim = dim
         # self.norm = nn.LayerNorm(normalized_shape=[512])
-        self.fc1 = nn.Linear(512, 1)
+        self.fc1 = nn.Linear(dim, 1)
 
     def forward(self, x):
         return self.fc1(x)
@@ -393,15 +395,16 @@ class CombiRegModel(AqueousRegModel):
 
 
 class ECFPLinear(pl.LightningModule):
-    def __init__(self, head='linear'):
+    def __init__(self, head='linear', dim=512):
         super().__init__()
+        self.dim = dim
         if head == 'linear':
-            self.head = LinearRegressionHead()
+            self.head = LinearRegressionHead(dim=dim)
         # elif head == 'masked':
         #     raise NotImplementedError
         else:
-            self.head = RegressionHead()
- 
+            self.head = RegressionHead(dim=dim)
+        print(head, dim) 
         self.criterion = nn.HuberLoss()
         self.criterion_mse = nn.MSELoss()
         self.criterion_mae = nn.L1Loss()
