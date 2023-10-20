@@ -106,26 +106,29 @@ def attribute_morgan(smi, bits_dict, weights_vec, norm=True):
     #     print("Atom index:", atom.GetIdx(), ", Atomic symbol:", atom.GetSymbol())
 
     atom_weights = np.zeros(len(mol.GetAtoms()))
-
+    atom_positive = np.zeros(len(mol.GetAtoms()))
+    atom_negative = np.zeros(len(mol.GetAtoms()))
     for _mol, x, bi in bits_dict.values():
         assert Chem.MolToSmiles(mol) == Chem.MolToSmiles(_mol)
         w_x = weights_vec[int(x)]
         for _bid, tuples in bi.items():
+            atomsToUse = set()
             for (atomId, radius) in tuples:
-                atomsToUse = set()
+                #bi.value tuples are (atom_id_CENTER, radius)
                 atomsToUse.update(extend_morgan(mol, atomId, radius))
                 #print(_bit, "\t", atomId, "\t", atomsToUse)
+
             if norm:
-                n = len(atomsToUse)
-                atom_weights[list(atomsToUse)] += w_x/n
-            else:
-                atom_weights[list(atomsToUse)] += w_x
-        # NOTE: bi.value tuples are (atom_id_CENTER, radius)
-        # for each bit_id entry add attrib
+                w_x = w_x / len(atomsToUse)
+            atom_weights[list(atomsToUse)] += w_x
 
+            if w_x > 0:
+                atom_positive[list(atomsToUse)] += w_x 
+            elif w_x < 0:
+                atom_negative[list(atomsToUse)] += w_x
 
-    print(atom_weights) 
-    return atom_weights
+    #print(atom_weights) 
+    return atom_weights, atom_positive, atom_negative
 
 def extend_morgan(mol, atomId, radius=2):
     ''' get atoms in radius centered on atomId. code from rdkit. '''
@@ -138,13 +141,17 @@ def extend_morgan(mol, atomId, radius=2):
         atomsToUse.add(mol.GetBondWithIdx(b).GetEndAtomIdx())
     return atomsToUse
 
+#norm = Normalize(vmin=-7.29, vmax=2.04)
+norm = Normalize()
+    
 def to_rdkit_cmap(atom_weight):
     '''helper to map to shape required by RDkit to visualize '''
     cmap = sns.light_palette("green", reverse=False, as_cmap=True)
-    atom_weight = Normalize()(atom_weight)
+    #atom_weight = Normalize()(atom_weight)
+    atom_weight = norm(atom_weight)
     return {i: [tuple(cmap(w))] for i, w in enumerate(atom_weight)}
 
-def plot_weighted_mol(atom_colors, smiles, logS, pred, uid=""):
+def plot_weighted_mol(atom_colors, smiles, logS, pred, uid="", suffix=""):
     atom_colors = atom_colors
     bond_colors = {}
     h_rads = {} #?
@@ -164,28 +171,30 @@ def plot_weighted_mol(atom_colors, smiles, logS, pred, uid=""):
     d.FinishDrawing()
     
     savedir = "/workspace/results/aqueous/ecfp"
-    with open(file=f'{savedir}/{uid}_MorganAttrib.png', mode = 'wb') as f:
+    with open(file=f'{savedir}/{uid}_MorganAttrib{suffix}.png', mode = 'wb') as f:
         f.write(d.GetDrawingText())
     return d
 
 # plot entire test set:
 smiles = test_dataset.smiles[:100]
 labels = test_dataset.labels[:100]
-ecfp = test_dataset.ecfp[:100]
-for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfp)):
+ecfps = test_dataset.ecfp[:100]
+vmin, vmax = 0., 0.
+for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
+    pred = model(ecfp[None, ...]).detach().numpy().item()
 
     bits_dict = make_morgan_dict(smi, nbits=cfg['nbits'])  
     bits_dict = sort_dict_by_weight(bits_dict, weights, topk=cfg['topk'])
-
     _ = draw_morgan_bits(bits_dict, uid=uid)
 
-    morgan_weights = attribute_morgan(smi, bits_dict, weights)
-    morgan_cols = to_rdkit_cmap(morgan_weights)
+    morgan_weights, morgan_pos, morgan_neg = attribute_morgan(smi, bits_dict, weights)
+    #min, max = np.min(morgan_weights), np.max(morgan_weights)
+    #vmin, vmax = np.min(min, vmin), np.max(max, vmax)
 
-    #pred = model(ecfp)
-    pred = 0.
-    _ = plot_weighted_mol(morgan_cols, smi, logs, pred, uid)
-
+    _ = plot_weighted_mol(to_rdkit_cmap(morgan_weights), smi, logs, pred, uid)
+    _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos), smi, logs, pred, uid, '_pos')
+    _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg), smi, logs, pred, uid, '_neg')
+#print(vmin, vmax)
 
 #https://github.com/rdkit/rdkit/blob/d9d1fe2838053484027ba9f5f74629069c6984dc/rdkit/Chem/Draw/__init__.py#L947
 
