@@ -7,7 +7,7 @@
     "head": "masked",
     "nbits": 512,
     "topk": 16,
-    "model": "reg",
+    "model": "mmb",
     "finetune": false,
     "dataset": "logs"
 }

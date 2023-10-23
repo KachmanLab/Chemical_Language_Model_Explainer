@@ -32,11 +32,11 @@ subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
 ckpt_path = max(subfolders, key=os.path.getmtime)
 print(ckpt_path)
 
-if cfg['model'] == 'reg':
+if cfg['model'] == 'mmb':
     print(cfg['head'])
     model = AqueousRegModel(head=cfg['head'])
     model = model.load_from_checkpoint(ckpt_path, head=cfg['head'])
-    xai = f"reg"
+    xai = f"mmb"
 elif cfg['model'] == 'baseline':
     model = BaselineAqueousModel()
     xai = f"sal"
@@ -58,7 +58,7 @@ preds = [f.get('preds') for f in all]
 labels = [f.get('labels') for f in all]
 masks = [f.get('masks') for f in all]
 
-if cfg['model'] == 'reg':
+if cfg['model'] == 'mmb':
     rel_weights = [f.get('rel_weights') for f in all]
     rdkit_colors = [f.get('rdkit_colors') for f in all]
 elif cfg['model'] == 'baseline':
@@ -147,7 +147,7 @@ for b_nr, _ in enumerate(all):
         pred = preds[b_nr][b_ix]
         uid = b_nr * cfg['n_batch'] + b_ix
 
-        if cfg['model'] == 'reg':
+        if cfg['model'] == 'mmb':
             atom_color = rdkit_colors[b_nr][b_ix]
         elif cfg['model'] == 'baseline':
             atom_color = salience_colors[b_nr][b_ix]

@@ -29,20 +29,20 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
                          shuffle=False, num_workers=8)
 
 subfolders = [f.path for f in os.scandir('/workspace/results/cmc/models/')
-    if (f.path.endswith('.pt') and ('cmc' in os.path.split(f)[1]))]
+    if (f.path.endswith('.pt') and ('cmc_mmb' in os.path.split(f)[1]))]
 print(subfolders)
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
-if cfg['model'] == 'cmc':
-    ft_model = AqueousRegModel()
-    xai = f"cmc"
+if cfg['model'] == 'mmb':
+    model = AqueousRegModel(head=cfg['head'])
+    xai = f"mmb"
 elif cfg['model'] == 'shap':
     raise NotImplementedError
-    # ft_model = BaselineAqueousModel()
+    # model = BaselineAqueousModel()
     # xai = f"shap"
 
-ft_model = ft_model.load_from_checkpoint(ckpt_path)
-ft_model.mmb.unfreeze()
+model = model.load_from_checkpoint(ckpt_path)
+model.mmb.unfreeze()
 
 trainer = pl.Trainer(
     accelerator='gpu',
@@ -51,7 +51,7 @@ trainer = pl.Trainer(
 )
 
 # predict with trained model (ckpt_path)
-all = trainer.predict(ft_model, test_loader, ckpt_path=ckpt_path)
+all = trainer.predict(model, test_loader, ckpt_path=ckpt_path)
 
 smiles = [f.get('smiles') for f in all]
 tokens = [f.get('tokens') for f in all]
@@ -201,7 +201,7 @@ for b_nr, _ in enumerate(all):
         # crippen_color = crippen_colors[uid]
         # crippen_pred = crippen_preds[uid]
 
-        if cfg['model'] == 'cmc':
+        if cfg['model'] == 'mmb':
             atom_color = rdkit_colors[b_nr][b_ix]
         elif cfg['model'] == 'shap':
             raise NotImplementedError

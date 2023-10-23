@@ -26,20 +26,22 @@ val_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'valid',
 test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test', 
     cfg['acc_test'], cfg['split'], data_seed=cfg['seed'])
 
-train_loader = DataLoader(train_dataset, batch_size=cfg['n_batch'], 
-    shuffle=True, num_workers=8)
-val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'], 
-    shuffle=False, num_workers=8)
-test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
-    shuffle=False, num_workers=8)
+train_loader = DataLoader(train_dataset, batch_size=cfg['n_batch'],
+                          shuffle=True, num_workers=8)
+val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'],
+                        shuffle=False, num_workers=8)
+test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
+                         shuffle=False, num_workers=8)
 
 subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
-    if (f.path.endswith('.pt') or f.path.endswith('.ckpt'))]
+    if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith('aqueous'))]
+ #('cmc' in os.path.split(f)[1]))
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
-model = AqueousRegModel()
-model = model.load_from_checkpoint(ckpt_path, head=cfg['head'])
-model.unfreeze()
+if cfg['model'] == 'mmb':
+    model = AqueousRegModel(head=cfg['head'])
+    model = model.load_from_checkpoint(ckpt_path, head=cfg['head'])
+    model.unfreeze()
 
 trainer = pl.Trainer(
     accelerator='gpu',
