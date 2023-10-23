@@ -14,19 +14,19 @@ with open('/workspace/scripts/cmc_config.json', 'r') as f:
 
 pl.seed_everything(cfg['seed'])
 
-train_dataset = CMCDataset('/workspace/data/cmc_dataset_1235.csv', 'train', 
-    cfg['split'], data_seed=cfg['seed'], augment=False)
-val_dataset = CMCDataset('/workspace/data/cmc_dataset_1235.csv', 'valid',
-    cfg['split'], data_seed=cfg['seed'])
-test_dataset = CMCDataset('/workspace/data/cmc_dataset_1235.csv', 'test',
-    cfg['split'], data_seed=cfg['seed'])
+train_dataset = CMCDataset('/workspace/data/cmcdata.csv', 'train',
+                           cfg['split'], data_seed=cfg['seed'], augment=False)
+val_dataset = CMCDataset('/workspace/data/cmcdata.csv', 'valid',
+                         cfg['split'], data_seed=cfg['seed'])
+test_dataset = CMCDataset('/workspace/data/cmcdata.csv', 'test',
+                          cfg['split'], data_seed=cfg['seed'])
 
-train_loader = DataLoader(train_dataset, batch_size=cfg['n_batch'], 
-    shuffle=True, num_workers=8)
-val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'], 
-    shuffle=False, num_workers=8)
-test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
-    shuffle=False, num_workers=8)
+train_loader = DataLoader(train_dataset, batch_size=cfg['n_batch'],
+                          shuffle=True, num_workers=8)
+val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'],
+                        shuffle=False, num_workers=8)
+test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
+                         shuffle=False, num_workers=8)
 
 if cfg['model'] == 'cmc':
     ft_model = AqueousRegModel()

@@ -17,7 +17,7 @@ from sklearn import linear_model
 
 from src.prop_loader import CMCDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
-from src.explainer import ColorMapper, plot_weighted_molecule 
+from src.explainer import ColorMapper, plot_weighted_molecule
 from nemo_src.regex_tokenizer import RegExTokenizer
 import shap
 
@@ -25,12 +25,12 @@ with open('/workspace/scripts/cmc_config.json', 'r') as f:
     cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
-test_dataset = CMCDataset('/workspace/data/cmc_dataset_1235.csv', 'test',
-    cfg['split'], data_seed=cfg['seed'])
-test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
-    shuffle=False, num_workers=8)
+test_dataset = CMCDataset('/workspace/data/cmcdata.csv', 'test',
+                          cfg['split'], data_seed=cfg['seed'])
+test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
+                         shuffle=False, num_workers=8)
 
-subfolders = [f.path for f in os.scandir('/workspace/results/cmc/models/') \
+subfolders = [f.path for f in os.scandir('/workspace/results/cmc/models/')
     if (f.path.endswith('.pt') and ('shap' in os.path.split(f)[1]))]
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
@@ -40,10 +40,11 @@ xai = f"shap"
 ft_model.mmb.unfreeze()
 mmb_tokenizer = ft_model.tokenizer
 
+
 class ShapTokenizer(RegExTokenizer):
-    """This minimal subset means the tokenizer must return a 
-    dictionary with ‘input_ids’ and then either include an 
-    ‘offset_mapping’ entry in the same dictionary or provide 
+    """This minimal subset means the tokenizer must return a
+    dictionary with ‘input_ids’ and then either include an
+    ‘offset_mapping’ entry in the same dictionary or provide
     a .convert_ids_to_tokens or .decode method."""
 
     def __init__(self):
@@ -54,7 +55,7 @@ class ShapTokenizer(RegExTokenizer):
         return self.ids_to_tokens(ids)
 
     def tokenize_one(self, smi: str):
-        token = self.text_to_tokens(smi) 
+        token = self.text_to_tokens(smi)
         token_id = self.token_to_ids(token)
         # print('**', token_id)
 
@@ -140,9 +141,9 @@ results.to_csv('/workspace/results/cmc/cmc_shap_predictions.csv', index=False)
 
 
 # PLOT
-test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],                                   
-    shuffle=False, num_workers=8)                                                                   
-                                                                                                    
+test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
+                         shuffle=False, num_workers=8)
+
 trainer = pl.Trainer(
     accelerator='gpu',
     gpus=1,
@@ -164,7 +165,7 @@ rmse = torch.sqrt(mse)
                                                                                                     
 data = pd.DataFrame({'y': y, 'yhat': yhat})
 reg = linear_model.LinearRegression()
-reg.fit(yhat.reshape(-1,1), y)
+reg.fit(yhat.reshape(-1, 1), y)
 slo = f"{reg.coef_[0]:.3f}"
                                                                           
 # text formatting for plot
@@ -174,8 +175,8 @@ p = sns.jointplot(x=y, y=yhat, kind='hex', color='g',
                     xlim=[-4, 6.5], ylim=[-4, 6.5])
 sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint, color='grey', ci=None,                       
             scatter=False)
-p.fig.suptitle(f"log(CMC) parity plot: SHAP + average-pooling")
-p.set_axis_labels('Experimental log(P)', 'Model log(P)')
+p.fig.suptitle(f"p(CMC) parity plot: SHAP + average-pooling")
+p.set_axis_labels('Experimental p(CMC)', 'Model p(CMC)')
 p.fig.subplots_adjust(top=0.95)
 p.fig.tight_layout()
 txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo} "                        

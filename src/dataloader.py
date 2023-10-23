@@ -4,11 +4,11 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 import pandas as pd
 import numpy as np
-import deepchem as dc
+
 
 class AqSolDataset(Dataset):
-    def __init__(self, file_path, subset, acc_test, split, data_seed=42, 
-            scale_logS = False, augment=False):
+    def __init__(self, file_path, subset, acc_test, split, data_seed=42,
+                 scale_logS=False, augment=False):
         self.subset = subset
         self.data_seed = data_seed
         self.augment = augment
@@ -65,14 +65,14 @@ class AqSolECFP(AqSolDataset):
     def __init__(self, file_path, subset, acc_test, split, data_seed=42,
                  nbits=512):
         super().__init__(file_path, subset, acc_test, split, data_seed)
-    
+
         ecfp = [AllChem.GetMorganFingerprintAsBitVect(
                     Chem.MolFromSmiles(smi), radius=2, nBits=nbits
                ) for smi in self.smiles]
         self.ecfp = torch.tensor(ecfp, dtype=torch.float32)
-        
+
         assert len(self.ecfp) == len(self.smiles)
-        
+
     def __getitem__(self, idx):
         ecfp = self.ecfp[idx]
         labels = self.labels[idx]

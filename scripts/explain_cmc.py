@@ -17,18 +17,18 @@ from sklearn import linear_model
 
 from src.prop_loader import CMCDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
-from src.explainer import ColorMapper, plot_weighted_molecule 
+from src.explainer import ColorMapper, plot_weighted_molecule
 
 with open('/workspace/scripts/cmc_config.json', 'r') as f:
     cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
-test_dataset = CMCDataset('/workspace/data/cmc_dataset_1235.csv', 'test',
-    cfg['split'], data_seed=cfg['seed'])
-test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
-    shuffle=False, num_workers=8)
-    
-subfolders = [f.path for f in os.scandir('/workspace/results/cmc/models/') \
+test_dataset = CMCDataset('/workspace/data/cmcdata.csv', 'test',
+                          cfg['split'], data_seed=cfg['seed'])
+test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
+                         shuffle=False, num_workers=8)
+
+subfolders = [f.path for f in os.scandir('/workspace/results/cmc/models/')
     if (f.path.endswith('.pt') and ('cmc' in os.path.split(f)[1]))]
 print(subfolders)
 ckpt_path = max(subfolders, key=os.path.getmtime)
@@ -102,7 +102,7 @@ rmse = torch.sqrt(mse)
 
 data = pd.DataFrame({'y': y, 'yhat': yhat})
 reg = linear_model.LinearRegression()
-reg.fit(yhat.reshape(-1,1), y)
+reg.fit(yhat.reshape(-1, 1), y)
 slo = f"{reg.coef_[0]:.3f}"
 
 # text formatting for plot
@@ -110,8 +110,8 @@ split = f"{int(round(1.-cfg['split'], 2)*100)}%"
 # plot a hexagonal parity plot
 p = sns.jointplot(x=y, y=yhat, kind='hex', color='g', xlim=[-6, 0], ylim=[-6, 0])
 sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint, color='grey', ci=None, scatter=False)
-p.fig.suptitle(f"log(CMC) parity plot: MegaMolBART + <REG> token head")
-p.set_axis_labels('Experimental log(CMC)', 'Model log(CMC)')
+p.fig.suptitle(f"p(CMC) parity plot: MegaMolBART + <REG> token head")
+p.set_axis_labels('Experimental p(CMC)', 'Model p(CMC)')
 p.fig.subplots_adjust(top=0.95)
 p.fig.tight_layout()
 txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo} "
