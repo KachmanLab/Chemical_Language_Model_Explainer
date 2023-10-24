@@ -4,26 +4,46 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 import pandas as pd
 import numpy as np
-
+from sklearn.model_selection import GroupShuffleSplit
+import datamol as dm
 
 class AqSolDataset(Dataset):
-    def __init__(self, file_path, subset, acc_test, split, data_seed=42,
-                 scale_logS=False, augment=False):
+    def __init__(self, file_path, subset, split_type, split,
+                 data_seed=42, augment=False):
         self.subset = subset
+        self.split = split
+        self.split_type = split_type
         self.data_seed = data_seed
         self.augment = augment
 
-        # load & split data into accurate test set according to SolProp specifications
+        # split data into accurate test set according to SolProp specifications
         df = pd.read_csv(file_path)
-        test_idx = (df['count'] > 1) & (df['logS_aq_std'] < 0.2)
-
-        # if not using accurate test set, set aside random test set
-        if not acc_test:
+        if split_type == 'accurate':
+            test_idx = (df['count'] > 1) & (df['logS_aq_std'] < 0.2)
+        elif split_type == 'random':
+            # TODO fix train/val 10% even split for random
             ntest = round(len(df) * (1-split))
             test_idx[:ntest] = True
-            test_idx[ntest:] = False  
+            test_idx[ntest:] = False
             np.random.seed(self.data_seed)
             test_idx = np.random.permutation(test_idx)
+        elif split_type == 'scaffold':
+            # TODO split into 80/10/10, get ID over smiles,
+            # fit into train/val/test setting below
+            scaffold_split(df['smiles solute'].to_list())
+            raise NotImplementedError
+
+                #df.smiles
+
+        # WIP get all incides
+        # WIP assert indices non-overlapping, total=len(df)
+        # if accurate:
+        #     - remove test
+        #     - randomShuffleSplit(train, val)
+        # elif random:
+        #     - randomShuffleSplit(train, val, test)
+        # elif scaffold:
+        #     - randomShuffleSplit(train, val, test)
 
         test_df = df[test_idx]
         df = df[~test_idx]
@@ -62,9 +82,9 @@ class AqSolDataset(Dataset):
 
 
 class AqSolECFP(AqSolDataset):
-    def __init__(self, file_path, subset, acc_test, split, data_seed=42,
+    def __init__(self, file_path, subset, split_type, split, data_seed=42,
                  nbits=512):
-        super().__init__(file_path, subset, acc_test, split, data_seed)
+        super().__init__(file_path, subset, split_type, split, data_seed)
 
         ecfp = [AllChem.GetMorganFingerprintAsBitVect(
                     Chem.MolFromSmiles(smi), radius=2, nBits=nbits
@@ -91,7 +111,14 @@ class AqSolECFP(AqSolDataset):
     #     return dataset#.load_dataset('/workspace/data/AqueousSolu-Exp.csv')
     # 
 
-
+def scaffold_split(smiles, subset):
+    """In line with common practice, we will use the scaffold split to evaluate our models"""
+    scaffolds = [dm.to_smiles(dm.to_scaffold_murcko(dm.to_mol(smi))) for smi in smiles]
+    splitter = GroupShuffleSplit(n_splits=2, valid_size=0.1,
+                                 test_size=0.1, random_state=cfg['seed'])
+    train, val, test = splitter.split(smiles, groups=scaffolds)
+    return train, val, test
+    #return next(splitter.split(smiles, groups=scaffolds))
 
 
 

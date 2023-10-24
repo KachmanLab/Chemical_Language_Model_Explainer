@@ -7,15 +7,20 @@ import numpy as np
 
 
 class CMCDataset(Dataset):
-    def __init__(self, file_path, subset, split, data_seed=42, augment=False):
+    def __init__(self, file_path, subset, split_type, split, data_seed=42, augment=False):
         self.subset = subset
+        self.split = split
+        self.split_type = split_type
         self.data_seed = data_seed
         self.augment = augment  # not implemented
+
+        if split_type == 'scaffold':
+            raise NotImplementedError
 
         # load & split data
         df = pd.read_csv(file_path)
         df = df[~pd.isna(df['p(CMC)'])]
-        df = df[(df['p(CMC)'] > -6.6) & (df['p(CMC)'] < 5.5)]
+        #df = df[(df['p(CMC)'] > -6.6) & (df['p(CMC)'] < 5.5)]
 
         # drop line 1173: logCMC = 23.3
         # CCCCCCCCCCOCC(COCCC[N+](C)(C)C)(COCCCCCCCCCC)COCCC[N+](C)(C)C.[I-].[I-]

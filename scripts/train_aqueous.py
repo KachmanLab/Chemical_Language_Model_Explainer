@@ -1,3 +1,5 @@
+import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 import json
@@ -11,11 +13,11 @@ with open('/workspace/scripts/aqueous_config.json', 'r') as f:
 pl.seed_everything(cfg['seed'])
 
 train_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train',
-    cfg['acc_test'], cfg['split'], data_seed=cfg['seed'], augment=False)
+    cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
 val_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'valid',
-    cfg['acc_test'], cfg['split'], data_seed=cfg['seed'])
+    cfg['split_type'], cfg['split'], data_seed=cfg['seed'])
 test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
-    cfg['acc_test'], cfg['split'], data_seed=cfg['seed'])
+    cfg['split_type'], cfg['split'], data_seed=cfg['seed'])
 
 train_loader = DataLoader(train_dataset, batch_size=cfg['n_batch'],
                           shuffle=True, num_workers=8)
@@ -31,8 +33,8 @@ if cfg['model'] == 'mmb':
         head = 'linear'
     else:
         head = 'hier'
-    print(cfg['head'], head)
     model = AqueousRegModel(head=head)
+    print(cfg['head'], head)
 elif cfg['model'] == 'shap':
     model = BaselineAqueousModel()
 
@@ -57,7 +59,7 @@ trainer = pl.Trainer(
 trainer.fit(model, train_loader, val_loader)
 trainer.test(model, test_loader)
 
-#mdir = 'aqueous' if cfg['model'] == 'mmb' else 'shap'
-mdir = 'mmb' if cfg['model'] == 'mmb' else 'shap'
-modelpath = f'/workspace/results/aqueous/models/aqueous_{mdir}.pt'
+mdir = 'aqueous' if cfg['model'] == 'mmb' else 'shap'
+suffix = f"{cfg['model']}_{cfg['head']}_{cfg['split_type']}"
+modelpath = f"/workspace/results/aqueous/models/aqueous_{suffix}.pt"
 trainer.save_checkpoint(modelpath)

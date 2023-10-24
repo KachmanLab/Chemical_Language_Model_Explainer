@@ -11,7 +11,6 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 import os
-import glob
 import json
 from sklearn import linear_model
 
@@ -24,12 +23,12 @@ with open('/workspace/scripts/cmc_config.json', 'r') as f:
 
 pl.seed_everything(cfg['seed'])
 test_dataset = CMCDataset('/workspace/data/cmcdata.csv', 'test',
-                          cfg['split'], data_seed=cfg['seed'])
+                cfg['split_type'], cfg['split'], data_seed=cfg['seed'])
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
                          shuffle=False, num_workers=8)
 
 subfolders = [f.path for f in os.scandir('/workspace/results/cmc/models/')
-    if (f.path.endswith('.pt') and ('cmc_mmb' in os.path.split(f)[1]))]
+    if (f.path.endswith('.pt') and ('cmc' in os.path.split(f)[1]))]
 print(subfolders)
 ckpt_path = max(subfolders, key=os.path.getmtime)
 
@@ -59,7 +58,7 @@ preds = [f.get('preds') for f in all]
 labels = [f.get('labels') for f in all]
 masks = [f.get('masks') for f in all]
 
-if cfg['model'] == 'cmc':
+if cfg['model'] == 'mmb':
     # raw_weights = [f.get('rel_weights') for f in all]
     atom_weights = [f.get('atom_weights') for f in all]
     rdkit_colors = [f.get('rdkit_colors') for f in all]

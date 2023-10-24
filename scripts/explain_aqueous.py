@@ -22,9 +22,9 @@ with open('/workspace/scripts/aqueous_config.json', 'r') as f:
     cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
-test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test', 
-    cfg['acc_test'], cfg['split'], data_seed=cfg['seed'])
-test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
+test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
+    cfg['split_type'], cfg['split'], data_seed=cfg['seed'])
+test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
     shuffle=False, num_workers=8)
     
 subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
@@ -36,10 +36,10 @@ if cfg['model'] == 'mmb':
     print(cfg['head'])
     model = AqueousRegModel(head=cfg['head'])
     model = model.load_from_checkpoint(ckpt_path, head=cfg['head'])
-    xai = f"mmb"
+    xai = f'mmb'
 elif cfg['model'] == 'baseline':
     model = BaselineAqueousModel()
-    xai = f"sal"
+    xai = f'sal'
 
 model.mmb.unfreeze()
 
@@ -80,20 +80,29 @@ reg.fit(yhat.reshape(-1,1), y)
 slo = f"{reg.coef_[0]:.3f}"
 
 # text formatting for plot
-_acc = f"{'accurate' if cfg['acc_test'] else 'random'}"
-split = f"{int(round(1.-cfg['split'], 2)*100)}%"
-_split = f'{split} ' if not cfg['acc_test'] else ''
-acc = f"{'acc' if cfg['acc_test'] else 'rnd'}" 
+split = f"{int(round(1.-cfg['split'], 2)*100)}% "
+if cfg["split_type"] == 'accurate':
+    color = 'r'
+    _acc = 'accurate'
+    split = ''
+elif cfg["split_type"] == 'scaffold':
+    color = 'b'
+    _acc = 'scaffold'
+elif cfg["split_type"] == 'random':
+    color = 'g'
+    _acc = 'random'
+
 # plot a hexagonal parity plot
-p = sns.jointplot(x=y, y=yhat, kind='hex', color='r' if cfg["acc_test"] else 'b',
-                 xlim=[-12,2], ylim=[-12, 2])
-sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint, color='grey', ci=None, scatter=False)
-p.fig.suptitle(f"AqueousSolu parity plot \n{_acc} {_split}test set, 298K")
+p = sns.jointplot(x=y, y=yhat, kind='hex', color=color,
+                  xlim=[-12, 2], ylim=[-12, 2])
+sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
+            color='grey', ci=None, scatter=False)
+p.fig.suptitle(f"AqueousSolu parity plot \n{_acc} {split}test set, 298K")
 p.set_axis_labels('Experimental log(S), 298K [mol/L]', 'Model log(S), 298K [mol/L]')
 p.fig.subplots_adjust(top=0.95)
 p.fig.tight_layout()
 txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo} "
-plt.text(2,-11.5,
+plt.text(2, -11.5,
          txt, ha="right", va="bottom", fontsize=14)
 p.savefig(f'/workspace/results/aqueous/Aqueous_parity_{_acc}_{xai}.png')
 
@@ -127,13 +136,13 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix=""):
     )
     # todo legend
     d.FinishDrawing()
-    
+
     with open(file=f'/workspace/results/aqueous/viz/{prefix}_MolViz.png',
-        mode = 'wb') as f:
+              mode='wb') as f:
         f.write(d.GetDrawingText())
 
-###################
 
+###################
 fid = model.head.fids
 
 # plot entire test set:
