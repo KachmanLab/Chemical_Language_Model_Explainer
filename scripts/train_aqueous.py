@@ -25,8 +25,14 @@ test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'],
                          shuffle=False, num_workers=8)
 
 if cfg['model'] == 'mmb':
-    print(cfg['head'])
-    model = AqueousRegModel(head=cfg['head'])
+    if cfg['head'] == 'masked':
+        head = 'hier_m'
+    elif cfg['head'] == 'maskedlinear':
+        head = 'linear'
+    else:
+        head = 'hier'
+    print(cfg['head'], head)
+    model = AqueousRegModel(head=head)
 elif cfg['model'] == 'shap':
     model = BaselineAqueousModel()
 

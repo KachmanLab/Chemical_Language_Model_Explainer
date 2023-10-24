@@ -7,22 +7,27 @@ stages:
       md5: a971c59bbbee6dbe768d3bdb60c7f7f6
       size: 2415802
     - path: scripts/aqueous_config.json
-      md5: 22417d2500a4b8c8282e0ce01367f167
-      size: 118
+      hash: md5
+      md5: b194e2df25ac5cf3e582c12e86de866b
+      size: 221
     - path: scripts/train_aqueous.py
-      md5: 5aa39f8e557f10018b18c6f812d818b1
-      size: 1852
+      hash: md5
+      md5: 1b4348b6853d84edf85001ac136e8d8e
+      size: 2171
     - path: src/dataloader.py
-      md5: 93db22cf89b1216e0372a8c1987de690
-      size: 7477
+      hash: md5
+      md5: 4b11745039f96a2ec9f81de791287f31
+      size: 8631
     - path: src/model.py
-      md5: dd61320f74f218659e501d58e46ef4f2
-      size: 13068
+      hash: md5
+      md5: ef1d7de9138acc62113542565b2812f3
+      size: 23438
     outs:
     - path: results/aqueous/models/
-      md5: 3ca7805fe8f4f17cccb0827dcaa6df54.dir
-      size: 235939037
-      nfiles: 2
+      hash: md5
+      md5: 4fe432db7302f9c9897df33944594d11.dir
+      size: 2828979740
+      nfiles: 12
   plot_aqueous:
     cmd: python3 scripts/explain_aqueous.py
     deps:
@@ -30,26 +35,32 @@ stages:
       md5: a971c59bbbee6dbe768d3bdb60c7f7f6
       size: 2415802
     - path: results/aqueous/models/
-      md5: 3ca7805fe8f4f17cccb0827dcaa6df54.dir
-      size: 235939037
-      nfiles: 2
+      hash: md5
+      md5: 4fe432db7302f9c9897df33944594d11.dir
+      size: 2828979740
+      nfiles: 12
     - path: scripts/aqueous_config.json
-      md5: 22417d2500a4b8c8282e0ce01367f167
-      size: 118
+      hash: md5
+      md5: b194e2df25ac5cf3e582c12e86de866b
+      size: 221
     - path: scripts/explain_aqueous.py
-      md5: e1aca82f4e82e68369f120793c6e46ec
-      size: 5106
+      hash: md5
+      md5: 9e6552dadac5b42b2bd729246169b9f3
+      size: 5210
     - path: src/dataloader.py
-      md5: 93db22cf89b1216e0372a8c1987de690
-      size: 7477
+      hash: md5
+      md5: 4b11745039f96a2ec9f81de791287f31
+      size: 8631
     - path: src/model.py
-      md5: dd61320f74f218659e501d58e46ef4f2
-      size: 13068
+      hash: md5
+      md5: ef1d7de9138acc62113542565b2812f3
+      size: 23438
     outs:
     - path: results/aqueous/viz/
-      md5: 6c8b11923caa259602c5356db452408c.dir
-      size: 26754643
-      nfiles: 575
+      hash: md5
+      md5: 12f3e38a70d4972a916c690077352226.dir
+      size: 80450038
+      nfiles: 1722
   predict_aqueous:
     cmd: python3 scripts/predict_aqueous.py
     deps:
@@ -57,39 +68,48 @@ stages:
       md5: a971c59bbbee6dbe768d3bdb60c7f7f6
       size: 2415802
     - path: results/aqueous/models/
-      md5: 3ca7805fe8f4f17cccb0827dcaa6df54.dir
-      size: 235939037
-      nfiles: 2
+      hash: md5
+      md5: 4fe432db7302f9c9897df33944594d11.dir
+      size: 2828979740
+      nfiles: 12
     - path: scripts/aqueous_config.json
-      md5: 22417d2500a4b8c8282e0ce01367f167
-      size: 118
+      hash: md5
+      md5: b194e2df25ac5cf3e582c12e86de866b
+      size: 221
     - path: scripts/predict_aqueous.py
-      md5: 3ef7e717b82020bc9010e1cd3296f386
-      size: 2758
+      hash: md5
+      md5: e70d1982b7f6dc97fc288bde630ba749
+      size: 2924
     - path: src/dataloader.py
-      md5: 93db22cf89b1216e0372a8c1987de690
-      size: 7477
+      hash: md5
+      md5: 4b11745039f96a2ec9f81de791287f31
+      size: 8631
     - path: src/model.py
-      md5: dd61320f74f218659e501d58e46ef4f2
-      size: 13068
+      hash: md5
+      md5: ef1d7de9138acc62113542565b2812f3
+      size: 23438
     outs:
     - path: results/aqueous/AqueousSolu_predictions.csv
-      md5: dc897539a9e434383ebfcd9cf6943ed8
-      size: 5099078
+      hash: md5
+      md5: 2df2dc9267963edf1b991e6aa962a808
+      size: 5126643
   aqueous:
     cmd: echo "Finished full aqueous solubility pipeline"
     deps:
     - path: results/aqueous/AqueousSolu_predictions.csv
-      md5: dc897539a9e434383ebfcd9cf6943ed8
-      size: 5099078
+      hash: md5
+      md5: 2df2dc9267963edf1b991e6aa962a808
+      size: 5126643
     - path: results/aqueous/models/
-      md5: 3ca7805fe8f4f17cccb0827dcaa6df54.dir
-      size: 235939037
-      nfiles: 2
+      hash: md5
+      md5: 4fe432db7302f9c9897df33944594d11.dir
+      size: 2828979740
+      nfiles: 12
     - path: results/aqueous/viz/
-      md5: 6c8b11923caa259602c5356db452408c.dir
-      size: 26754643
-      nfiles: 575
+      hash: md5
+      md5: 12f3e38a70d4972a916c690077352226.dir
+      size: 80450038
+      nfiles: 1722
   train_combi:
     cmd: python3 scripts/train_combi.py
     deps:

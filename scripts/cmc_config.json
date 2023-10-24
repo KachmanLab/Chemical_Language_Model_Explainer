@@ -3,10 +3,10 @@
     "seed": 42,
     "n_epochs": 50,
     "split": 0.90,
-    "model": "mmb", //ECFP
+    "model": "mmb",
     "head": "masked",
     "nbits": 512,
     "topk": 16,
     "finetune": false,
-    "dataset": "pcmc",
+    "dataset": "pcmc"
 }

@@ -114,7 +114,7 @@ stages:
     cmd: python3 scripts/train_cmc.py
     deps:
     - data/cmcdata.csv
-    - data/cmcdata_micellization.pcsv
+    - data/cmcdata_micellization.csv
     - scripts/train_cmc.py
     - src/model.py
     - src/prop_loader.py
@@ -127,7 +127,7 @@ stages:
     cmd: python3 scripts/explain_cmc.py
     deps: 
     - data/cmcdata.csv
-    - data/cmcdata_micellization.pcsv
+    - data/cmcdata_micellization.csv
     - src/prop_loader.py
     - src/model.py
     - src/explainer.py
@@ -156,7 +156,7 @@ stages:
     cmd: python3 scripts/explain_shap_cmc.py
     deps: 
     - data/cmcdata.csv
-    - data/cmcdata_micellization.pcsv
+    - data/cmcdata_micellization.csv
     - src/prop_loader.py
     - src/model.py
     - src/explainer.py
