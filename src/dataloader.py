@@ -5,7 +5,8 @@ from rdkit.Chem import AllChem
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import GroupShuffleSplit
-import datamol as dm
+from rdkit.Chem.Scaffolds import MurckoScaffold
+#import datamol as dm
 
 class AqSolDataset(Dataset):
     def __init__(self, file_path, subset, split_type, split,
@@ -19,20 +20,32 @@ class AqSolDataset(Dataset):
         # split data into accurate test set according to SolProp specifications
         df = pd.read_csv(file_path)
         if split_type == 'accurate':
-            test_idx = (df['count'] > 1) & (df['logS_aq_std'] < 0.2)
+            test_idx = np.where(df['count'] > 1) & (df['logS_aq_std'] < 0.2)
+            print('type', type(test_idx))
+            print(test_idx[:16])
+            
         elif split_type == 'random':
+            test_idx = np.where(df['logS_aq_std'] != np.nan)
+            print('type', type(test_idx))
+            print(test_idx[:16])
+            
             # TODO fix train/val 10% even split for random
             ntest = round(len(df) * (1-split))
             test_idx[:ntest] = True
             test_idx[ntest:] = False
             np.random.seed(self.data_seed)
             test_idx = np.random.permutation(test_idx)
+
         elif split_type == 'scaffold':
+            _train, test_idx = self.scaffold_split(df['smiles solute'].to_list())
+            train_idx, val_idx = self.scaffold_split(df['smiles solute'][np.array(_train)].to_list())
             # TODO split into 80/10/10, get ID over smiles,
             # fit into train/val/test setting below
-            scaffold_split(df['smiles solute'].to_list())
-            raise NotImplementedError
-
+            # print(type(test_idx))
+            # print(test_idx[:16])
+            print(test_idx.shape, test_idx[:16])
+            print(train_idx.shape)
+            print(val_idx.shape)
                 #df.smiles
 
         # WIP get all incides
@@ -79,6 +92,24 @@ class AqSolDataset(Dataset):
             smiles_data, _ = aug_smiles(smiles_data)
         labels = self.labels[idx]
         return smiles_data, labels
+    
+    def get_murcko_scaffolds(self, smi):
+        mol = Chem.MolFromSmiles(smi)
+
+        scaffold = MurckoScaffold.GetScaffoldForMol(mol)
+        scaffold = MurckoScaffold.MakeScaffoldGeneric(scaffold)
+        return Chem.MolToSmiles(scaffold, canonical=True)
+
+    def scaffold_split(self, smiles):
+        scaffolds = [self.get_murcko_scaffolds(smi) for smi in smiles]
+        # print(np.unique(scaffolds), '\n', 'len', len(np.unique(scaffolds)))
+        splitter = GroupShuffleSplit(n_splits=1, 
+                                     test_size=0.1,
+                                     random_state=self.data_seed)
+        # return splitter.split(smiles, groups=scaffolds)
+        return next(splitter.split(smiles, groups=scaffolds))
+
+
 
 
 class AqSolECFP(AqSolDataset):
@@ -109,17 +140,6 @@ class AqSolECFP(AqSolDataset):
     #     print(type(dataset))
     #     print(dataset)
     #     return dataset#.load_dataset('/workspace/data/AqueousSolu-Exp.csv')
-    # 
-
-def scaffold_split(smiles, subset):
-    """In line with common practice, we will use the scaffold split to evaluate our models"""
-    scaffolds = [dm.to_smiles(dm.to_scaffold_murcko(dm.to_mol(smi))) for smi in smiles]
-    splitter = GroupShuffleSplit(n_splits=2, valid_size=0.1,
-                                 test_size=0.1, random_state=cfg['seed'])
-    train, val, test = splitter.split(smiles, groups=scaffolds)
-    return train, val, test
-    #return next(splitter.split(smiles, groups=scaffolds))
-
 
 
 class CombiSoluDataset(Dataset):
