@@ -12,11 +12,12 @@ from nemo_src.regex_tokenizer import RegExTokenizer
 from nemo_src.infer import NeMoMegaMolBARTWrapper
 from src.explainer import *
 
+
 class REGRegExTokenizer(RegExTokenizer):
     def __init__(self):
         super().__init__()
         self.load_tokenizer()
-        
+
         self.reg_token = '<REG>'
         self.vocab[self.reg_token] = 6
         self._update_cache()
@@ -33,42 +34,42 @@ class REGRegExTokenizer(RegExTokenizer):
         # Prepend <REG> token
         token_ids = [self.token_to_ids(['<REG>']+t) for t in tokens]
         pad_length = max([len(seq) for seq in token_ids])
-        
+
         encoder_masks = [
-            ([1] * len(seq)) + ([0] * (pad_length - len(seq))) \
-                for seq in token_ids
+            ([1] * len(seq)) + ([0] * (pad_length - len(seq)))
+            for seq in token_ids
         ]
         token_ids = [
-            seq + ([self.pad_id] * (pad_length - len(seq))) \
-                for seq in token_ids 
+            seq + ([self.pad_id] * (pad_length - len(seq)))
+            for seq in token_ids
         ]
 
         token_ids = torch.tensor(token_ids, dtype=torch.int64).cuda()
         encoder_masks = torch.tensor(encoder_masks,
-                                    dtype=torch.int64,
-                                    device=token_ids.device)
+                                     dtype=torch.int64,
+                                     device=token_ids.device)
 
         return token_ids, encoder_masks
 
     def tokenize_pair(self, solu_smi: List[str], solv_smi: List[str]):
         solu_t = [self.text_to_tokens(s) for s in solu_smi]
         solv_t = [self.text_to_tokens(s) for s in solv_smi]
-        
+
         # Prepend <REG> token, add <SEP> token between solu and solv
         token_ids = [self.token_to_ids(
             ['<REG>'] + solu + ['<SEP>'] + solv
         ) for solu, solv in zip(solu_t, solv_t)]
 
         pad_length = max([len(seq) for seq in token_ids])
-        encoder_masks = [([1] * len(seq)) + ([0] * (pad_length - len(seq))) \
-            for seq in token_ids]
-        token_ids = [seq + ([self.pad_id] * (pad_length - len(seq))) \
-             for seq in token_ids]
+        encoder_masks = [([1] * len(seq)) + ([0] * (pad_length - len(seq)))
+                         for seq in token_ids]
+        token_ids = [seq + ([self.pad_id] * (pad_length - len(seq)))
+                     for seq in token_ids]
 
         token_ids = torch.tensor(token_ids, dtype=torch.int64).cuda()
         encoder_masks = torch.tensor(encoder_masks,
-                                    dtype=torch.int64,
-                                    device=token_ids.device)
+                                     dtype=torch.int64,
+                                     device=token_ids.device)
 
         return token_ids, encoder_masks
 
@@ -114,8 +115,9 @@ class MaskedLinearRegressionHead(pl.LightningModule):
         if self.fids:
             fids = self.fids
         elif not fids:
-            #fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
-            #print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])            #[237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
+            # fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
+            # print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])
+            # [237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
             vec = self.fc1.weight[0].cpu().detach().numpy()
             fids = [ix for ix, val in sorted(
                 enumerate(np.abs(vec)),
@@ -127,11 +129,11 @@ class MaskedLinearRegressionHead(pl.LightningModule):
             fids = fids[-2]
         self.fids = fids
 
-        #print('feature ids to consider:', fids)
+        # print('feature ids to consider:', fids)
         mask = torch.zeros_like(x, dtype=torch.int64)
         mask[:, fids] = 1
 
-        return x * mask 
+        return x * mask
 
     def forward(self, x):
         ''' mask out all features excluding [fids]'''
@@ -158,8 +160,9 @@ class MaskedRegressionHead(pl.LightningModule):
         if self.fids:
             fids = self.fids
         elif not fids:
-            #fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
-            #print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])            #[237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
+            # fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
+            # print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])
+            # [237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
             vec = self.fc2.weight[0].cpu().detach().numpy()
             fids = [ix for ix, val in sorted(
                 enumerate(np.abs(vec)),
@@ -171,11 +174,11 @@ class MaskedRegressionHead(pl.LightningModule):
             fids = fids[-2]
         self.fids = fids
 
-        #print('feature ids to consider:', fids)
+        # print('feature ids to consider:', fids)
         mask = torch.zeros_like(x, dtype=torch.int64)
         mask[:, fids] = 1
 
-        return x * mask 
+        return x * mask
 
     def forward(self, x):
         ''' mask out all features excluding [fids]'''
@@ -216,10 +219,10 @@ class AqueousRegModel(pl.LightningModule):
         molbart_model = NeMoMegaMolBARTWrapper()
         self.mmb = molbart_model.model
         self.mmb.enc_dec_model.enc_dec_model.decoder = None
-    
+   
     def configure_optimizers(self):
-        return optim.AdamW(self.parameters(), lr = self.learning_rate, \
-            betas=(0.9, 0.999))
+        return optim.AdamW(self.parameters(), lr = self.learning_rate,
+                           betas=(0.9, 0.999))
 
     def forward(self, solu_smi):
         """ tokenize SMILES and prepend <REG> token.
@@ -227,7 +230,7 @@ class AqueousRegModel(pl.LightningModule):
             use <REG> token to aggregate into static shape
             apply regression head to obtain logS
         """
-        # tokenize smiles string of solute 
+        # tokenize smiles string of solute
         solu_tokens, solu_mask = self.tokenizer.tokenize(solu_smi)
         # encode with MMB
         solu = self.mmb.encode(solu_tokens, solu_mask)
@@ -245,9 +248,9 @@ class AqueousRegModel(pl.LightningModule):
         mae = self.criterion_mae(outputs, labels)
         mse = self.criterion_mse(outputs, labels)
         metrics = {
-            'loss': loss, 
-            'train_mae': mae, 
-            'train_mse': mse, 
+            'loss': loss,
+            'train_mae': mae,
+            'train_mse': mse,
         }
         self.log_dict(metrics)
         return metrics
@@ -261,13 +264,13 @@ class AqueousRegModel(pl.LightningModule):
         val_mae = self.criterion_mae(outputs, labels)
         val_mse = self.criterion_mse(outputs, labels)
         metrics = {
-            'val_loss': val_loss, 
-            'val_mae': val_mae, 
-            'val_mse': val_mse, 
+            'val_loss': val_loss,
+            'val_mae': val_mae,
+            'val_mse': val_mse,
         }
         self.log_dict(metrics)
         return metrics
-    
+
     def test_step(self, batch, batch_idx):
         inputs, labels = batch
         self.mmb.unfreeze()
@@ -276,16 +279,16 @@ class AqueousRegModel(pl.LightningModule):
         test_mae = self.criterion_mae(outputs, labels)
         test_mse = self.criterion_mse(outputs, labels)
         metrics = {
-            'test_mae': test_mae, 
-            'test_mse': test_mse, 
+            'test_mae': test_mae,
+            'test_mse': test_mse,
         }
         self.log_dict(metrics)
         return metrics
 
     def predict_step(self, batch, batch_idx):
         """ predict & explain:
-            forward with grad enabled to evaluate attn weights and gradients 
-            collect attn+grads for each layer, 
+            forward with grad enabled to evaluate attn weights and gradients
+            collect attn+grads for each layer,
             call explainer: propagate relevance, extract <REG> token weights
             call color mapper: map atom-token weights to colors for rdkit plot
         """
@@ -295,35 +298,35 @@ class AqueousRegModel(pl.LightningModule):
             self.zero_grad()
             preds = self(inputs)
         preds.backward(torch.ones_like(preds))
-        
-        attn, attn_grads = self.collect_attn_grads() 
-        
+
+        attn, attn_grads = self.collect_attn_grads()
+
         # re-construct tokens and masks
         _, masks = self.tokenizer.tokenize(inputs)
         tokens = [self.tokenizer.text_to_tokens(s) for s in inputs]
-            
-        # extract weights & map colors for all samples in batch:
-        rel_weights = [self.explainer(attn[i], attn_grads[i], masks[i], tokens[i]) \
-            for i in range(len(inputs))]
-        atom_weights = [self.cmapper(rel_weights[i], tokens[i]) \
-            for i in range(len(inputs))]
-        rdkit_colors = [self.cmapper.to_rdkit_cmap(atom_weights[i]) \
-            for i in range(len(inputs))]
 
-        return {"preds": preds, "labels": labels, 
-            "smiles": inputs, "tokens": tokens, "masks": masks, 
-            "rel_weights": rel_weights, "atom_weights": atom_weights,
-            "rdkit_colors": rdkit_colors,
-        }
+        # extract weights & map colors for all samples in batch:
+        rel_weights = [self.explainer(attn[i], attn_grads[i], masks[i], tokens[i])
+                       for i in range(len(inputs))]
+        atom_weights = [self.cmapper(rel_weights[i], tokens[i])
+                        for i in range(len(inputs))]
+        rdkit_colors = [self.cmapper.to_rdkit_cmap(atom_weights[i])
+                        for i in range(len(inputs))]
+
+        return {"preds": preds, "labels": labels,
+                "smiles": inputs, "tokens": tokens, "masks": masks,
+                "rel_weights": rel_weights, "atom_weights": atom_weights,
+                "rdkit_colors": rdkit_colors,
+                }
 
     def collect_attn_grads(self):
         """ collect attention activations (attn) and gradients (attn_grads)
             for each layer.
-            returns: attn, attn_grads of shape 
+            returns: attn, attn_grads of shape
                 [batch, n_layers (6), n_heads (8), len_solu_tok, len_solu_tok]
         """
         attn, attn_grads = [], []
-        for i in range(6): # self.mmb.num_heads
+        for i in range(6):  # self.mmb.num_heads
             m = self.mmb.enc_dec_model.enc_dec_model.encoder.model.layers[i]
             attn.append(
                 m.self_attention.core_attention.get_attn()
@@ -331,7 +334,7 @@ class AqueousRegModel(pl.LightningModule):
             attn_grads.append(
                 m.self_attention.core_attention.get_attn_gradients()
             )
-            
+
         attn = torch.stack(attn, axis=1)
         attn_grads = torch.stack(attn_grads, axis=1)
 
@@ -358,8 +361,8 @@ class CombiRegModel(AqueousRegModel):
 
     def predict_step(self, batch, batch_idx):
         """ predict & explain:
-            forward with grad enabled to evaluate attn weights and gradients 
-            collect attn+grads for each layer, 
+            forward with grad enabled to evaluate attn weights and gradients
+            collect attn+grads for each layer,
             call explainer: propagate relevance, extract <REG> token weights
             call color mapper: map atom-token weights to colors for rdkit plot
         """
@@ -368,7 +371,7 @@ class CombiRegModel(AqueousRegModel):
             self.zero_grad()
             preds = self(inputs)
         preds.backward(torch.ones_like(preds))
-        
+
         # reconstruct tokens & mask
         solu_smi, solv_smi, temperature = inputs
         solu_t = [self.tokenizer.text_to_tokens(s) for s in solu_smi]
@@ -378,20 +381,20 @@ class CombiRegModel(AqueousRegModel):
         tokens = [solu + ['.'] + solv for solu, solv in zip(solu_t, solv_t)]
         _, masks = self.tokenizer.tokenize_pair(solu_smi, solv_smi)
 
-        attn, attn_grads = self.collect_attn_grads() 
-        
+        attn, attn_grads = self.collect_attn_grads()
+
         # extract weights & map colors for all samples in batch:
-        rel_weights = [self.explainer(attn[i], attn_grads[i], masks[i]) \
-            for i in range(len(solu_smi))]
-        atom_weights = [self.cmapper(rel_weights[i], tokens[i]) \
-            for i in range(len(solu_smi))]
-        rdkit_colors = [self.cmapper.to_rdkit_cmap(atom_weights[i]) \
-            for i in range(len(solu_smi))]
-        
-        return {"preds": preds, "labels": labels, "tokens": tokens, 
-                "solu_smi": solu_smi, "solv_smi": solv_smi, "masks": masks, 
+        rel_weights = [self.explainer(attn[i], attn_grads[i], masks[i])
+                       for i in range(len(solu_smi))]
+        atom_weights = [self.cmapper(rel_weights[i], tokens[i])
+                        for i in range(len(solu_smi))]
+        rdkit_colors = [self.cmapper.to_rdkit_cmap(atom_weights[i])
+                        for i in range(len(solu_smi))]
+
+        return {"preds": preds, "labels": labels, "tokens": tokens,
+                "solu_smi": solu_smi, "solv_smi": solv_smi, "masks": masks,
                 "rel_weights": rel_weights, "atom_weights": atom_weights,
-                "rdkit_colors": rdkit_colors}   
+                "rdkit_colors": rdkit_colors}
 
 
 class ECFPLinear(pl.LightningModule):
@@ -404,15 +407,15 @@ class ECFPLinear(pl.LightningModule):
         #     raise NotImplementedError
         else:
             self.head = RegressionHead(dim=dim)
-        print(head, dim) 
+        print(head, dim)
         self.criterion = nn.HuberLoss()
         self.criterion_mse = nn.MSELoss()
         self.criterion_mae = nn.L1Loss()
         self.learning_rate = 1e-5
- 
+
     def configure_optimizers(self):
-        return optim.AdamW(self.parameters(), lr = self.learning_rate, \
-            betas=(0.9, 0.999))
+        return optim.AdamW(self.parameters(), lr = self.learning_rate,
+                           betas=(0.9, 0.999))
 
     def forward(self, ecfp):
         """ tokenize SMILES and prepend <REG> token.
@@ -430,9 +433,9 @@ class ECFPLinear(pl.LightningModule):
         mae = self.criterion_mae(outputs, labels)
         mse = self.criterion_mse(outputs, labels)
         metrics = {
-            'loss': loss, 
-            'train_mae': mae, 
-            'train_mse': mse, 
+            'loss': loss,
+            'train_mae': mae,
+            'train_mse': mse,
         }
         self.log_dict(metrics)
         return metrics
@@ -445,13 +448,13 @@ class ECFPLinear(pl.LightningModule):
         val_mae = self.criterion_mae(outputs, labels)
         val_mse = self.criterion_mse(outputs, labels)
         metrics = {
-            'val_loss': val_loss, 
-            'val_mae': val_mae, 
-            'val_mse': val_mse, 
+            'val_loss': val_loss,
+            'val_mae': val_mae,
+            'val_mse': val_mse,
         }
         self.log_dict(metrics)
         return metrics
-    
+
     def test_step(self, batch, batch_idx):
         inputs, labels = batch
         with torch.set_grad_enabled(False):
@@ -459,19 +462,17 @@ class ECFPLinear(pl.LightningModule):
         test_mae = self.criterion_mae(outputs, labels)
         test_mse = self.criterion_mse(outputs, labels)
         metrics = {
-        'test_mae': test_mae, 
-            'test_mse': test_mse, 
+        'test_mae': test_mae,
+            'test_mse': test_mse,
         }
         self.log_dict(metrics)
         return metrics
 
     def predict_step(self, batch, batch_idx):
         inputs, labels = batch
-        #with torch.set_grad_enabled(True):
         with torch.set_grad_enabled(False):
             preds = self(inputs)
         return {"preds": preds, "labels": labels}
-
 
 
 ##########################################
@@ -487,23 +488,23 @@ class BaselineAqueousModel(AqueousRegModel):
         self.criterion_mse = nn.MSELoss()
         self.criterion_mae = nn.L1Loss()
         self.learning_rate = 1e-5
-    
+
     def init_molbart(self):
         molbart_model = NeMoMegaMolBARTWrapper()
         self.mmb = molbart_model.model
         self.mmb.enc_dec_model.enc_dec_model.decoder = None
         self.tokenizer = molbart_model.tokenizer
-    
+
     # def save_salience(self, grad):
     #     self.salience = torch.pow(grad, 2)
-    
+
     # def get_salience(self):
     #     return self.salience.detach().cpu()
-     
+
     # def featurize(sef, inputs):
     #     solu, mask = self._tokenize(inputs)
     #     solu = self.mmb.encode(solu, mask)
-        
+
     #     solu = solu * mask.unsqueeze(-1)
     #     solu = torch.mean(solu, dim=1)
     #     return solu.detach().cpu().numpy()
@@ -512,10 +513,10 @@ class BaselineAqueousModel(AqueousRegModel):
         # print("in:", inputs)
         solu, mask = self._tokenize(inputs)
         solu = self.mmb.encode(solu, mask)
-        
+
         # if not self.training:
         #     solu.register_hook(self.save_salience)
-        
+
         solu = solu * mask.unsqueeze(-1)
         solu = torch.mean(solu, dim=1)
         solu = solu.to(torch.float32)
@@ -526,8 +527,10 @@ class BaselineAqueousModel(AqueousRegModel):
         token_ids = [self.tokenizer.token_to_ids(t) for t in tokens]
 
         pad_length = max([len(seq) for seq in token_ids])
-        encoder_mask = [([1] * len(seq)) + ([0] * (pad_length - len(seq))) for seq in token_ids]
-        token_ids = [seq + ([self.tokenizer.pad_id] * (pad_length - len(seq))) for seq in token_ids]
+        encoder_mask = [([1] * len(seq)) + ([0] * (pad_length - len(seq)))
+                        for seq in token_ids]
+        token_ids = [seq + ([self.tokenizer.pad_id] * (pad_length - len(seq)))
+                     for seq in token_ids]
 
         token_ids = torch.tensor(token_ids, dtype=torch.int64).cuda()
         encoder_mask = torch.tensor(encoder_mask,
@@ -535,7 +538,7 @@ class BaselineAqueousModel(AqueousRegModel):
                                     device=token_ids.device)
 
         return token_ids, encoder_mask
-    
+
     def predict_step(self, batch, batch_idx):
         inputs, labels = batch
 
@@ -543,19 +546,19 @@ class BaselineAqueousModel(AqueousRegModel):
             self.zero_grad()
             preds = self(inputs)
         preds.backward(torch.ones_like(preds))
-        
+
         _, masks = self._tokenize(inputs)
         tokens = [self.tokenizer.text_to_tokens(s) for s in inputs]
-            
+
         # salience = self.get_salience()
         # salience = salience.mean(axis=-1)
         # salience_colors = [self.cmapper(salience[i], tokens[i]) \
         #     for i in range(len(inputs))]
 
-        return {"preds": preds, "labels": labels, 
-            "smiles": inputs, "tokens": tokens, "masks": masks, }
-            # "salience_colors": salience_colors
-            # }
+        return {"preds": preds, "labels": labels,
+            "smiles": inputs, "tokens": tokens, "masks": masks}
+        # "salience_colors": salience_colors
+        # }
 
     # def mask_forward(self, token, mask):
     #     """ forward without tokenizer"""
@@ -585,7 +588,7 @@ class BaselineAqueousModel(AqueousRegModel):
 
         # if not self.training:
         #     solu.register_hook(self.save_salience)
-        
+
         solu = solu * mask.unsqueeze(-1)
         solu = torch.mean(solu, dim=1)
         solu = solu.to(torch.float32)
@@ -599,18 +602,18 @@ class MMBFeaturizer(BaselineAqueousModel):
     def featurize(self, inputs):
         solu, mask = self._tokenize(inputs)
         solu = self.mmb.encode(solu, mask)
-        
+
         solu = solu * mask.unsqueeze(-1)
         solu = torch.mean(solu, dim=1)
-        return solu #.detach().cpu().numpy()
+        return solu
 
     def predict_step(self, batch, batch_idx):
-        
-        inputs, labels = batch  
+
+        inputs, labels = batch
         with torch.set_grad_enabled(True):
             self.zero_grad()
             feats = self.featurize(inputs)
-        return feats 
+        return feats
 
 
 # from molfeat.trans.pretrained import PretrainedMolTransformer
@@ -618,7 +621,7 @@ class MMBFeaturizer(BaselineAqueousModel):
 # class MegaMolBartModel(PretrainedMolTransformer):
 #     """
 #     In this dummy example, we train a RF model to predict the cLogP
-##     then use the feature importance of the RF model as the embedding.
+#     then use the feature importance of the RF model as the embedding.
 #     """
 
 #     def __init__(self):
