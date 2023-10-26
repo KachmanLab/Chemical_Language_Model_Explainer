@@ -4,11 +4,9 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import (
-    GroupShuffleSplit, ShuffleSplit, PredefinedSplit
-)
+from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit
 from rdkit.Chem.Scaffolds import MurckoScaffold
-from copy import deepcopy 
+
 
 class AqSolDataset(Dataset):
     def __init__(self, file_path, subset, split_type, split,
@@ -20,141 +18,81 @@ class AqSolDataset(Dataset):
         self.data_seed = data_seed
         self.augment = augment
 
-        # split data into accurate test set according to SolProp specifications
+        # split data into accurate test set according to SolProp
         df = pd.read_csv(file_path)
         # drop one extreme outlier (logS 6.4)
-        df = df[df['logS_aq_avg'] < 2.05]
+        df = df[df['logS_aq_avg'] < 2.05].reset_index()
         self.min = df['logS_aq_avg'].min()
         self.max = df['logS_aq_avg'].max()
 
-        assert len(set(df['smiles solute'].to_list())) == len(df['smiles solute'].to_list())
-        
         if split_type == 'scaffold':
             splitter = MurckoScaffoldSplitter(
-                smiles=df['smiles solute'].to_list(), 
-                n_splits=1,
+                smiles=df['smiles solute'].to_list(),
+                n_splits=5,
+                test_size=0.1,
                 seed=self.data_seed
             )
         elif split_type == 'stratified':
             raise NotImplementedError
         else:
             splitter = ShuffleSplit(
-                n_splits=1,
+                n_splits=5,
                 test_size=0.1,
                 random_state=self.data_seed
             )
-        # split into train+val/test, 
+        # split into train+val/test,
         if split_type == 'accurate':
             # predefined accurate split: >2 measuments with low std
-            test_idx = np.where((df['count'] > 1) & (df['logS_aq_std'] < 0.2))
+            test_idx = np.where(
+                (df['count'] > 1) & (df['logS_aq_std'] < 0.2))[0]
+            _sanity = None
         else:
-            _sanity, test_idx = splitter.split(
-                df['smiles solute'].to_list())
-            # TODO HERE FIX THIS 
-            # TODO fix different random//scaffold split behaviour here
-            print(_sanity)
-            print(test_idx)
+            _sanity, test_idx = next(
+                splitter.split(df['smiles solute'].to_list()))
 
         if _sanity is not None:
             assert len(_sanity)+len(test_idx) == len(df)
-            print('sanity checking', len(_sanity))
-            print(len(_sanity), len(test_idx))
-            print(type(test_idx), test_idx.shape, test_idx[:1])
-            sanity_df = deepcopy(df.iloc[_sanity])  # drop deepcopy
+            sane_train = df.iloc[_sanity].reset_index()
+            sane_test = df.iloc[test_idx].reset_index()
 
         # set aside test set
-        test_df = deepcopy(df.iloc[test_idx])  # drop deepcopy
-        df = df.drop(test_idx)  
- 
-        if _sanity is not None:
-            assert df.shape == sanity_df.shape  # drop
-            print(df.shape, sanity_df.shape)
-            san1 = set(df['smiles solute'].to_list()) 
-            san2 = set(sanity_df['smiles solute'].to_list()) 
-            print(len(san1^san2), 'dif1 \n')
-            print(len(san1-san2), 'dif2 \n')
-            print(len(san2-san1))
+        test_df = df.iloc[test_idx].reset_index()
+        tr_va_df = df.drop(test_idx).reset_index()
+        self.tr_va_df = tr_va_df
 
+        # sanity check: assert train/test non-overlapping
+        if _sanity is not None:
+            assert tr_va_df.shape == sane_train.shape
             assert len(set(df['smiles solute'].to_list()) ^
-                       set(sanity_df['smiles solute'].to_list())) == 0
-                       # df['smiles solute'], sanity_df['smiles solute']
+                   set(sane_train['smiles solute'].to_list()) ^
+                   set(sane_test['smiles solute'].to_list())) == 0
+            assert len(set(tr_va_df['smiles solute'].to_list()) ^
+                       set(sane_train['smiles solute'].to_list())) == 0
+            assert len(set(test_df['smiles solute'].to_list()) ^
+                       set(sane_test['smiles solute'].to_list())) == 0
 
         # split remaining df into train/val
-        train_idx, val_idx = splitter.split(
-            df['smiles solute'].to_list())
-        print(type(train_idx), train_idx.shape, train_idx[:1])
-        print(type(val_idx), val_idx.shape, val_idx[:1])
+        if self.subset == 'test':
+            self.smiles = test_df['smiles solute'].to_list()
+            self.labels = torch.tensor(
+                test_df['logS_aq_avg'].to_list(), dtype=torch.float32)
+        else:
+            self.tr_va_splitter = splitter.split(
+                tr_va_df['smiles solute'].to_list())
+            self.next_split()
 
-        # select subset
+    def next_split(self):
+        train_idx, val_idx = next(self.tr_va_splitter)
+
         if self.subset == 'train':
-            df = df.iloc[train_idx]
-        elif self.subset == 'val':
-            df = df.iloc[val_idx]
-        elif self.subset == 'test':
-            df = test_df
+            df = self.tr_va_df.iloc[train_idx]
+        elif self.subset == 'valid':
+            df = self.tr_va_df.iloc[val_idx]
 
         self.smiles = df['smiles solute'].to_list()
-        labels = df['logS_aq_avg'].to_list()
-        self.labels = torch.tensor(labels, dtype=torch.float32)
-        #
+        self.labels = torch.tensor(
+            df['logS_aq_avg'].to_list(), dtype=torch.float32)
 
-
-
-
-        #splitter = PredefinedSplit(test_fold=acc_idx)
-
-        # test_idx = np.where(df['count'] > 1) & (df['logS_aq_std'] < 0.2)
-        # print(type(test_idx), test_idx.shape, test_idx[:1])
-        # test_df = df[test_idx]
-        # df = df[~test_idx]
-        # test_df = df.iloc[test_idx]
-        # df = df.drop(test_idx)
-
-                # test_idx = np.where(df['logS_aq_std'] != np.nan)
-        # print(type(test_idx), test_idx.shape, test_idx[:1])
-        #
-        # # TODO fix train/val 10% even split for random
-        # ntest = round(len(df) * (1-split))
-        # test_idx[:ntest] = True
-        # test_idx[ntest:] = False
-        # np.random.seed(self.data_seed)
-        # test_idx = np.random.permutation(test_idx)
-
-
-        # TODO split into 80/10/10, get ID over smiles,
-        # fit into train/val/test setting below
-        # print(type(test_idx))
-        # print(test_idx[:16])
-
-        # WIP get all incides
-        # WIP assert indices non-overlapping, total=len(df)
-        # if accurate:
-        #     - remove test
-        #     - randomShuffleSplit(train, val)
-        # elif random:
-        #     - randomShuffleSplit(train, val, test)
-        # elif scaffold:
-        #     - randomShuffleSplit(train, val, test)
-
-        # total = df.shape[0]
-        # split_index = int(total * split)
-
-        # if self.subset == 'train':
-        #     # TODO change split_index(from/to) to split_idx (raw indices)
-        #     self.smiles = df['smiles solute'].to_list()
-        #     labels = df['logS_aq_avg'].to_list()
-        #     self.labels = torch.tensor(labels, dtype=torch.float32)
-        #
-        # elif self.subset == 'valid':
-        #     self.smiles = df['smiles solute'][split_index:].to_list()
-        #     val_labels = df['logS_aq_avg'][split_index:].to_list()
-        #     self.labels = torch.tensor(val_labels, dtype=torch.float32)
-        #
-        # elif self.subset == 'test':
-        #     self.smiles = test_df['smiles solute'].to_list()
-        #     test_labels = test_df['logS_aq_avg'].to_list()
-        #     self.labels = torch.tensor(test_labels, dtype=torch.float32)
-        #
     def __len__(self):
         return len(self.smiles)
 
@@ -167,8 +105,9 @@ class AqSolDataset(Dataset):
 
 
 class MurckoScaffoldSplitter():
-    def __init__(self, smiles, n_splits=1, seed=42, top_k=5):
-        self.n_splits = n_splits 
+    def __init__(self, smiles, n_splits=1, test_size=0.1, seed=42, top_k=5):
+        self.n_splits = n_splits
+        self.test_size = test_size,
         self.seed = seed
         self.top_k = top_k
         self.topscf = self.get_top_scaffolds(
@@ -196,20 +135,37 @@ class MurckoScaffoldSplitter():
         splitter = GroupShuffleSplit(n_splits=self.n_splits,
                                      test_size=0.1,
                                      random_state=self.seed)
-        return next(splitter.split(smiles, groups=scaffolds))
+        return splitter.split(smiles, groups=scaffolds)
 
 
 class AqSolECFP(AqSolDataset):
     def __init__(self, file_path, subset, split_type, split, data_seed=42,
                  nbits=512):
         super().__init__(file_path, subset, split_type, split, data_seed)
+        self.nbits = nbits
+        self.make_ecfp()
 
+    def make_ecfp(self):
+        ''' TODO fix self.nbits during next_split()'''
         ecfp = [AllChem.GetMorganFingerprintAsBitVect(
-                    Chem.MolFromSmiles(smi), radius=2, nBits=nbits
+                    Chem.MolFromSmiles(smi), radius=2, nBits=512  # self.nbits
                ) for smi in self.smiles]
         self.ecfp = torch.tensor(ecfp, dtype=torch.float32)
 
         assert len(self.ecfp) == len(self.smiles)
+
+    def next_split(self):
+        train_idx, val_idx = next(self.tr_va_splitter)
+
+        if self.subset == 'train':
+            df = self.tr_va_df.iloc[train_idx]
+        elif self.subset == 'valid':
+            df = self.tr_va_df.iloc[val_idx]
+
+        self.smiles = df['smiles solute'].to_list()
+        self.labels = torch.tensor(
+            df['logS_aq_avg'].to_list(), dtype=torch.float32)
+        self.make_ecfp()
 
     def __getitem__(self, idx):
         ecfp = self.ecfp[idx]
@@ -350,43 +306,45 @@ if __name__ == '__main__':
         cfg = json.load(f)
     pl.seed_everything(cfg['seed'])
 
-    cfg['split_type'] = 'accurate'
-    train_accurate = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train',
-        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
-    print('train_accurate')
-    print(train_accurate.smiles[:3])
-    print(train_accurate.labels[:3])
-    # print(train_accurate.smiles[:6])
-
     cfg['split_type'] = 'scaffold'
+    print('_scaffold train val test')
     train_scaffold = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train',
         cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
-    print('train_scaffold')
-    print(train_scaffold.smiles[:3])
-    print(train_scaffold.labels[:3])
-    # print(train_scaffold.smiles[:6])
+    valid_scaffold = AqSolDataset('/workspace/data/AqueousSolu.csv', 'valid',
+        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
+    test_scaffold = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
+        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
 
+    cfg['split_type'] = 'accurate'
+    print('train_accurate')
+    train_accurate = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train',
+        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
 
     cfg['split_type'] = 'random'
-    train_random = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train',
-        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
     print('train_random')
-    print(train_random.smiles[:3])
-    print(train_random.labels[:3])
-    # print(train_random.smiles[:6])
+    train_random = AqSolDataset('/workspace/data/AqueousSolu.csv', 'valid',
+        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
 
     cfg['split_type'] = 'scaffold'
     sanity = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train',
         cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
-    print('sanity')
-    print(sanity.smiles[:3])
-    print(sanity.labels[:3])
-    # print(sanity.smiles[:6])
 
     assert len(sanity.smiles) == len(train_scaffold.smiles)
     assert set(sanity.smiles) == set(train_scaffold.smiles)
     assert set(sanity.smiles) ^ set(train_scaffold.smiles) == set()
-    # val_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'valid',
-    #     cfg['split_type'], cfg['split'], data_seed=cfg['seed'])
-    # test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
-    #     cfg['split_type'], cfg['split'], data_seed=cfg['seed'])
+
+    ecfp_scaffold = AqSolECFP('/workspace/data/AqueousSolu.csv', 'train',
+        'scaffold', cfg['split'], data_seed=cfg['seed'], nbits=512)
+    ecfp_random = AqSolECFP('/workspace/data/AqueousSolu.csv', 'valid',
+        'random', cfg['split'], data_seed=cfg['seed'], nbits=512)
+    ecfp_accurate = AqSolECFP('/workspace/data/AqueousSolu.csv', 'test',
+        'accurate', cfg['split'], data_seed=cfg['seed'], nbits=512)
+
+    train_scaffold.next_split()
+    valid_scaffold.next_split()
+    sanity.next_split()
+    ecfp_scaffold.next_split()
+    ecfp_random.next_split()
+
+    assert train_scaffold.smiles[42] == sanity.smiles[42]
+    assert ecfp_scaffold.smiles[42] == train_scaffold.smiles[42]
