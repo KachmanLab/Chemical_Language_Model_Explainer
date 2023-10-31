@@ -184,7 +184,7 @@ class MaskedRegressionHead(pl.LightningModule):
         ''' mask out all features excluding [fids]'''
         x = self.norm(x)
 
-        x = self.mask_features(x)
+        #x = self.mask_features(x)
         x.register_hook(self.mask_features)
 
         x = F.relu(self.fc1(x))

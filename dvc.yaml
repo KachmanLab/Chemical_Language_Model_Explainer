@@ -10,19 +10,7 @@ stages:
     outs:
     - results/aqueous/models/:
         persist: true
-  
-  predict_aqueous:
-    cmd: python3 scripts/predict_aqueous.py
-    deps:
-    - data/AqueousSolu.csv
-    - src/model.py
-    - src/dataloader.py
-    - scripts/predict_aqueous.py
-    - results/aqueous/models/
-    - scripts/aqueous_config.json
-    outs:
-    - results/aqueous/AqueousSolu_predictions.csv
-  
+    
   plot_aqueous:
     cmd: python3 scripts/explain_aqueous.py
     deps:
@@ -36,12 +24,24 @@ stages:
     - results/aqueous/viz/:
         persist: true
 
-  aqueous:
+  predict_aqueous:
+    cmd: python3 scripts/predict_aqueous.py
+    deps:
+    - data/AqueousSolu.csv
+    - src/model.py
+    - src/dataloader.py
+    - scripts/predict_aqueous.py
+    - results/aqueous/models/
+    - scripts/aqueous_config.json
+    outs:
+    - results/aqueous/AqueousSolu_predictions.csv
+
+  aq:
     cmd: echo "Finished full aqueous solubility pipeline"
     deps:
     - results/aqueous/models/
     - results/aqueous/viz/
-    - results/aqueous/AqueousSolu_predictions.csv
+    # - results/aqueous/AqueousSolu_predictions.csv
 
 
   train_combi:

@@ -25,21 +25,21 @@ class AqSolDataset(Dataset):
         self.min = df['logS_aq_avg'].min()
         self.max = df['logS_aq_avg'].max()
 
+        splitter = ShuffleSplit(
+            n_splits=5,
+            test_size=0.1,
+            random_state=self.data_seed
+        )
         if split_type == 'scaffold':
-            splitter = MurckoScaffoldSplitter(
+            test_splitter = MurckoScaffoldSplitter(
                 smiles=df['smiles solute'].to_list(),
                 n_splits=5,
                 test_size=0.1,
                 seed=self.data_seed
             )
-        elif split_type == 'stratified':
-            raise NotImplementedError
         else:
-            splitter = ShuffleSplit(
-                n_splits=5,
-                test_size=0.1,
-                random_state=self.data_seed
-            )
+            test_splitter = splitter
+
         # split into train+val/test,
         if split_type == 'accurate':
             # predefined accurate split: >2 measuments with low std
@@ -48,7 +48,7 @@ class AqSolDataset(Dataset):
             _sanity = None
         else:
             _sanity, test_idx = next(
-                splitter.split(df['smiles solute'].to_list()))
+                test_splitter.split(df['smiles solute'].to_list()))
 
         if _sanity is not None:
             assert len(_sanity)+len(test_idx) == len(df)
@@ -105,7 +105,9 @@ class AqSolDataset(Dataset):
 
 
 class MurckoScaffoldSplitter():
-    def __init__(self, smiles, n_splits=1, test_size=0.1, seed=42, top_k=5):
+    # 10544 798 461 with k=3, seed=42
+    # 7287 3590 921 with k=2, seed=42
+    def __init__(self, smiles, n_splits=1, test_size=0.1, seed=42, top_k=3):
         self.n_splits = n_splits
         self.test_size = test_size,
         self.seed = seed
@@ -124,6 +126,8 @@ class MurckoScaffoldSplitter():
     def get_top_scaffolds(self, scaffolds):
         ''' get list of most frequent murcko-* scaffolds '''
         vals, cnts = np.unique(scaffolds, return_counts=True)
+        print(sorted(cnts, reverse=True)[:10])
+        print(sorted(list(zip(vals, cnts)), key=lambda x: x[1], reverse=True)[:10])
         # filter out scaffolds with less than 5 occurances
         return [scf for scf, cnt in list(zip(vals, cnts)) if cnt >= self.top_k]
 
@@ -314,6 +318,11 @@ if __name__ == '__main__':
         cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
     test_scaffold = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
         cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
+    print(len(train_scaffold), len(valid_scaffold), len(test_scaffold))
+    for i in range(4):
+        train_scaffold.next_split()
+        valid_scaffold.next_split()
+        print(len(train_scaffold), len(valid_scaffold), len(test_scaffold))
 
     cfg['split_type'] = 'accurate'
     print('train_accurate')

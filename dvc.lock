@@ -8,26 +8,26 @@ stages:
       size: 2415802
     - path: scripts/aqueous_config.json
       hash: md5
-      md5: b194e2df25ac5cf3e582c12e86de866b
-      size: 221
+      md5: 88e82b770157608a1c82623c26584152
+      size: 226
     - path: scripts/train_aqueous.py
       hash: md5
-      md5: 1b4348b6853d84edf85001ac136e8d8e
-      size: 2171
+      md5: eaf16b78e9f121955e7ef92896e272f7
+      size: 2662
     - path: src/dataloader.py
       hash: md5
-      md5: 4b11745039f96a2ec9f81de791287f31
-      size: 8631
+      md5: c78dea881a7a20d636ebbfed2a740f19
+      size: 14418
     - path: src/model.py
       hash: md5
-      md5: ef1d7de9138acc62113542565b2812f3
-      size: 23438
+      md5: fac78b8d4e90126a943cea6cffe23015
+      size: 23302
     outs:
     - path: results/aqueous/models/
       hash: md5
-      md5: 4fe432db7302f9c9897df33944594d11.dir
-      size: 2828979740
-      nfiles: 12
+      md5: d36a2a703dcd023c5f6d8ac4809058ea.dir
+      size: 944374448
+      nfiles: 9
   plot_aqueous:
     cmd: python3 scripts/explain_aqueous.py
     deps:
@@ -36,31 +36,31 @@ stages:
       size: 2415802
     - path: results/aqueous/models/
       hash: md5
-      md5: 4fe432db7302f9c9897df33944594d11.dir
-      size: 2828979740
-      nfiles: 12
+      md5: d36a2a703dcd023c5f6d8ac4809058ea.dir
+      size: 944374448
+      nfiles: 9
     - path: scripts/aqueous_config.json
       hash: md5
-      md5: b194e2df25ac5cf3e582c12e86de866b
-      size: 221
+      md5: 88e82b770157608a1c82623c26584152
+      size: 226
     - path: scripts/explain_aqueous.py
       hash: md5
-      md5: 9e6552dadac5b42b2bd729246169b9f3
-      size: 5210
+      md5: a0c83ba0da650697f3c4d4a1b0cdc66d
+      size: 5682
     - path: src/dataloader.py
       hash: md5
-      md5: 4b11745039f96a2ec9f81de791287f31
-      size: 8631
+      md5: c78dea881a7a20d636ebbfed2a740f19
+      size: 14418
     - path: src/model.py
       hash: md5
-      md5: ef1d7de9138acc62113542565b2812f3
-      size: 23438
+      md5: fac78b8d4e90126a943cea6cffe23015
+      size: 23302
     outs:
     - path: results/aqueous/viz/
       hash: md5
-      md5: 12f3e38a70d4972a916c690077352226.dir
-      size: 80450038
-      nfiles: 1722
+      md5: 3c9f39ef80b192d165e12323c370a652.dir
+      size: 24744434
+      nfiles: 455
   predict_aqueous:
     cmd: python3 scripts/predict_aqueous.py
     deps:
@@ -69,30 +69,30 @@ stages:
       size: 2415802
     - path: results/aqueous/models/
       hash: md5
-      md5: 4fe432db7302f9c9897df33944594d11.dir
-      size: 2828979740
-      nfiles: 12
+      md5: 6d3dcf4d6bff9e3d422e61d6982fc202.dir
+      size: 944065298
+      nfiles: 7
     - path: scripts/aqueous_config.json
       hash: md5
-      md5: b194e2df25ac5cf3e582c12e86de866b
-      size: 221
+      md5: b95d1100d38e9ba4aa1bbcd3f268a059
+      size: 227
     - path: scripts/predict_aqueous.py
       hash: md5
-      md5: e70d1982b7f6dc97fc288bde630ba749
-      size: 2924
+      md5: 70cbf54a4802d4b8cc49c5b69052b98a
+      size: 3097
     - path: src/dataloader.py
       hash: md5
-      md5: 4b11745039f96a2ec9f81de791287f31
-      size: 8631
+      md5: 22dbac31abf08d1f115bcf176d14aca5
+      size: 14019
     - path: src/model.py
       hash: md5
-      md5: ef1d7de9138acc62113542565b2812f3
-      size: 23438
+      md5: ad6282bdc4a676d392e21749e6229c9d
+      size: 23301
     outs:
     - path: results/aqueous/AqueousSolu_predictions.csv
       hash: md5
-      md5: 2df2dc9267963edf1b991e6aa962a808
-      size: 5126643
+      md5: 305770ec55ebb07ab7a47d0d711ec6d9
+      size: 5200032
   aqueous:
     cmd: echo "Finished full aqueous solubility pipeline"
     deps:
@@ -399,3 +399,16 @@ stages:
       md5: 79bf5754d341f78fb22c6c2963628cbf.dir
       size: 4913998
       nfiles: 115
+  aq:
+    cmd: echo "Finished full aqueous solubility pipeline"
+    deps:
+    - path: results/aqueous/models/
+      hash: md5
+      md5: d36a2a703dcd023c5f6d8ac4809058ea.dir
+      size: 944374448
+      nfiles: 9
+    - path: results/aqueous/viz/
+      hash: md5
+      md5: 3c9f39ef80b192d165e12323c370a652.dir
+      size: 24744434
+      nfiles: 455

@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 import json
 from pytorch_lightning.loggers import WandbLogger
+import wandb
 from src.dataloader import AqSolDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
 
@@ -60,6 +61,21 @@ trainer.fit(model, train_loader, val_loader)
 trainer.test(model, test_loader)
 
 mdir = 'aqueous' if cfg['model'] == 'mmb' else 'shap'
-suffix = f"{cfg['model']}_{cfg['head']}_{cfg['split_type']}"
-modelpath = f"/workspace/results/aqueous/models/aqueous_{suffix}.pt"
-trainer.save_checkpoint(modelpath)
+
+suffix = f"{cfg['model']}_{cfg['head']}_{cfg['split_type']}_{cfg['seed']}"
+basepath = f"/workspace/results/aqueous/models"
+
+if cfg['finetune']:
+    modelpath = f"{basepath}/aqueous_{suffix}.pt"
+    trainer.save_checkpoint(modelpath)
+else:
+    i=0
+    headpath = f"{basepath}/aq_head{i}_{suffix}.pt"
+    torch.save(model.head.state_dict(), headpath)
+
+    artifact = wandb.Artifact(f"aq_head{i}", type='model')
+    artifact.add_file(headpath)
+    wandb_logger.experiment.log_artifact(artifact)
+
+# model.head.load_state_dict(torch.load(
+#                f"{basepath}/aq_head{i}_{suffix}.pt")

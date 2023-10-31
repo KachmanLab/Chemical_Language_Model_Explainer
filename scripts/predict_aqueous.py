@@ -33,12 +33,21 @@ val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'],
 test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
     shuffle=False, num_workers=8)
 
+prefix = 'aqueous' if cfg['finetune'] else 'aq_head'
 subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
-    if (f.path.endswith('.pt') or f.path.endswith('.ckpt'))]
+    if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith(prefix))]
 ckpt_path = max(subfolders, key=os.path.getmtime)
+print(ckpt_path)
 
-model = AqueousRegModel(head=cfg['head'])
-model = model.load_from_checkpoint(ckpt_path, head=cfg['head'])
+if cfg['model'] == 'mmb':
+    model = AqueousRegModel(head=cfg['head'])
+    if cfg['finetune']:
+        model = model.load_from_checkpoint(ckpt_path, head=cfg['head'])
+    else:
+        model.head.load_state_dict(torch.load(ckpt_path))
+else:
+    raise NotImplementedError
+# model = model.load_from_checkpoint(ckpt_path, head=cfg['head'])
 model.unfreeze()
 
 trainer = pl.Trainer(
