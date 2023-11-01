@@ -9,15 +9,15 @@ from rdkit.Chem.Scaffolds import MurckoScaffold
 from typing import List
 
 class AqSolDataset(Dataset):
-    def __init__(self, file_path, subset, split_type, split,
+    def __init__(self, file_path, subset, split, split_frac,
                  n_splits=5, data_seed=42, augment=False):
         self.subset = subset
-        self.split_type = split_type
         self.split = split
+        self.split_frac = split_frac
         self.n_splits = n_splits
         self.data_seed = data_seed
         self.augment = augment
-        print(split_type, n_splits)
+        print(split, n_splits)
 
         # split data into accurate test set according to SolProp
         df = pd.read_csv(file_path)
@@ -28,21 +28,21 @@ class AqSolDataset(Dataset):
 
         splitter = ShuffleSplit(
             n_splits=5,
-            test_size=0.1,
+            test_size=self.split_frac,
             random_state=self.data_seed
         )
-        if split_type == 'scaffold':
+        if split == 'scaffold':
             test_splitter = MurckoScaffoldSplitter(
                 smiles=df['smiles solute'].to_list(),
                 n_splits=5,
-                test_size=0.1,
+                test_size=self.split_frac,
                 seed=self.data_seed
             )
         else:
             test_splitter = splitter
 
         # split into train+val/test,
-        if split_type == 'accurate':
+        if split == 'accurate':
             # predefined accurate split: >2 measuments with low std
             test_idx = np.where(
                 (df['count'] > 1) & (df['logS_aq_std'] < 0.2))[0]
@@ -74,10 +74,11 @@ class AqSolDataset(Dataset):
 
         if self.subset == 'test':
             self.data = DataSplit(
-                smiles = test_df['smiles solute'].to_list(),
-                labels = torch.tensor(
-                    test_df['logS_aq_avg'].to_list(), dtype=torch.float32),
-                split = self.subset)
+                        smiles = test_df['smiles solute'].to_list(),
+                        labels = torch.tensor(
+                            test_df['logS_aq_avg'].to_list(), dtype=torch.float32),
+                        subset = self.subset
+                    )
         else:
             # split remaining df into train/val
             self.tr_va_splitter = splitter.split(
@@ -91,11 +92,12 @@ class AqSolDataset(Dataset):
                 elif self.subset == 'valid':
                     df = self.tr_va_df.iloc[val_idx]
 
-                self.data.append(DataSplit(
-                    smiles = df['smiles solute'].to_list(),
-                    labels = torch.tensor(
-                        df['logS_aq_avg'].to_list(), dtype=torch.float32),
-                    split = self.subset)
+                self.data.append(
+                    DataSplit(
+                        smiles = df['smiles solute'].to_list(),
+                        labels = torch.tensor(
+                            df['logS_aq_avg'].to_list(), dtype=torch.float32),
+                        subset = self.subset)
                     )
 
     def __len__(self):
@@ -107,17 +109,12 @@ class AqSolDataset(Dataset):
         else:
             return self.data[idx]
 
-    # def next(self):
-    #     if self.subset == 'test':
-    #         return self.data
-    #     else:
-    #         yield self.data
 
 class DataSplit(Dataset):
-    def __init__(self, smiles: List[str], labels: List[float], split: str):
+    def __init__(self, smiles: List[str], labels: List[float], subset: str):
         self.smiles = smiles
         self.labels = labels
-        self.split = split
+        self.subset = subset
 
     def __len__(self):
         return len(self.smiles)
@@ -169,9 +166,9 @@ class MurckoScaffoldSplitter():
 
 
 class AqSolECFP(AqSolDataset):
-    def __init__(self, file_path, subset, split_type, split, data_seed=42,
+    def __init__(self, file_path, subset, split, split, data_seed=42,
                  nbits=512):
-        super().__init__(file_path, subset, split_type, split, data_seed)
+        super().__init__(file_path, subset, split, split, data_seed)
         self.nbits = nbits
         self.make_ecfp()
 
@@ -336,14 +333,14 @@ if __name__ == '__main__':
         cfg = json.load(f)
     pl.seed_everything(cfg['seed'])
 
-    cfg['split_type'] = 'scaffold'
+    cfg['split'] = 'scaffold'
     print('_scaffold train val test')
     train_scaffold = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train',
-        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
+        cfg['split'], cfg['split_frac'], data_seed=cfg['seed'], augment=False)
     valid_scaffold = AqSolDataset('/workspace/data/AqueousSolu.csv', 'valid',
-        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
+        cfg['split'], cfg['split_frac'], data_seed=cfg['seed'], augment=False)
     test_scaffold = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
-        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
+        cfg['split'], cfg['split_frac'], data_seed=cfg['seed'], augment=False)
     train_scaffold.next_split()
     valid_scaffold.next_split()
     print(len(train_scaffold), len(valid_scaffold), len(test_scaffold))
@@ -352,30 +349,30 @@ if __name__ == '__main__':
         valid_scaffold.next_split()
         print(len(train_scaffold), len(valid_scaffold), len(test_scaffold))
 
-    cfg['split_type'] = 'accurate'
+    cfg['split'] = 'accurate'
     print('train_accurate')
     train_accurate = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train',
-        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
+        cfg['split'], cfg['split_frac'], data_seed=cfg['seed'], augment=False)
 
-    cfg['split_type'] = 'random'
+    cfg['split'] = 'random'
     print('train_random')
     train_random = AqSolDataset('/workspace/data/AqueousSolu.csv', 'valid',
-        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
+        cfg['split'], cfg['split_frac'], data_seed=cfg['seed'], augment=False)
 
-    cfg['split_type'] = 'scaffold'
+    cfg['split'] = 'scaffold'
     sanity = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train',
-        cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
+        cfg['split'], cfg['split_frac'], data_seed=cfg['seed'], augment=False)
 
     assert len(sanity.smiles) == len(train_scaffold.smiles)
     assert set(sanity.smiles) == set(train_scaffold.smiles)
     assert set(sanity.smiles) ^ set(train_scaffold.smiles) == set()
 
     ecfp_scaffold = AqSolECFP('/workspace/data/AqueousSolu.csv', 'train',
-        'scaffold', cfg['split'], data_seed=cfg['seed'], nbits=512)
+        'scaffold', cfg['split_frac'], data_seed=cfg['seed'], nbits=512)
     ecfp_random = AqSolECFP('/workspace/data/AqueousSolu.csv', 'valid',
-        'random', cfg['split'], data_seed=cfg['seed'], nbits=512)
+        'random', cfg['split_frac'], data_seed=cfg['seed'], nbits=512)
     ecfp_accurate = AqSolECFP('/workspace/data/AqueousSolu.csv', 'test',
-        'accurate', cfg['split'], data_seed=cfg['seed'], nbits=512)
+        'accurate', cfg['split_frac'], data_seed=cfg['seed'], nbits=512)
 
     train_scaffold.next_split()
     valid_scaffold.next_split()

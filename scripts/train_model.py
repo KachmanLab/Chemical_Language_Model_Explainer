@@ -12,7 +12,7 @@ with open("/workspace/cfg/model_config.json", 'r') as f:
     cfg = json.load(f)
 
 pl.seed_everything(cfg['seed'])
-root = f"/workspace/data/{cfg['property']}_proc/{cfg['split_type']}"
+root = f"/workspace/data/{cfg['property']}_proc/{cfg['split']}"
 
 with open(f"{root}/test.pkl", 'rb') as f:
     test = pickle.load(f)
@@ -66,7 +66,7 @@ for fold in range(cfg['n_splits']):
     trainer.fit(model, train_loader, valid_loader)
     trainer.test(model, test_loader)
 
-    basepath = f"/workspace/{cfg['property']}_prod/{cfg['split_type']}"
+    basepath = f"/workspace/{cfg['property']}_prod/{cfg['split']}"
     ft = '-ft' if (cfg['finetune'] and cfg['model'] == 'mmb') else ''
     mdir = f"{cfg['model']}{ft}-{head}"
 

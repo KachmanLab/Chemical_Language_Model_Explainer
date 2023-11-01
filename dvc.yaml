@@ -1,29 +1,32 @@
-# vars:
+vars:
+  - params.yaml:split
+  - cfg/data_cfg.json
+  - cfg/model_cfg.json
+
 #   - split: random,accurate,scaffold
 #   - model: mmb-lin,mmb-hier,mmb-ft-hier,mmb-ft-lin,mmb-avg,ecfp-hier,ecfp-lin
 
 stages:
   split_data:
-    cmd: python3 scripts/split_data.py --split ${split}
     deps:
     - data/AqueousSolu.csv
     - cfg/data_config.json
     - src/dataloader.py
-    # params:
-    #   data_config.json:
-    #     - property
-    #     - split_type
+    foreach: ${split}
+    do: 
+      cmd: python3 scripts/split_data.py ${item} 
     outs:
-      - path: data/aq_proc/${split_type}/
-        persist: true
+      - path: data/aq_proc/${item}/
 
   train_model:
-    cmd: python3 scripts/train_model.py --split_type ${split_type} --model ${model}
     deps:
-    - results/data/aq_proc/
-    - scripts/train_model.py
+    - results/data/aq_proc/${split}
     - src/model.py
     - scripts/model_config.json
+    - scripts/train_model.py
+    foreach: ${model}-${head}
+    do:
+      cmd: python3 scripts/train_model.py ${model}-${head}
     # params:
     #   data_config.json:
     #     - property
@@ -33,7 +36,8 @@ stages:
     #     - head
     #     - finetune
     outs:
-      - path: aq_prod/${split_type}/${model}/
+      - path: aq_prod/${split}/${model}/
+        #OR - path: aq_prod/${split}/${model}-${head}
 
   plot_aqueous:
     cmd: python3 scripts/explain_aqueous.py
