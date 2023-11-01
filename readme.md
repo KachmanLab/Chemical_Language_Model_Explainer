@@ -32,6 +32,10 @@ results/{aqueous, combi}/
 
 dvc.yaml                - dvc stages to reproduce results with 'dvc repro {aqueous, combi}'
 ```
+```
+# mkdir -p /workspace/data/aq_proc/{random,accurate,scaffold}
+# mkdir -p /workspace/aq_prod/{random,accurate,scaffold}/{mmb-hier,mmb-lin,mmb-ft-hier,mmb-ft-lin,mmb-avg,ecfp}/viz
+```
 
 # Setup:
 ### Clone repository, build MegaMolBART docker container

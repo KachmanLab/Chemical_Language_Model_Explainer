@@ -1,38 +1,50 @@
-# mkdir -p /workspace/data/aq_proc/{random,accurate,scaffold}
-# mkdir -p /workspace/aq_prod/{random,accurate,scaffold}/{mmb-hier,mmb-lin,mmb-ft-hier,mmb-ft-lin,mmb-avg,ecfp}
+# vars:
+#   - split: random,accurate,scaffold
+#   - model: mmb-lin,mmb-hier,mmb-ft-hier,mmb-ft-lin,mmb-avg,ecfp-hier,ecfp-lin
 
 stages:
-  split_aqueous:
-    cmd: python3 scripts/split_aqueous.py
+  split_data:
+    cmd: python3 scripts/split_data.py --split ${split}
+    deps:
     - data/AqueousSolu.csv
-    - cfg/data_config.yaml
+    - cfg/data_config.json
     - src/dataloader.py
+    # params:
+    #   data_config.json:
+    #     - property
+    #     - split_type
     outs:
-    - results/data/aq_proc/:
+      - path: data/aq_proc/${split_type}/
         persist: true
 
-  train_aqueous:
-    cmd: python3 scripts/train_aqueous.py
+  train_model:
+    cmd: python3 scripts/train_model.py --split_type ${split_type} --model ${model}
     deps:
     - results/data/aq_proc/
-    - scripts/train_aqueous.py
+    - scripts/train_model.py
     - src/model.py
     - scripts/model_config.json
+    # params:
+    #   data_config.json:
+    #     - property
+    #     - split
+    #   - model_config.json:
+    #     - model
+    #     - head
+    #     - finetune
     outs:
-    - /aq_prod/models/:
-        persist: true
-    
+      - path: aq_prod/${split_type}/${model}/
+
   plot_aqueous:
     cmd: python3 scripts/explain_aqueous.py
     deps:
     - results/data/aq_proc/
     - src/model.py
     - scripts/explain_aqueous.py
-    - /aq_prod/models/
+    - aq_prod/models/
     - scripts/model_cfg.json
     outs:
-    - /aq_prod/viz/:
-        persist: true
+      - path: aq_prod/viz/
 
   predict_aqueous:
     cmd: python3 scripts/predict_aqueous.py
@@ -40,16 +52,16 @@ stages:
     - results/data/aq_proc/
     - src/model.py
     - scripts/predict_aqueous.py
-    - /aq_prod/models/
+    - aq_prod/models/
     - scripts/model_cfg.json
     outs:
-    - /aq_prod/AqueousSolu_predictions.csv
+    - aq_prod/AqueousSolu_predictions.csv
 
   aq:
     cmd: echo "Finished full aqueous solubility pipeline"
     deps:
-    - /aq_prod/models/
-    - /aq_prod/viz/
+    - aq_prod/models/
+    - aq_prod/viz/
     # - /aq_prod/AqueousSolu_predictions.csv
 
 

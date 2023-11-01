@@ -1,5 +1,6 @@
 {
-    "dataset": "aq",
+    "property": "aq",
+    "filepath": "/workspace/data/AqueousSolu.csv",
     "data_seed": 42,
     "split_type": "accurate",
     "split": 0.9,

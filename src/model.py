@@ -198,14 +198,16 @@ class AqueousRegModel(pl.LightningModule):
         super().__init__()
         self.init_molbart()
         self.tokenizer = REGRegExTokenizer()
-        if head == 'linear':
+        if head == 'lin':
             self.head = LinearRegressionHead()
-        elif head == 'maskedlinear':
+        elif head == 'hier':
+            self.head = RegressionHead()
+        elif head == 'lin_mask':
             self.head = MaskedLinearRegressionHead()
-        elif head == 'masked':
+        elif head == 'hier_mask':
             self.head = MaskedRegressionHead()
         else:
-            self.head = RegressionHead()
+            raise NotImplementedError
         print(self.head, head)
         self.explainer = MolecularSelfAttentionViz(save_heatmap=False)
         self.cmapper = ColorMapper()
@@ -398,14 +400,12 @@ class CombiRegModel(AqueousRegModel):
 
 
 class ECFPLinear(pl.LightningModule):
-    def __init__(self, head='linear', dim=512):
+    def __init__(self, head='lin', dim=512):
         super().__init__()
         self.dim = dim
-        if head == 'linear':
+        if head == 'lin':
             self.head = LinearRegressionHead(dim=dim)
-        # elif head == 'masked':
-        #     raise NotImplementedError
-        else:
+        elif head == 'hier':
             self.head = RegressionHead(dim=dim)
         print(head, dim)
         self.criterion = nn.HuberLoss()
@@ -481,7 +481,10 @@ class BaselineAqueousModel(AqueousRegModel):
         """ uses average pooling instead of <REG> token """
         super().__init__()
         self.init_molbart()
-        self.head = LinearRegressionHead().cuda()
+        if head == 'lin':
+            self.head = LinearRegressionHead().cuda()
+        elif head == 'hier':
+            self.head = RegressionHead().cuda()
         self.cmapper = ColorMapper()
 
         self.criterion = nn.HuberLoss()
