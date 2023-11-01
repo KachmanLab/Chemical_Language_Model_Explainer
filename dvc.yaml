@@ -1,47 +1,56 @@
+# mkdir -p /workspace/data/aq_proc/{random,accurate,scaffold}
+# mkdir -p /workspace/aq_prod/{random,accurate,scaffold}/{mmb-hier,mmb-lin,mmb-ft-hier,mmb-ft-lin,mmb-avg,ecfp}
+
 stages:
+  split_aqueous:
+    cmd: python3 scripts/split_aqueous.py
+    - data/AqueousSolu.csv
+    - cfg/data_config.yaml
+    - src/dataloader.py
+    outs:
+    - results/data/aq_proc/:
+        persist: true
+
   train_aqueous:
     cmd: python3 scripts/train_aqueous.py
     deps:
-    - data/AqueousSolu.csv
+    - results/data/aq_proc/
     - scripts/train_aqueous.py
     - src/model.py
-    - src/dataloader.py
-    - scripts/aqueous_config.json
+    - scripts/model_config.json
     outs:
-    - results/aqueous/models/:
+    - /aq_prod/models/:
         persist: true
     
   plot_aqueous:
     cmd: python3 scripts/explain_aqueous.py
     deps:
-    - data/AqueousSolu.csv
+    - results/data/aq_proc/
     - src/model.py
-    - src/dataloader.py
     - scripts/explain_aqueous.py
-    - results/aqueous/models/
-    - scripts/aqueous_config.json
+    - /aq_prod/models/
+    - scripts/model_cfg.json
     outs:
-    - results/aqueous/viz/:
+    - /aq_prod/viz/:
         persist: true
 
   predict_aqueous:
     cmd: python3 scripts/predict_aqueous.py
     deps:
-    - data/AqueousSolu.csv
+    - results/data/aq_proc/
     - src/model.py
-    - src/dataloader.py
     - scripts/predict_aqueous.py
-    - results/aqueous/models/
-    - scripts/aqueous_config.json
+    - /aq_prod/models/
+    - scripts/model_cfg.json
     outs:
-    - results/aqueous/AqueousSolu_predictions.csv
+    - /aq_prod/AqueousSolu_predictions.csv
 
   aq:
     cmd: echo "Finished full aqueous solubility pipeline"
     deps:
-    - results/aqueous/models/
-    - results/aqueous/viz/
-    # - results/aqueous/AqueousSolu_predictions.csv
+    - /aq_prod/models/
+    - /aq_prod/viz/
+    # - /aq_prod/AqueousSolu_predictions.csv
 
 
   train_combi:
@@ -82,7 +91,7 @@ stages:
     - scripts/train_aqueous.py
     - src/model.py
     - src/dataloader.py
-    - scripts/aqueous_config.json
+    - scripts/model_cfg.json
     outs:
     - results/shap/models/:
         persist: true

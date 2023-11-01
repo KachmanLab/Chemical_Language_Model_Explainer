@@ -6,17 +6,18 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit
 from rdkit.Chem.Scaffolds import MurckoScaffold
-
+from typing import List
 
 class AqSolDataset(Dataset):
     def __init__(self, file_path, subset, split_type, split,
-                 data_seed=42, augment=False):
+                 n_splits=5, data_seed=42, augment=False):
         self.subset = subset
-        self.split = split
         self.split_type = split_type
-        print(split_type)
+        self.split = split
+        self.n_splits = n_splits
         self.data_seed = data_seed
         self.augment = augment
+        print(split_type, n_splits)
 
         # split data into accurate test set according to SolProp
         df = pd.read_csv(file_path)
@@ -71,35 +72,60 @@ class AqSolDataset(Dataset):
             assert len(set(test_df['smiles solute'].to_list()) ^
                        set(sane_test['smiles solute'].to_list())) == 0
 
-        # split remaining df into train/val
         if self.subset == 'test':
-            self.smiles = test_df['smiles solute'].to_list()
-            self.labels = torch.tensor(
-                test_df['logS_aq_avg'].to_list(), dtype=torch.float32)
+            self.data = DataSplit(
+                smiles = test_df['smiles solute'].to_list(),
+                labels = torch.tensor(
+                    test_df['logS_aq_avg'].to_list(), dtype=torch.float32),
+                split = self.subset)
         else:
+            # split remaining df into train/val
             self.tr_va_splitter = splitter.split(
                 tr_va_df['smiles solute'].to_list())
-            self.next_split()
 
-    def next_split(self):
-        train_idx, val_idx = next(self.tr_va_splitter)
+            self.data = []
+            for fold in range(self.n_splits):
+                train_idx, val_idx = next(self.tr_va_splitter)
+                if self.subset == 'train':
+                    df = self.tr_va_df.iloc[train_idx]
+                elif self.subset == 'valid':
+                    df = self.tr_va_df.iloc[val_idx]
 
-        if self.subset == 'train':
-            df = self.tr_va_df.iloc[train_idx]
-        elif self.subset == 'valid':
-            df = self.tr_va_df.iloc[val_idx]
+                self.data.append(DataSplit(
+                    smiles = df['smiles solute'].to_list(),
+                    labels = torch.tensor(
+                        df['logS_aq_avg'].to_list(), dtype=torch.float32),
+                    split = self.subset)
+                    )
 
-        self.smiles = df['smiles solute'].to_list()
-        self.labels = torch.tensor(
-            df['logS_aq_avg'].to_list(), dtype=torch.float32)
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        if self.subset == 'test':
+            return self.data
+        else:
+            return self.data[idx]
+
+    # def next(self):
+    #     if self.subset == 'test':
+    #         return self.data
+    #     else:
+    #         yield self.data
+
+class DataSplit(Dataset):
+    def __init__(self, smiles: List[str], labels: List[float], split: str):
+        self.smiles = smiles
+        self.labels = labels
+        self.split = split
 
     def __len__(self):
         return len(self.smiles)
 
     def __getitem__(self, idx):
         smiles_data = self.smiles[idx]
-        if self.subset == 'train' and self.augment:
-            smiles_data, _ = aug_smiles(smiles_data)
+        # if self.subset == 'train' and self.augment:
+        #     smiles_data, _ = aug_smiles(smiles_data)
         labels = self.labels[idx]
         return smiles_data, labels
 
@@ -318,6 +344,8 @@ if __name__ == '__main__':
         cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
     test_scaffold = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test',
         cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
+    train_scaffold.next_split()
+    valid_scaffold.next_split()
     print(len(train_scaffold), len(valid_scaffold), len(test_scaffold))
     for i in range(4):
         train_scaffold.next_split()

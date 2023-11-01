@@ -1,0 +1,8 @@
+{
+    "dataset": "aq",
+    "data_seed": 42,
+    "split_type": "accurate",
+    "split": 0.9,
+    "n_splits": 5,
+    "scaffold_k": 3
+}

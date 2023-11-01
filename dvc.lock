@@ -8,8 +8,8 @@ stages:
       size: 2415802
     - path: scripts/aqueous_config.json
       hash: md5
-      md5: 88e82b770157608a1c82623c26584152
-      size: 226
+      md5: 66f47df394ae6d8503d09515aac74604
+      size: 224
     - path: scripts/train_aqueous.py
       hash: md5
       md5: eaf16b78e9f121955e7ef92896e272f7
@@ -25,9 +25,9 @@ stages:
     outs:
     - path: results/aqueous/models/
       hash: md5
-      md5: d36a2a703dcd023c5f6d8ac4809058ea.dir
-      size: 944374448
-      nfiles: 9
+      md5: 5958776518eb1ec667c1fbedce0ea163.dir
+      size: 309150
+      nfiles: 3
   plot_aqueous:
     cmd: python3 scripts/explain_aqueous.py
     deps:
@@ -36,13 +36,13 @@ stages:
       size: 2415802
     - path: results/aqueous/models/
       hash: md5
-      md5: d36a2a703dcd023c5f6d8ac4809058ea.dir
-      size: 944374448
-      nfiles: 9
+      md5: 5958776518eb1ec667c1fbedce0ea163.dir
+      size: 309150
+      nfiles: 3
     - path: scripts/aqueous_config.json
       hash: md5
-      md5: 88e82b770157608a1c82623c26584152
-      size: 226
+      md5: 66f47df394ae6d8503d09515aac74604
+      size: 224
     - path: scripts/explain_aqueous.py
       hash: md5
       md5: a0c83ba0da650697f3c4d4a1b0cdc66d
@@ -58,9 +58,9 @@ stages:
     outs:
     - path: results/aqueous/viz/
       hash: md5
-      md5: 3c9f39ef80b192d165e12323c370a652.dir
-      size: 24744434
-      nfiles: 455
+      md5: 81964e9504e973d1a118c38431454c42.dir
+      size: 56031866
+      nfiles: 1171
   predict_aqueous:
     cmd: python3 scripts/predict_aqueous.py
     deps:
@@ -404,11 +404,11 @@ stages:
     deps:
     - path: results/aqueous/models/
       hash: md5
-      md5: d36a2a703dcd023c5f6d8ac4809058ea.dir
-      size: 944374448
-      nfiles: 9
+      md5: 5958776518eb1ec667c1fbedce0ea163.dir
+      size: 309150
+      nfiles: 3
     - path: results/aqueous/viz/
       hash: md5
-      md5: 3c9f39ef80b192d165e12323c370a652.dir
-      size: 24744434
-      nfiles: 455
+      md5: 81964e9504e973d1a118c38431454c42.dir
+      size: 56031866
+      nfiles: 1171
