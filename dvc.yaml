@@ -1,40 +1,39 @@
-vars:
-  - params.yaml:split
-  - cfg/data_cfg.json
-  - cfg/model_cfg.json
+params:
+  - params.yaml
+  
+
+    #- cfg/data_cfg.json:property,split,data_seed
+    #- cfg/model_cfg.json:
 
 #   - split: random,accurate,scaffold
 #   - model: mmb-lin,mmb-hier,mmb-ft-hier,mmb-ft-lin,mmb-avg,ecfp-hier,ecfp-lin
 
 stages:
   split_data:
+    matrix:
+      split: ${data.split}
+    cmd: python3 scripts/split_data.py ${item.data}
     deps:
     - data/AqueousSolu.csv
     - cfg/data_config.json
     - src/dataloader.py
-    foreach: ${split}
-    do: 
-      cmd: python3 scripts/split_data.py ${item} 
     outs:
-      - path: data/aq_proc/${item}/
+      - path: data/aq_proc/${item.data.split}/
 
   train_model:
+    cmd: python3 scripts/train_model.py \
+            ${item.ml.model}-${item.ml.head}
+    matrix:
+      model: ${ml.model}
+      head: ${ml.head}
+        #split: ${data.split}
     deps:
-    - results/data/aq_proc/${split}
+    - data/${item.data.property}/${item.data.split}/
     - src/model.py
     - scripts/model_config.json
     - scripts/train_model.py
-    foreach: ${model}-${head}
-    do:
-      cmd: python3 scripts/train_model.py ${model}-${head}
-    # params:
-    #   data_config.json:
-    #     - property
-    #     - split
-    #   - model_config.json:
-    #     - model
-    #     - head
-    #     - finetune
+    metrics:
+      - path: aq_prod/${split}/${model}/metrics.json 
     outs:
       - path: aq_prod/${split}/${model}/
         #OR - path: aq_prod/${split}/${model}-${head}

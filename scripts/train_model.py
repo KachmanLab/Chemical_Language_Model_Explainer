@@ -47,7 +47,10 @@ for fold in range(cfg['n_splits']):
     elif cfg['model'] == 'mmb-avg':
         model = BaselineAqueousModel(head=head)
     elif cfg['model'] == 'ecfp':
-        model = ECFPLinear(head=head)
+        #model = ECFPLinear(head=head)
+        model = ECFPLinear(head=cfg['head'], dim=cfg['nbits'])
+        # split train script into sklearn - vs - torch
+        # 
 
     wandb_logger = WandbLogger(
         project='aqueous-solu' if cfg['property'] == 'aq' else cfg['property']
