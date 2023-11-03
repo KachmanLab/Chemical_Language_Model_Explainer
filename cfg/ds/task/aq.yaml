@@ -1,0 +1,4 @@
+property: aq
+filepath: "/workspace/data/AqueousSolu.csv"
+propname: "logS_aq_std"
+smilesname: "smiles solute"

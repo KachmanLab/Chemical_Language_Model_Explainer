@@ -1,5 +1,5 @@
 params:
-  - params.yaml
+  - cfg/params.yaml
   
 
     #- cfg/data_cfg.json:property,split,data_seed
@@ -10,30 +10,39 @@ params:
 
 stages:
   split_data:
-    matrix:
-      split: ${data.split}
-    cmd: python3 scripts/split_data.py ${item.data}
+    # matrix:
+    #   split: ${data.split}
+    cmd: 
+      - mkdir -p data/${ds.task}/${ds.split}/
+      - python3 scripts/split_data.py \
+         ${ds.task} ${ds.split}
+    params:
+      - ds.task
+      - ds.split
     deps:
-    - data/AqueousSolu.csv
-    - cfg/data_config.json
-    - src/dataloader.py
+      # - data/AqueousSolu.csv
+      # - cfg/data_config.json
+      - src/dataloader.py
     outs:
-      - path: data/aq_proc/${item.data.split}/
+      - path: data/${ds.task.property}/${ds.split}/
 
   train_model:
     cmd: python3 scripts/train_model.py \
-            ${item.ml.model}-${item.ml.head}
-    matrix:
-      model: ${ml.model}
-      head: ${ml.head}
-        #split: ${data.split}
+            ${ml.model} ${ml.head}
+    params:
+      - ml.model
+      - ml.head
+    # matrix:
+    #   model: ${ml.model}
+    #   head: ${ml.head}
+    #   split: ${data.split}
     deps:
-    - data/${item.data.property}/${item.data.split}/
-    - src/model.py
-    - scripts/model_config.json
-    - scripts/train_model.py
+      - data/${ds.task.property}/${ds.split}/
+      - src/model.py
+      # - scripts/model_config.json
+      # - scripts/train_model.py
     metrics:
-      - path: aq_prod/${split}/${model}/metrics.json 
+      - path: ${ds.task.property}_prod/${ds.split}/${ml.model}-${ml.head}/metrics.json 
     outs:
       - path: aq_prod/${split}/${model}/
         #OR - path: aq_prod/${split}/${model}-${head}

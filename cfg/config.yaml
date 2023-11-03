@@ -1,0 +1,8 @@
+defaults:
+task: aq
+split: scaffold
+ml: mmb
+head: hier
+ml/n_epochs: 1
+ml/n_batch: 64
+ml/seed: 42

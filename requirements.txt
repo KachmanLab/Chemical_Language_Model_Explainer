@@ -8,22 +8,21 @@ numpy == 1.22.3
 pandas == 1.4.3
 seaborn == 0.13.0
 
-deepchem[torch] == 2.7.1
+hydra-core == 1.1.2
+omegaconf == 2.1.2
+
 wandb == 0.13.1
 pyopenssl == 22.1.0
 shap == 0.43.0
-torch_geometric == 2.3.1
-molfeat == 0.9.4
-datamol == 0.11.4
-#chemplot == *
+
+# deepchem[torch] == 2.7.1
+# torch_geometric == 2.3.1
+# molfeat == 0.9.4
+# datamol == 0.11.4
+# chemplot == *
 
 ## contained in MegaMolBART v0.2 docker container:
 # nemo-chem                     0.2.0.dev0
 # nemo-toolkit                  1.11.0
 # pytorch-lightning             1.6.5
 # torch                         1.13.0a0+08820cb
-
-
-# thinc 8.0.15 requires pydantic!=1.8,!=1.8.1,<1.9.0,>=1.7.4, but you have pydantic 2.4.2 which is incompatible.
-# spacy 3.3.0 requires pydantic!=1.8,!=1.8.1,<1.9.0,>=1.7.4, but you have pydantic 2.4.2 which is incompatible.
-# dask-cuda 22.6.0 requires click==8.0.4, but you have click 8.1.7 which is incompatible.

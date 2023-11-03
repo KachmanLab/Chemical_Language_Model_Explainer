@@ -1,0 +1,4 @@
+property: cmc
+filepath: "/workspace/data/cmcdata.csv"
+propname: "pCMC"
+smilesname: "SMILES"

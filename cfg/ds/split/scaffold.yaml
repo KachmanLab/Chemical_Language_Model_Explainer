@@ -1,0 +1,3 @@
+split: scaffold
+n_folds: 5
+data_seed: 42

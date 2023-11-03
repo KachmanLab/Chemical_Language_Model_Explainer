@@ -1,0 +1,4 @@
+property: sft
+filepath: "/workspace/data/cmcdata_micellization.csv"
+propname: "AW_SFT_CMC"
+smilesname: "SMILES"

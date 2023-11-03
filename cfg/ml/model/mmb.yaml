@@ -1,0 +1,4 @@
+model: mmb
+finetune: false
+n_batch: 64
+seed: 42
