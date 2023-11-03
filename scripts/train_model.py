@@ -6,13 +6,17 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 from src.model import AqueousRegModel, BaselineAqueousModel, ECFPLinear
 import pickle
+import dvc.api
 
 root = "/workspace/results/aqueous/models"
-with open("/workspace/cfg/model_config.json", 'r') as f:
-    cfg = json.load(f)
-
-pl.seed_everything(cfg['seed'])
-root = f"/workspace/data/{cfg['property']}_proc/{cfg['split']}"
+# with open("/workspace/cfg/model_config.json", 'r') as f:
+#     cfg = json.load(f)
+cfg = dvc.api.params_show()
+print(cfg)
+print(cfg['ml']['model'], cfg['ml']['head'])
+print(cfg['ds']['task'], cfg['ds']['split'])
+pl.seed_everything(cfg['ml']['seed'])
+root = f"/workspace/data/{cfg['ds']['task']}/{cfg['ds']['split']}"
 
 with open(f"{root}/test.pkl", 'rb') as f:
     test = pickle.load(f)
@@ -40,17 +44,17 @@ for fold in range(cfg['n_splits']):
     # configure model
     if cfg['model'] == 'mmb':
         model = AqueousRegModel(head=head)
-        if cfg['finetune'] or 'ft' in cfg['model']:
-            # unfreeze to train the whole model instead of just the head
-            model.mmb.unfreeze()
-            cfg['finetune'] = True
+    elif cfg['finetune'] or 'ft' in cfg['model'] or cfg['model'] == 'mmb-ft':
+        # unfreeze to train the whole model instead of just the head
+        # cfg['finetune'] = True
+        model = AqueousRegModel(head=head)
+        model.mmb.unfreeze()
     elif cfg['model'] == 'mmb-avg':
         model = BaselineAqueousModel(head=head)
     elif cfg['model'] == 'ecfp':
-        #model = ECFPLinear(head=head)
+        # model = ECFPLinear(head=head)
         model = ECFPLinear(head=cfg['head'], dim=cfg['nbits'])
         # split train script into sklearn - vs - torch
-        # 
 
     wandb_logger = WandbLogger(
         project='aqueous-solu' if cfg['property'] == 'aq' else cfg['property']

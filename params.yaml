@@ -1,0 +1,13 @@
+ds:
+  task: aq
+  split: accurate
+  n_splits: 5
+  split_frac: 0.9
+  scaffold_k: 3
+ml:
+  model: mmb
+  head: hier
+  xai: ours
+  n_batch: 64
+  seed: 64
+  n_epochs: 1

@@ -1,5 +1,7 @@
 params:
-  - cfg/params.yaml
+  - params.yaml
+    #- config.yaml
+    #- cfg/ds
   
 
     #- cfg/data_cfg.json:property,split,data_seed
@@ -13,22 +15,26 @@ stages:
     # matrix:
     #   split: ${data.split}
     cmd: 
+      # - echo "${item.ds.task} ${item.ds.split}"
+      - cd /workspace && echo "${ds.task} ${ds.split}"
       - mkdir -p data/${ds.task}/${ds.split}/
-      - python3 scripts/split_data.py \
-         ${ds.task} ${ds.split}
+        #- python3 scripts/split_data.py ${ds}
+      #        ${ds.task} ${ds.split}
     params:
-      - ds.task
-      - ds.split
+      - ds
     deps:
       # - data/AqueousSolu.csv
       # - cfg/data_config.json
       - src/dataloader.py
     outs:
-      - path: data/${ds.task.property}/${ds.split}/
+      - data/${ds.task}/${ds.split}/
 
   train_model:
-    cmd: python3 scripts/train_model.py \
-            ${ml.model} ${ml.head}
+    cmd: 
+      - mkdir -p our/${ds.task}/${ds.split}/${ml.model}-${ml.head}/{viz,model}
+      - echo ${ml}
+      - python3 scripts/train_model.py ${ml}
+            # ${ml.model} ${ml.head}
     params:
       - ml.model
       - ml.head
@@ -37,43 +43,54 @@ stages:
     #   head: ${ml.head}
     #   split: ${data.split}
     deps:
-      - data/${ds.task.property}/${ds.split}/
+      - data/${ds.task}/${ds.split}/
       - src/model.py
       # - scripts/model_config.json
       # - scripts/train_model.py
-    metrics:
-      - path: ${ds.task.property}_prod/${ds.split}/${ml.model}-${ml.head}/metrics.json 
+    # metrics:
     outs:
-      - path: aq_prod/${split}/${model}/
-        #OR - path: aq_prod/${split}/${model}-${head}
-
-  plot_aqueous:
-    cmd: python3 scripts/explain_aqueous.py
-    deps:
-    - results/data/aq_proc/
-    - src/model.py
-    - scripts/explain_aqueous.py
-    - aq_prod/models/
-    - scripts/model_cfg.json
-    outs:
-      - path: aq_prod/viz/
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/model/
 
   predict_aqueous:
-    cmd: python3 scripts/predict_aqueous.py
+    cmd: python3 scripts/predict_aqueous.py ${ml}
+    params:
+      - ml.model
+      - ml.head
+      - ml.xai
     deps:
-    - results/data/aq_proc/
-    - src/model.py
-    - scripts/predict_aqueous.py
-    - aq_prod/models/
-    - scripts/model_cfg.json
+      - src/model.py
+      - scripts/predict_aqueous.py
+      - data/${ds.task}/${ds.split}/
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/model/
     outs:
-    - aq_prod/AqueousSolu_predictions.csv
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/metrics.json 
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/preds.csv 
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt 
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/plots/
+
+  explain_aqueous:
+    cmd: python3 scripts/explain_aqueous.py ${ml}
+      #${ml.model} ${ml.head} ${ml.xai}
+    deps:
+      - src/model.py
+      - scripts/explain_aqueous.py
+      - data/${ds.task}/${ds.split}/
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
+      #- aq_prod/models/
+      #- scripts/model_cfg.json
+    params:
+      - ml.model
+      - ml.head
+      - ml.xai
+    outs:
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
 
   aq:
     cmd: echo "Finished full aqueous solubility pipeline"
     deps:
-    - aq_prod/models/
-    - aq_prod/viz/
+    - out/${ds.task}/${ds.split}/
+    - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
+    - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
     # - /aq_prod/AqueousSolu_predictions.csv
 
 
