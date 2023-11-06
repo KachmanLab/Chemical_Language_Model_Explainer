@@ -13,3 +13,7 @@ defaults:
     n_batch: 64
     seed: 42
     n_epochs: 1
+xai:
+  method: ours
+  fid: None
+  head: mask

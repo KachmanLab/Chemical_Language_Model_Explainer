@@ -32,25 +32,20 @@ basepath = f"/workspace/out/{cfg['ds']['property']}/{cfg['ds']['split']}"
 mdir = f"{cfg['ml']['model']}-{cfg['ml']['head']}"
 ckpt_path = f"{basepath}/{mdir}/best.pt"
 
+head = cfg['ml']['head']
 if head == 'lin_mask' or 'lin':
-    head = MaskedLinearRegressionHead()
+    head = 'lin_mask'   # MaskedLinearRegressionHead()
 elif head == 'hier_mask' or 'hier':
-    head = MaskedRegressionHead()
-# TODO set head =head
+    head = 'hier_mask'  # MaskedRegressionHead()
 
-if cfg['model'] == 'mmb':
-    print(cfg['head'])
-    head = 'mask
-    model = AqueousRegModel(head=cfg['ml']['head'])
-    if cfg['finetune']:
-        model = model.load_from_checkpoint(ckpt_path,
-                                           head=cfg['ml']['head'])
+if cfg['ml']['model'] == 'mmb':
+    model = AqueousRegModel(head=head)
+    if cfg['ml']['finetune']:
+        model = model.load_from_checkpoint(ckpt_path, head=head)
     else:
-        # model = model.head.load_state_dict(torch.load(
-        #     f"{basepath}/aq_head{i}_{suffix}.pt"))
         model.head.load_state_dict(torch.load(ckpt_path))
     xai = 'mmb'
-elif cfg['model'] == 'mmb-avg':
+elif cfg['ml']['model'] == 'mmb-avg':
     model = BaselineAqueousModel(head=cfg['ml']['head'])
     xai = 'mmb-avg'
 
@@ -71,10 +66,10 @@ preds = [f.get('preds') for f in all]
 labels = [f.get('labels') for f in all]
 masks = [f.get('masks') for f in all]
 
-if cfg['model'] == 'mmb':
+if cfg['ml']['model'] == 'mmb':
     rel_weights = [f.get('rel_weights') for f in all]
     rdkit_colors = [f.get('rdkit_colors') for f in all]
-elif cfg['model'] == 'mmb-avg':
+elif cfg['ml']['model'] == 'mmb-avg':
     raise NotImplementedError, 'check mmb-avg has salience/attrib/shap'
     salience_colors = [f.get('salience_colors') for f in all]
 
@@ -94,7 +89,7 @@ reg.fit(yhat.reshape(-1, 1), y)
 slo = f"{reg.coef_[0]:.3f}"
 
 # text formatting for plot
-split = f"{int(round(1.-cfg['split_frac'], 2)*100)}% "
+split = f"{int(round(1.-cfg['ml']['split_frac'], 2)*100)}% "
 color = cfg['ds']["color"]
 _acc = cfg['ds']["split"]
 
@@ -152,7 +147,7 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix=""):
 
 ###################
 fid = model.head.fids
-#fid = 00
+# fid = 00
 
 # plot entire test set:
 b_indices = list(range(cfg['ml']['n_batch']))
@@ -165,9 +160,9 @@ for b_nr, _ in enumerate(all):
         pred = preds[b_nr][b_ix]
         uid = b_nr * cfg['ml']['n_batch'] + b_ix
 
-        if cfg['model'] == 'mmb':
+        if cfg['ml']['model'] == 'mmb':
             atom_color = rdkit_colors[b_nr][b_ix]
-        elif cfg['model'] == 'mmb-avg':
+        elif cfg['ml']['model'] == 'mmb-avg':
             atom_color = salience_colors[b_nr][b_ix]
 
         # print(uid)

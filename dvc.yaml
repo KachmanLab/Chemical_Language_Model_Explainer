@@ -70,20 +70,21 @@ stages:
   #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt 
   #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/plots/
 
-  explain_aqueous:
-    cmd: python3 scripts/explain_aqueous.py ${ds} ${ml}
+  explain_model:
+    cmd: python3 scripts/explain_model.py ${ds} ${ml} ${xai}
       #${ml.model} ${ml.head} ${ml.xai}
     deps:
-      - src/model.py
-      - scripts/explain_aqueous.py
+      # - src/model.py
+      - scripts/explain_model.py
       - data/${ds.task}/${ds.split}/test.pickle
       - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
+      - src/maskedhead.py
       #- aq_prod/models/
       #- scripts/model_cfg.json
     params:
       - ml.model
       - ml.head
-      - ml.xai
+      - xai
     outs:
       - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
       - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/parity.png

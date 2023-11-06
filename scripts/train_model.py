@@ -7,14 +7,10 @@ from src.model import AqueousRegModel, BaselineAqueousModel, ECFPLinear
 import pickle
 import dvc.api
 import json
-# with open("/workspace/cfg/model_config.json", 'r') as f:
-#     cfg = json.load(f)
 
 cfg = dvc.api.params_show()
-print(cfg)
-print(cfg['ml']['model'], cfg['ml']['head'])
-print(cfg['ml']['model'], cfg['ml']['head'])
-print(cfg['ds']['task'], cfg['ds']['split'])
+print('ds', cfg['ml']['model'], cfg['ml']['head'])
+print('ml', cfg['ds']['task'], cfg['ds']['split'])
 
 pl.seed_everything(cfg['ml']['seed'])
 root = f"/workspace/data/{cfg['ds']['task']}/{cfg['ds']['split']}"
@@ -35,13 +31,6 @@ for fold in range(cfg['ds']['n_splits']):
                               shuffle=True, num_workers=8)
     valid_loader = DataLoader(valid, batch_size=cfg['ml']['n_batch'],
                               shuffle=False, num_workers=8)
-
-    # configure regression head
-    # if 'hier' in cfg['ml']['head']:
-    #     head = 'hier'
-    # elif 'lin' in cfg['ml']['head']:
-    #     head = 'lin'
-    # print(cfg['ml']['head'], head)
 
     # configure model
     if cfg['ml']['model'] == 'mmb':
