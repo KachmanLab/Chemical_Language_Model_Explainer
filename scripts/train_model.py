@@ -6,8 +6,7 @@ import wandb
 from src.model import AqueousRegModel, BaselineAqueousModel, ECFPLinear
 import pickle
 import dvc.api
-
-# import json
+import json
 # with open("/workspace/cfg/model_config.json", 'r') as f:
 #     cfg = json.load(f)
 
@@ -24,6 +23,7 @@ with open(f"{root}/test.pkl", 'rb') as f:
     test = pickle.load(f)
 test_loader = DataLoader(test, batch_size=cfg['ml']['n_batch'],
                          shuffle=False, num_workers=8)
+metrics = {}
 
 for fold in range(cfg['ds']['n_splits']):
     # Load pickle
@@ -46,7 +46,7 @@ for fold in range(cfg['ds']['n_splits']):
     # configure model
     if cfg['ml']['model'] == 'mmb':
         model = AqueousRegModel(head=cfg['ml']['head'])
-    elif cfg['ml']['finetune'] or 'ft' in cfg['ml']['model'] or cfg['ml']['model'] == 'mmb-ft':
+    elif cfg['ml']['finetune'] or cfg['ml']['model'] == 'mmb-ft':
         # unfreeze to train the whole model instead of just the head
         # cfg['finetune'] = True
         model = AqueousRegModel(head=cfg['ml']['head'])
@@ -55,7 +55,8 @@ for fold in range(cfg['ds']['n_splits']):
         model = BaselineAqueousModel(head=cfg['ml']['head'])
     elif cfg['ml']['model'] == 'ecfp':
         # model = ECFPLinear(head=head)
-        model = ECFPLinear(head=cfg['ml']['head'], dim=cfg['ml']['nbits'])
+        model = ECFPLinear(head=cfg['ml']['head'],
+                           dim=cfg['ml']['nbits'])
         # split train script into sklearn - vs - torch
 
     wandb_logger = WandbLogger(
@@ -73,9 +74,9 @@ for fold in range(cfg['ds']['n_splits']):
     )
 
     trainer.fit(model, train_loader, valid_loader)
-    trainer.test(model, test_loader)
+    metrics[fold] = trainer.validate(model, valid_loader)
 
-    basepath = f"/workspace/{cfg['ds']['property']}_prod/{cfg['ds']['split']}"
+    basepath = f"/workspace/out/{cfg['ds']['property']}/{cfg['ds']['split']}"
     mdir = f"{cfg['ml']['model']}-{cfg['ml']['head']}"
 
     if cfg['ml']['finetune']:
@@ -89,5 +90,19 @@ for fold in range(cfg['ds']['n_splits']):
         artifact.add_file(path)
         wandb_logger.experiment.log_artifact(artifact)
 
-    # model.head.load_state_dict(torch.load(
-    #                f"{basepath}/aq_head{i}_{suffix}.pt")
+# select best model based on valid score, test of test set, save best ckpt
+# TODO fix RMSE and change to val_rmse
+best_fold = torch.argmax([metrics.get(f)['val_mae'] for f in range(
+    cfg['ds']['n_splits'])])
+ckpt_path = f"{basepath}/{mdir}/head{best_fold}.pt"
+
+if cfg['ml']['model'] == 'mmb-ft' or cfg['ml']['finetune']:
+    model = model.load_from_checkpoint(ckpt_path, head=cfg['ml']['head'])
+else:
+    model.head.load_state_dict(torch.load(ckpt_path))
+
+metrics['valid'] = trainer.validate(model, valid_loader)
+metrics['test'] = trainer.test(model, test_loader)
+print(metrics)
+with open(f"{basepath}/{mdir}/metrics.json", 'w') as f:
+    json.dump(metrics, f)

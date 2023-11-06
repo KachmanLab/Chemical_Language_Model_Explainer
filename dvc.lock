@@ -412,3 +412,26 @@ stages:
       md5: 81964e9504e973d1a118c38431454c42.dir
       size: 56031866
       nfiles: 1171
+  split_data:
+    cmd:
+    - cd /workspace && echo "aq accurate"
+    - mkdir -p data/aq/accurate/
+    deps:
+    - path: src/dataloader.py
+      hash: md5
+      md5: 1cfda43822e9d832f39c3af954b0282a
+      size: 15311
+    params:
+      params.yaml:
+        ds:
+          task: aq
+          split: accurate
+          n_splits: 5
+          split_frac: 0.9
+          scaffold_k: 3
+    outs:
+    - path: data/aq/accurate/
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0

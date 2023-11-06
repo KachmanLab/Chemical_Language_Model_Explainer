@@ -215,6 +215,7 @@ class AqueousRegModel(pl.LightningModule):
         self.criterion = nn.HuberLoss()
         self.criterion_mse = nn.MSELoss()
         self.criterion_mae = nn.L1Loss()
+        # self.criterion_rmse = nn.MSELoss(reduction='none')
         self.learning_rate = 1e-5
 
     def init_molbart(self):
@@ -264,7 +265,7 @@ class AqueousRegModel(pl.LightningModule):
             outputs = self(inputs)
         val_loss = self.criterion(outputs, labels)
         val_mae = self.criterion_mae(outputs, labels)
-        val_mse = self.criterion_mse(outputs, labels)
+        val_mse = self.criterion_mse(outputs, labels, square=False)
         metrics = {
             'val_loss': val_loss,
             'val_mae': val_mae,
@@ -280,6 +281,7 @@ class AqueousRegModel(pl.LightningModule):
             outputs = self(inputs)
         test_mae = self.criterion_mae(outputs, labels)
         test_mse = self.criterion_mse(outputs, labels)
+        # test_rmse = self.criterion_rmse(outputs, labels)
         metrics = {
             'test_mae': test_mae,
             'test_mse': test_mse,

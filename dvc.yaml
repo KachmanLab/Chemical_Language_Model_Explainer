@@ -33,7 +33,7 @@ stages:
     cmd: 
       - mkdir -p our/${ds.task}/${ds.split}/${ml.model}-${ml.head}/{viz,model}
       - echo ${ml}
-      - python3 scripts/train_model.py ${ml}
+      - python3 scripts/train_model.py ${ds} ${ml}
             # ${ml.model} ${ml.head}
     params:
       - ml.model
@@ -47,34 +47,36 @@ stages:
       - src/model.py
       # - scripts/model_config.json
       # - scripts/train_model.py
-    # metrics:
+    metrics:
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/metrics.json
     outs:
       - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/model/
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
 
-  predict_aqueous:
-    cmd: python3 scripts/predict_aqueous.py ${ml}
-    params:
-      - ml.model
-      - ml.head
-      - ml.xai
-    deps:
-      - src/model.py
-      - scripts/predict_aqueous.py
-      - data/${ds.task}/${ds.split}/
-      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/model/
-    outs:
-      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/metrics.json 
-      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/preds.csv 
-      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt 
-      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/plots/
+  # predict_aqueous:
+  #   cmd: python3 scripts/predict_aqueous.py ${ml}
+  #   params:
+  #     - ml.model
+  #     - ml.head
+  #     - ml.xai
+  #   deps:
+  #     - src/model.py
+  #     - scripts/predict_aqueous.py
+  #     - data/${ds.task}/${ds.split}/
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/model/
+  #   outs:
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/metrics.json 
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/preds.csv 
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt 
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/plots/
 
   explain_aqueous:
-    cmd: python3 scripts/explain_aqueous.py ${ml}
+    cmd: python3 scripts/explain_aqueous.py ${ds} ${ml}
       #${ml.model} ${ml.head} ${ml.xai}
     deps:
       - src/model.py
       - scripts/explain_aqueous.py
-      - data/${ds.task}/${ds.split}/
+      - data/${ds.task}/${ds.split}/test.pickle
       - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
       #- aq_prod/models/
       #- scripts/model_cfg.json
@@ -84,6 +86,7 @@ stages:
       - ml.xai
     outs:
       - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/parity.png
 
   aq:
     cmd: echo "Finished full aqueous solubility pipeline"
