@@ -17,6 +17,7 @@ stages:
     cmd: 
       # - echo "${item.ds.task} ${item.ds.split}"
       - cd /workspace && echo "${ds.task} ${ds.split}"
+      - echo "TEST p${ds}"
       - mkdir -p data/${ds.task}/${ds.split}/
         #- python3 scripts/split_data.py ${ds}
       #        ${ds.task} ${ds.split}
@@ -87,7 +88,7 @@ stages:
       - xai
     outs:
       - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
-      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/parity.png
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/parity_plot.png
 
   aq:
     cmd: echo "Finished full aqueous solubility pipeline"

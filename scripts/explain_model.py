@@ -98,14 +98,17 @@ p = sns.jointplot(x=y, y=yhat, kind='hex', color=color,
                   xlim=[-12, 2], ylim=[-12, 2])
 sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
             color='grey', ci=None, scatter=False)
-p.fig.suptitle(f"AqueousSolu parity plot \n{_acc} {split}test set, 298K")
-p.set_axis_labels('Experimental log(S), 298K [mol/L]', 'Model log(S), 298K [mol/L]')
+p.fig.suptitle(f"{cfg['ds']['plot_tite']} parity plot \n{_acc} {split}test set")
+# p.set_axis_labels('Experimental log(S), 298K [mol/L]', 'Model log(S), 298K [mol/L]')
+p.set_axis_labels(f"Experimental {cfg['ds']['plot_desc']}",
+                  f"Model {cfg['ds']['plot_desc']}")
+   
 p.fig.subplots_adjust(top=0.95)
 p.fig.tight_layout()
 txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo} "
 plt.text(2, -11.5,
          txt, ha="right", va="bottom", fontsize=14)
-p.savefig(f'/workspace/results/aqueous/Aqueous_parity_{_acc}_{xai}.png')
+p.savefig(f"{basepath}/{mdir}/parity_plot.png")
 
 ###################
 

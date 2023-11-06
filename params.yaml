@@ -1,12 +1,12 @@
 ds:
-  task: aq
-  split: accurate
+  task: cmc
+  split: scaffold
   n_splits: 5
   split_frac: 0.9
   scaffold_k: 3
   color: r
 ml:
-  model: mmb
+  model: mmb-ft
   head: hier
   xai: ours
   n_batch: 64

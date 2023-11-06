@@ -2,3 +2,5 @@ property: cmc
 filepath: "/workspace/data/cmcdata.csv"
 propname: "pCMC"
 smilesname: "SMILES"
+plot_title: "Critical micelle concentration"
+plot_desc: "p(CMC)"

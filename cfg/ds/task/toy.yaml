@@ -1,2 +1,7 @@
 property: toy
 filepath: "/workspace/data/AqueousSolu.csv"
+filepath: "/workspace/data/Aqueous_Toy.csv"
+propname: "num_carbon"
+smilesname: "smiles solute"
+plot_title: "Toy test: Carbon count prediction"
+plot_desc: "num_carbon"

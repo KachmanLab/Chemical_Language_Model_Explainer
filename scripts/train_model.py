@@ -8,6 +8,13 @@ import pickle
 import dvc.api
 import json
 
+# @hydra.main(version_base=None, config_path='cfg', config_name='config')
+# def main(cfg: DictConfig = None):
+#     if cfg is None:
+#     cfg = dvc.api.params_show()
+#     return cfg
+# cfg = get_config()
+
 cfg = dvc.api.params_show()
 print('ds', cfg['ml']['model'], cfg['ml']['head'])
 print('ml', cfg['ds']['task'], cfg['ds']['split'])
