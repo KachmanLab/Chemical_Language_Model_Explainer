@@ -15,4 +15,4 @@ ml:
 xai:
   method: ours
   fid: None
-
+  head: mask
