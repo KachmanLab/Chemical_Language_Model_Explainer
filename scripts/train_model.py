@@ -7,6 +7,7 @@ from src.model import AqueousRegModel, BaselineAqueousModel, ECFPLinear
 import pickle
 import dvc.api
 import json
+import gc
 
 # @hydra.main(version_base=None, config_path='cfg', config_name='config')
 # def main(cfg: DictConfig = None):
@@ -26,18 +27,26 @@ with open(f"{root}/test.pkl", 'rb') as f:
     test = pickle.load(f)
 test_loader = DataLoader(test, batch_size=cfg['ml']['n_batch'],
                          shuffle=False, num_workers=8)
-metrics = {}
 
+metrics = {}
 for fold in range(cfg['ds']['n_splits']):
     # Load pickle
     with open(f"{root}/train{fold}.pkl", 'rb') as f:
         train = pickle.load(f)
     with open(f"{root}/valid{fold}.pkl", 'rb') as f:
         valid = pickle.load(f)
+    print('len train, val', len(train), len(valid))
     train_loader = DataLoader(train, batch_size=cfg['ml']['n_batch'],
                               shuffle=True, num_workers=8)
     valid_loader = DataLoader(valid, batch_size=cfg['ml']['n_batch'],
                               shuffle=False, num_workers=8)
+
+    if fold > 0:
+        del model
+        del trainer
+        del wandb_logger
+        torch.cuda.empty_cache()
+        gc.collect()
 
     # configure model
     if cfg['ml']['model'] == 'mmb':
@@ -70,35 +79,43 @@ for fold in range(cfg['ds']['n_splits']):
     )
 
     trainer.fit(model, train_loader, valid_loader)
-    metrics[fold] = trainer.validate(model, valid_loader)
+    metrics[fold] = trainer.validate(model, valid_loader)[0]
 
-    basepath = f"/workspace/out/{cfg['ds']['property']}/{cfg['ds']['split']}"
+    basepath = f"/workspace/out/{cfg['ds']['task']}/{cfg['ds']['split']}"
     mdir = f"{cfg['ml']['model']}-{cfg['ml']['head']}"
 
     if cfg['ml']['finetune']:
-        path = f"{basepath}/{mdir}/mmb{fold}.pt"
+        path = f"{basepath}/{mdir}/model/mmb{fold}.pt"
         trainer.save_checkpoint(path)
     else:
-        path = f"{basepath}/{mdir}/head{fold}.pt"
+        path = f"{basepath}/{mdir}/model/head{fold}.pt"
         torch.save(model.head.state_dict(), path)
-
-        artifact = wandb.Artifact(f"head{fold}_{mdir}", type='model')
-        artifact.add_file(path)
-        wandb_logger.experiment.log_artifact(artifact)
+        # artifact = wandb.Artifact(f"head{fold}_{mdir}", type='model')
+        # artifact.add_file(path)
+        # wandb_logger.experiment.log_artifact(artifact)
 
 # select best model based on valid score, test of test set, save best ckpt
 # TODO fix RMSE and change to val_rmse
-best_fold = torch.argmax([metrics.get(f)['val_mae'] for f in range(
-    cfg['ds']['n_splits'])])
-ckpt_path = f"{basepath}/{mdir}/head{best_fold}.pt"
+# best_fold = torch.argmax([v['val_mae'] for k, v in metrics.items()])
+
+print(metrics)
+best_fold = [v['val_mae'] for k, v in metrics.items()]
+print(best_fold)
+if len(best_fold) > 1:
+    best_fold = torch.argmax(best_fold)
+else:
+    best_fold = 0
+ckpt_path = f"{basepath}/{mdir}/model/head{best_fold}.pt"
 
 if cfg['ml']['model'] == 'mmb-ft' or cfg['ml']['finetune']:
     model = model.load_from_checkpoint(ckpt_path, head=cfg['ml']['head'])
+    trainer.save_checkpoint(f"{basepath}/{mdir}/best.pt")
 else:
     model.head.load_state_dict(torch.load(ckpt_path))
+    torch.save(model.head.state_dict(), f"{basepath}/{mdir}/best.pt")
 
-metrics['valid'] = trainer.validate(model, valid_loader)
-metrics['test'] = trainer.test(model, test_loader)
+metrics['valid'] = trainer.validate(model, valid_loader)[0]
+metrics['test'] = trainer.test(model, test_loader)[0]
 print(metrics)
 with open(f"{basepath}/{mdir}/metrics.json", 'w') as f:
     json.dump(metrics, f)

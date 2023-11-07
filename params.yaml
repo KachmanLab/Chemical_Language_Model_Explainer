@@ -1,17 +1,26 @@
 ds:
-  task: cmc
-  split: scaffold
-  n_splits: 5
+  task: aq
+  split: accurate
+  n_splits: 1
   split_frac: 0.9
   scaffold_k: 3
   color: r
+  data_seed: 42
+  # del
+  filepath: "/workspace/data/AqueousSolu.csv"
+  propname: "logS_aq_avg"
+  smilesname: "smiles solute"
+  plot_title: "Aqueous solubility log([mol/L])"
+  plot_propname: "log(S)"
 ml:
-  model: mmb-ft
+  model: mmb
   head: hier
   xai: ours
   n_batch: 64
   seed: 42
   n_epochs: 1
+  # del
+  finetune: False
 xai:
   method: ours
   fid: None

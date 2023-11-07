@@ -19,7 +19,7 @@ stages:
       - cd /workspace && echo "${ds.task} ${ds.split}"
       - echo "TEST p${ds}"
       - mkdir -p data/${ds.task}/${ds.split}/
-        #- python3 scripts/split_data.py ${ds}
+      - python3 scripts/split_data.py ${ds}
       #        ${ds.task} ${ds.split}
     params:
       - ds
@@ -32,7 +32,7 @@ stages:
 
   train_model:
     cmd: 
-      - mkdir -p our/${ds.task}/${ds.split}/${ml.model}-${ml.head}/{viz,model}
+      - mkdir -p out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/{viz,model}
       - echo ${ml}
       - python3 scripts/train_model.py ${ds} ${ml}
             # ${ml.model} ${ml.head}
@@ -72,12 +72,13 @@ stages:
   #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/plots/
 
   explain_model:
-    cmd: python3 scripts/explain_model.py ${ds} ${ml} ${xai}
+    cmd:
+      - python3 scripts/explain_model.py ${ds} ${ml} ${xai}
       #${ml.model} ${ml.head} ${ml.xai}
     deps:
       # - src/model.py
       - scripts/explain_model.py
-      - data/${ds.task}/${ds.split}/test.pickle
+      - data/${ds.task}/${ds.split}/test.pkl
       - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
       - src/maskedhead.py
       #- aq_prod/models/

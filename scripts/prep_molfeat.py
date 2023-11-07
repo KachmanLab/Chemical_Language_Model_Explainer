@@ -10,17 +10,16 @@ from src.dataloader import AqSolDataset, AqSolDeepChem
 from src.datamol_loader import * #AqueousDataMolSet, scaffold_split
 from src.model import AqueousRegModel, BaselineAqueousModel, MMBFeaturizer
 
-
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import GroupShuffleSplit
 from molfeat.trans.fp import FPVecTransformer
-from molfeat.trans.pretrained.hf_transformers import PretrainedHFTransformer
-from molfeat.trans.pretrained.dgl_pretrained import PretrainedDGLTransformer
 from autosklearn.regression import AutoSklearnRegressor
-from molfeat.store import ModelStore
 import sklearn
 import molfeat
 import datamol as dm
+#from molfeat.trans.pretrained.hf_transformers import PretrainedHFTransformer
+#from molfeat.trans.pretrained.dgl_pretrained import PretrainedDGLTransformer
+#from molfeat.store import ModelStore
 # https://molfeat-docs.datamol.io/stable/usage.html#quick-api-tour
 
 with open('/workspace/scripts/aqueous_config.json', 'r') as f:

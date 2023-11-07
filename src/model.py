@@ -76,13 +76,14 @@ class REGRegExTokenizer(RegExTokenizer):
 
 
 class RegressionHead(pl.LightningModule):
-    def __init__(self, dim=512):
+    def __init__(self, dim=512, fids=None):
         super().__init__()
         self.dim = dim
         self.norm = nn.LayerNorm(normalized_shape=[dim])
         self.fc1 = nn.Linear(dim, 64)
         self.fc2 = nn.Linear(64, 64)
         self.fc3 = nn.Linear(64, 1)
+        self.fids = None
 
     def forward(self, x):
         x = self.norm(x)
@@ -93,15 +94,16 @@ class RegressionHead(pl.LightningModule):
 
 
 class LinearRegressionHead(pl.LightningModule):
-    def __init__(self, dim=512):
+    def __init__(self, dim=512, fids=None):
         super().__init__()
         self.dim = dim
         # self.norm = nn.LayerNorm(normalized_shape=[512])
         self.fc1 = nn.Linear(dim, 1)
+        self.fids = None
 
     def forward(self, x):
-        return self.fc1(x)
-
+        self.fc1(x)
+        return x.squeeze(1)
 
 class AqueousRegModel(pl.LightningModule):
     def __init__(self, head):
@@ -175,11 +177,11 @@ class AqueousRegModel(pl.LightningModule):
             outputs = self(inputs)
         val_loss = self.criterion(outputs, labels)
         val_mae = self.criterion_mae(outputs, labels)
-        val_mse = self.criterion_mse(outputs, labels, square=False)
+        # val_mse = self.criterion_mse(outputs, labels, square=False)
         metrics = {
             'val_loss': val_loss,
             'val_mae': val_mae,
-            'val_mse': val_mse,
+            # 'val_mse': val_mse,
         }
         self.log_dict(metrics)
         return metrics

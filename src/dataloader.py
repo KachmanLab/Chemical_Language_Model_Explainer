@@ -74,11 +74,11 @@ class AqSolDataset(Dataset):
 
         if self.subset == 'test':
             self.data = DataSplit(
-                        smiles = test_df['smiles solute'].to_list(),
-                        labels = torch.tensor(
-                            test_df['logS_aq_avg'].to_list(), dtype=torch.float32),
-                        subset = self.subset
-                    )
+                    smiles = test_df['smiles solute'].to_list(),
+                    labels = torch.tensor(
+                        test_df['logS_aq_avg'].to_list(), dtype=torch.float32),
+                    subset = self.subset
+                )
         else:
             # split remaining df into train/val
             self.tr_va_splitter = splitter.split(
@@ -166,7 +166,7 @@ class MurckoScaffoldSplitter():
 
 
 class AqSolECFP(AqSolDataset):
-    def __init__(self, file_path, subset, split, split, data_seed=42,
+    def __init__(self, file_path, subset, split, split_frac, data_seed=42,
                  nbits=512):
         super().__init__(file_path, subset, split, split, data_seed)
         self.nbits = nbits

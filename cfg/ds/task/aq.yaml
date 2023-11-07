@@ -1,4 +1,6 @@
 property: aq
 filepath: "/workspace/data/AqueousSolu.csv"
-propname: "logS_aq_std"
+propname: "logS_aq_avg"
 smilesname: "smiles solute"
+plot_title: "Aqueous solubility log([mol/L])"
+plot_propname: "log(S)"

@@ -3,20 +3,15 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
-from rdkit.Chem import Draw, AllChem
-from rdkit import Chem, rdBase
+# from rdkit.Chem import Draw, AllChem
+# from rdkit import Chem, rdBase
 
 import seaborn as sns
-# import numpy as np
 import pandas as pd
-import os
-# import glob
 import pickle
 import dvc.api
-import json
 from sklearn import linear_model
 
-from src.dataloader import AqSolDataset
 from src.model import AqueousRegModel, BaselineAqueousModel
 from src.explainer import ColorMapper
 
@@ -28,25 +23,26 @@ with open(f"{root}/test.pkl", 'rb') as f:
 test_loader = DataLoader(test, batch_size=cfg['ml']['n_batch'],
                          shuffle=False, num_workers=8)
 
-basepath = f"/workspace/out/{cfg['ds']['property']}/{cfg['ds']['split']}"
+basepath = f"/workspace/out/{cfg['ds']['task']}/{cfg['ds']['split']}"
 mdir = f"{cfg['ml']['model']}-{cfg['ml']['head']}"
 ckpt_path = f"{basepath}/{mdir}/best.pt"
 
 head = cfg['ml']['head']
-if head == 'lin_mask' or 'lin':
+if head == 'lin_mask' or head == 'lin':
     head = 'lin_mask'   # MaskedLinearRegressionHead()
-elif head == 'hier_mask' or 'hier':
+elif head == 'hier_mask' or head == 'hier':
     head = 'hier_mask'  # MaskedRegressionHead()
 
 if cfg['ml']['model'] == 'mmb':
     model = AqueousRegModel(head=head)
-    if cfg['ml']['finetune']:
+    if cfg['ml']['finetune'] or 'ft' in cfg['ml']['model']:
         model = model.load_from_checkpoint(ckpt_path, head=head)
+        xai = 'mmb-ft'
     else:
         model.head.load_state_dict(torch.load(ckpt_path))
-    xai = 'mmb'
+        xai = 'mmb'
 elif cfg['ml']['model'] == 'mmb-avg':
-    model = BaselineAqueousModel(head=cfg['ml']['head'])
+    model = BaselineAqueousModel(head=head)
     xai = 'mmb-avg'
 
 model.mmb.unfreeze()
@@ -70,7 +66,7 @@ if cfg['ml']['model'] == 'mmb':
     rel_weights = [f.get('rel_weights') for f in all]
     rdkit_colors = [f.get('rdkit_colors') for f in all]
 elif cfg['ml']['model'] == 'mmb-avg':
-    raise NotImplementedError, 'check mmb-avg has salience/attrib/shap'
+    raise NotImplementedError
     salience_colors = [f.get('salience_colors') for f in all]
 
 ###################################

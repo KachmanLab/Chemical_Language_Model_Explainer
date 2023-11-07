@@ -49,6 +49,28 @@ def scaffold_split(smiles):
     return next(splitter.split(smiles, groups=scaffolds))
 train_ind, test_ind = scaffold_split(smiles)
 
+def viz_substruct(main_smile, substructure_smarts):
+    
+    mol_file = Chem.MolFromSmiles(main_smile)
+    sub_pattern = Chem.MolFromSmarts(substructure_smarts)
+    
+    hit_ats = list(mol_file.GetSubstructMatch(sub_pattern)) # Returns the indices of the molecule’s atoms that match a substructure query
+    hit_bonds = []
+
+    for bond in sub_pattern.GetBonds():
+        aid1 = hit_ats[bond.GetBeginAtomIdx()]
+        aid2 = hit_ats[bond.GetEndAtomIdx()]
+
+        hit_bonds.append( mol_file.GetBondBetweenAtoms(aid1, aid2).GetIdx() )
+
+    d2d = rdMolDraw2D.MolDraw2DSVG(400, 400) # or MolDraw2DCairo to get PNGs
+    rdMolDraw2D.PrepareAndDrawMolecule(d2d, mol_file, highlightAtoms=hit_ats,  highlightBonds=hit_bonds)
+    d2d.FinishDrawing()
+    return SVG(d2d.GetDrawingText())
+
+>> diclofenac = 'O=C(O)Cc1ccccc1Nc1c(Cl)cccc1Cl'
+>> substruct_smarts = 'O=CCccN'
+>> viz_substruct(diclofenac, substruct_smarts)
 for name, feats in reps.items():
     print(name)
     print(feats.shape)
@@ -70,7 +92,7 @@ for name, feats in reps.items():
             'regressor':['gaussian_process', 'mlp', 'libsvm_svr', 'sgd'],
         },
         #tmp_folder='/workspace/results/aqueous/autosk',
-        #resampling_strategy=scaffold_split,
+        #resampling_strategy=s caffold_split,
         resampling_strategy='cv',
         resampling_strategy_arguments={"folds": 5},
     )
