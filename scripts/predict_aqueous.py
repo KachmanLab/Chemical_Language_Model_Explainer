@@ -5,39 +5,53 @@ import pytorch_lightning as pl
 # from rdkit.Chem import Draw, AllChem
 # from rdkit import Chem, rdBase
 
-import numpy as np
+# import numpy as np
+# import os
+# import glob
+# import json
 import pandas as pd
-import os
-import glob
-import json
 from itertools import chain
 
-from src.dataloader import AqSolDataset
+# from src.dataloader import AqSolDataset
 from src.model import AqueousRegModel
+import pickle
+import dvc.api
+cfg = dvc.api.params_show()
+pl.seed_everything(cfg['ml']['seed'])
 
-with open('/workspace/scripts/aqueous_config.json', 'r') as f:
-    cfg = json.load(f)
+# with open('/workspace/scripts/aqueous_config.json', 'r') as f:
+#     cfg = json.load(f)
 
-pl.seed_everything(cfg['seed'])
-train_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'train', 
-    cfg['split_type'], cfg['split'], data_seed=cfg['seed'], augment=False)
-val_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'valid', 
-    cfg['split_type'], cfg['split'], data_seed=cfg['seed'])
-test_dataset = AqSolDataset('/workspace/data/AqueousSolu.csv', 'test', 
-    cfg['split_type'], cfg['split'], data_seed=cfg['seed'])
+datapath = f"/workspace/data/{cfg['ds']['property']}/{cfg['ds']['split']}"
+basepath = f"/workspace/out/{cfg['ds']['property']}/{cfg['ds']['split']}"
+mdir = f"{cfg['ml']['model']}-{cfg['ml']['head']}"
 
-train_loader = DataLoader(train_dataset, batch_size=cfg['n_batch'], 
-    shuffle=True, num_workers=8)
-val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'], 
-    shuffle=False, num_workers=8)
-test_loader = DataLoader(test_dataset, batch_size=cfg['n_batch'], 
-    shuffle=False, num_workers=8)
+with open(f"{datapath}/test.pkl", 'rb') as f:
+    test = pickle.load(f)
+test_loader = DataLoader(test, batch_size=cfg['ml']['n_batch'],
+                         shuffle=False, num_workers=8)
+# with open(f"{root}/train{fold}.pkl", 'rb') as f:
+#     train = pickle.load(f)
+# with open(f"{root}/valid{fold}.pkl", 'rb') as f:
+#     valid = pickle.load(f)
+# train_loader = DataLoader(train_dataset, batch_size=cfg['n_batch'],
+#                           shuffle=True, num_workers=8)
+# val_loader = DataLoader(val_dataset, batch_size=cfg['n_batch'],
+#                         shuffle=False, num_workers=8)
 
-prefix = 'aqueous' if cfg['finetune'] else 'aq_head'
-subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
-    if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith(prefix))]
-ckpt_path = max(subfolders, key=os.path.getmtime)
-print(ckpt_path)
+# prefix = 'aqueous' if cfg['finetune'] else 'aq_head'
+# subfolders = [f.path for f in os.scandir('/workspace/results/aqueous/models/') \
+#     if (f.path.endswith('.pt') and f.path.split('/')[-1].startswith(prefix))]
+# ckpt_path = max(subfolders, key=os.path.getmtime)
+# print(ckpt_path)
+
+if cfg['ml']['finetune']:
+    path = f"{basepath}/{mdir}/best.pt"
+    trainer.save_checkpoint(path)
+else:
+    path = f"{basepath}/{mdir}/head{fold}.pt"
+    torch.save(model.head.state_dict(), path)
+
 
 if cfg['model'] == 'mmb':
     model = AqueousRegModel(head=cfg['head'])
@@ -56,12 +70,12 @@ trainer = pl.Trainer(
     precision=16,
 )
 
-train = trainer.predict(model, train_loader)
-val = trainer.predict(model, val_loader)
+# train = trainer.predict(model, train_loader)
+# val = trainer.predict(model, val_loader)
 test = trainer.predict(model, test_loader)
 
-results = pd.DataFrame(
-    columns=['SMILES', 'Tokens', 'logS_pred', 'logS_exp', 'Atom_weights', 'Split']
+results = pd.DataFrame(columns=[
+    'SMILES', 'Tokens', 'logS_pred', 'logS_exp', 'Atom_weights', 'Split']
 )
 for split, all in list(zip(['test', 'val', 'train'], [test, val, train])):
     # reverse order for consistency with plotting
@@ -83,5 +97,6 @@ for split, all in list(zip(['test', 'val', 'train'], [test, val, train])):
 
 # reset index to correspond to visualization UID
 results = results.reset_index(drop=True)
-results = results.reset_index().rename(columns={'index':'uid'})
-results.to_csv('/workspace/results/aqueous/AqueousSolu_predictions.csv', index=False)
+results = results.reset_index().rename(columns={'index': 'uid'})
+results.to_csv('/workspace/results/aqueous/AqueousSolu_predictions.csv',
+               index=False)

@@ -1,0 +1,18 @@
+ds:
+  task: cmc
+  split: scaffold
+  n_splits: 5
+  split_frac: 0.9
+  scaffold_k: 3
+  color: r
+ml:
+  model: mmb-ft
+  head: hier
+  xai: ours
+  n_batch: 64
+  seed: 42
+  n_epochs: 1
+xai:
+  method: ours
+  fid: None
+  head: mask

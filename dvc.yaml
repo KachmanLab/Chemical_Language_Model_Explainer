@@ -1,71 +1,101 @@
-vars:
-  - params.yaml:split
-  - cfg/data_cfg.json
-  - cfg/model_cfg.json
+params:
+  - params.yaml
+    #- config.yaml
+    #- cfg/ds
+  
+
+    #- cfg/data_cfg.json:property,split,data_seed
+    #- cfg/model_cfg.json:
 
 #   - split: random,accurate,scaffold
 #   - model: mmb-lin,mmb-hier,mmb-ft-hier,mmb-ft-lin,mmb-avg,ecfp-hier,ecfp-lin
 
 stages:
   split_data:
+    # matrix:
+    #   split: ${data.split}
+    cmd: 
+      # - echo "${item.ds.task} ${item.ds.split}"
+      - cd /workspace && echo "${ds.task} ${ds.split}"
+      - echo "TEST p${ds}"
+      - mkdir -p data/${ds.task}/${ds.split}/
+        #- python3 scripts/split_data.py ${ds}
+      #        ${ds.task} ${ds.split}
+    params:
+      - ds
     deps:
-    - data/AqueousSolu.csv
-    - cfg/data_config.json
-    - src/dataloader.py
-    foreach: ${split}
-    do: 
-      cmd: python3 scripts/split_data.py ${item} 
+      # - data/AqueousSolu.csv
+      # - cfg/data_config.json
+      - src/dataloader.py
     outs:
-      - path: data/aq_proc/${item}/
+      - data/${ds.task}/${ds.split}/
 
   train_model:
+    cmd: 
+      - mkdir -p our/${ds.task}/${ds.split}/${ml.model}-${ml.head}/{viz,model}
+      - echo ${ml}
+      - python3 scripts/train_model.py ${ds} ${ml}
+            # ${ml.model} ${ml.head}
+    params:
+      - ml.model
+      - ml.head
+    # matrix:
+    #   model: ${ml.model}
+    #   head: ${ml.head}
+    #   split: ${data.split}
     deps:
-    - results/data/aq_proc/${split}
-    - src/model.py
-    - scripts/model_config.json
-    - scripts/train_model.py
-    foreach: ${model}-${head}
-    do:
-      cmd: python3 scripts/train_model.py ${model}-${head}
-    # params:
-    #   data_config.json:
-    #     - property
-    #     - split
-    #   - model_config.json:
-    #     - model
-    #     - head
-    #     - finetune
+      - data/${ds.task}/${ds.split}/
+      - src/model.py
+      # - scripts/model_config.json
+      # - scripts/train_model.py
+    metrics:
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/metrics.json
     outs:
-      - path: aq_prod/${split}/${model}/
-        #OR - path: aq_prod/${split}/${model}-${head}
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/model/
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
 
-  plot_aqueous:
-    cmd: python3 scripts/explain_aqueous.py
-    deps:
-    - results/data/aq_proc/
-    - src/model.py
-    - scripts/explain_aqueous.py
-    - aq_prod/models/
-    - scripts/model_cfg.json
-    outs:
-      - path: aq_prod/viz/
+  # predict_aqueous:
+  #   cmd: python3 scripts/predict_aqueous.py ${ml}
+  #   params:
+  #     - ml.model
+  #     - ml.head
+  #     - ml.xai
+  #   deps:
+  #     - src/model.py
+  #     - scripts/predict_aqueous.py
+  #     - data/${ds.task}/${ds.split}/
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/model/
+  #   outs:
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/metrics.json 
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/preds.csv 
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt 
+  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/plots/
 
-  predict_aqueous:
-    cmd: python3 scripts/predict_aqueous.py
+  explain_model:
+    cmd: python3 scripts/explain_model.py ${ds} ${ml} ${xai}
+      #${ml.model} ${ml.head} ${ml.xai}
     deps:
-    - results/data/aq_proc/
-    - src/model.py
-    - scripts/predict_aqueous.py
-    - aq_prod/models/
-    - scripts/model_cfg.json
+      # - src/model.py
+      - scripts/explain_model.py
+      - data/${ds.task}/${ds.split}/test.pickle
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
+      - src/maskedhead.py
+      #- aq_prod/models/
+      #- scripts/model_cfg.json
+    params:
+      - ml.model
+      - ml.head
+      - xai
     outs:
-    - aq_prod/AqueousSolu_predictions.csv
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
+      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/parity_plot.png
 
   aq:
     cmd: echo "Finished full aqueous solubility pipeline"
     deps:
-    - aq_prod/models/
-    - aq_prod/viz/
+    - out/${ds.task}/${ds.split}/
+    - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
+    - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
     # - /aq_prod/AqueousSolu_predictions.csv
 
 

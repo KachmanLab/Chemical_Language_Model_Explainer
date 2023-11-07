@@ -5,13 +5,14 @@ import torch.optim as optim
 import pytorch_lightning as pl
 from copy import deepcopy
 from typing import List
-
 # from nemo_chem.tokenizer.regex_tokenizer import RegExTokenizer
 # from nemo_chem.models.megamolbart.infer import NeMoMegaMolBARTWrapper
 from nemo_src.regex_tokenizer import RegExTokenizer
 from nemo_src.infer import NeMoMegaMolBARTWrapper
 from src.explainer import *
-
+from src.maskedhead import (
+    MaskedRegressionHead, MaskedLinearRegressionHead
+)
 
 class REGRegExTokenizer(RegExTokenizer):
     def __init__(self):
@@ -102,97 +103,6 @@ class LinearRegressionHead(pl.LightningModule):
         return self.fc1(x)
 
 
-class MaskedLinearRegressionHead(pl.LightningModule):
-    def __init__(self, fids=None):
-        super().__init__()
-        # self.norm = nn.LayerNorm(normalized_shape=[512])
-        self.fc1 = nn.Linear(512, 1)
-        self.fids = fids
-
-    def mask_features(self, x, fids=None):
-        ''' mask fids in calculation of feature attribution
-            fids: feature_ids, list of ints'''
-        if self.fids:
-            fids = self.fids
-        elif not fids:
-            # fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
-            # print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])
-            # [237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
-            vec = self.fc1.weight[0].cpu().detach().numpy()
-            fids = [ix for ix, val in sorted(
-                enumerate(np.abs(vec)),
-                key=lambda a: a[1],
-                reverse=True
-            )]
-
-            print(fids[:10])
-            fids = fids[-2]
-        self.fids = fids
-
-        # print('feature ids to consider:', fids)
-        mask = torch.zeros_like(x, dtype=torch.int64)
-        mask[:, fids] = 1
-
-        return x * mask
-
-    def forward(self, x):
-        ''' mask out all features excluding [fids]'''
-        x = self.mask_features(x)
-        x.register_hook(self.mask_features)
-
-        x = self.fc1(x)
-        return x.squeeze(1)
-
-
-class MaskedRegressionHead(pl.LightningModule):
-    def __init__(self, fids=None):
-        super().__init__()
-        # self.norm = nn.LayerNorm(normalized_shape=[512])
-        self.norm = nn.LayerNorm(normalized_shape=[512])
-        self.fc1 = nn.Linear(512, 64)
-        self.fc2 = nn.Linear(64, 64)
-        self.fc3 = nn.Linear(64, 1)
-        self.fids = fids
-
-    def mask_features(self, x, fids=None):
-        ''' mask fids in calculation of feature attribution
-            fids: feature_ids, list of ints'''
-        if self.fids:
-            fids = self.fids
-        elif not fids:
-            # fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
-            # print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])
-            # [237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
-            vec = self.fc2.weight[0].cpu().detach().numpy()
-            fids = [ix for ix, val in sorted(
-                enumerate(np.abs(vec)),
-                key=lambda a: a[1],
-                reverse=True
-            )]
-
-            print(list(zip(fids[:10], vec[fids[:10]])))
-            fids = fids[-2]
-        self.fids = fids
-
-        # print('feature ids to consider:', fids)
-        mask = torch.zeros_like(x, dtype=torch.int64)
-        mask[:, fids] = 1
-
-        return x * mask
-
-    def forward(self, x):
-        ''' mask out all features excluding [fids]'''
-        x = self.norm(x)
-
-        #x = self.mask_features(x)
-        x.register_hook(self.mask_features)
-
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x.squeeze(1)
-
-
 class AqueousRegModel(pl.LightningModule):
     def __init__(self, head):
         super().__init__()
@@ -215,6 +125,7 @@ class AqueousRegModel(pl.LightningModule):
         self.criterion = nn.HuberLoss()
         self.criterion_mse = nn.MSELoss()
         self.criterion_mae = nn.L1Loss()
+        # self.criterion_rmse = nn.MSELoss(reduction='none')
         self.learning_rate = 1e-5
 
     def init_molbart(self):
@@ -264,7 +175,7 @@ class AqueousRegModel(pl.LightningModule):
             outputs = self(inputs)
         val_loss = self.criterion(outputs, labels)
         val_mae = self.criterion_mae(outputs, labels)
-        val_mse = self.criterion_mse(outputs, labels)
+        val_mse = self.criterion_mse(outputs, labels, square=False)
         metrics = {
             'val_loss': val_loss,
             'val_mae': val_mae,
@@ -280,6 +191,7 @@ class AqueousRegModel(pl.LightningModule):
             outputs = self(inputs)
         test_mae = self.criterion_mae(outputs, labels)
         test_mse = self.criterion_mse(outputs, labels)
+        # test_rmse = self.criterion_rmse(outputs, labels)
         metrics = {
             'test_mae': test_mae,
             'test_mse': test_mse,

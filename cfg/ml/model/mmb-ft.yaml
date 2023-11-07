@@ -1,0 +1,5 @@
+model: mmb
+finetune: true
+xai: ours
+n_batch: 64
+seed: 42

@@ -1,0 +1,4 @@
+split: random
+n_folds: 5
+data_seed: 42
+color: g

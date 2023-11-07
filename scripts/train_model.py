@@ -1,61 +1,67 @@
 import torch
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-import json
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 from src.model import AqueousRegModel, BaselineAqueousModel, ECFPLinear
 import pickle
+import dvc.api
+import json
 
-root = "/workspace/results/aqueous/models"
-with open("/workspace/cfg/model_config.json", 'r') as f:
-    cfg = json.load(f)
+# @hydra.main(version_base=None, config_path='cfg', config_name='config')
+# def main(cfg: DictConfig = None):
+#     if cfg is None:
+#     cfg = dvc.api.params_show()
+#     return cfg
+# cfg = get_config()
 
-pl.seed_everything(cfg['seed'])
-root = f"/workspace/data/{cfg['property']}_proc/{cfg['split']}"
+cfg = dvc.api.params_show()
+print('ds', cfg['ml']['model'], cfg['ml']['head'])
+print('ml', cfg['ds']['task'], cfg['ds']['split'])
+
+pl.seed_everything(cfg['ml']['seed'])
+root = f"/workspace/data/{cfg['ds']['task']}/{cfg['ds']['split']}"
 
 with open(f"{root}/test.pkl", 'rb') as f:
     test = pickle.load(f)
-test_loader = DataLoader(test, batch_size=cfg['n_batch'],
+test_loader = DataLoader(test, batch_size=cfg['ml']['n_batch'],
                          shuffle=False, num_workers=8)
+metrics = {}
 
-for fold in range(cfg['n_splits']):
+for fold in range(cfg['ds']['n_splits']):
     # Load pickle
     with open(f"{root}/train{fold}.pkl", 'rb') as f:
         train = pickle.load(f)
     with open(f"{root}/valid{fold}.pkl", 'rb') as f:
         valid = pickle.load(f)
-    train_loader = DataLoader(train, batch_size=cfg['n_batch'],
+    train_loader = DataLoader(train, batch_size=cfg['ml']['n_batch'],
                               shuffle=True, num_workers=8)
-    valid_loader = DataLoader(valid, batch_size=cfg['n_batch'],
+    valid_loader = DataLoader(valid, batch_size=cfg['ml']['n_batch'],
                               shuffle=False, num_workers=8)
 
-    # configure regression head
-    if 'hier' in cfg['head']:
-        head = 'hier'
-    elif 'lin' in cfg['head']:
-        head = 'lin'
-    print(cfg['head'], head)
-
     # configure model
-    if cfg['model'] == 'mmb':
-        model = AqueousRegModel(head=head)
-        if cfg['finetune'] or 'ft' in cfg['model']:
-            # unfreeze to train the whole model instead of just the head
-            model.mmb.unfreeze()
-            cfg['finetune'] = True
-    elif cfg['model'] == 'mmb-avg':
-        model = BaselineAqueousModel(head=head)
-    elif cfg['model'] == 'ecfp':
-        model = ECFPLinear(head=head)
+    if cfg['ml']['model'] == 'mmb':
+        model = AqueousRegModel(head=cfg['ml']['head'])
+    elif cfg['ml']['finetune'] or cfg['ml']['model'] == 'mmb-ft':
+        # unfreeze to train the whole model instead of just the head
+        # cfg['finetune'] = True
+        model = AqueousRegModel(head=cfg['ml']['head'])
+        model.mmb.unfreeze()
+    elif cfg['ml']['model'] == 'mmb-avg':
+        model = BaselineAqueousModel(head=cfg['ml']['head'])
+    elif cfg['ml']['model'] == 'ecfp':
+        # model = ECFPLinear(head=head)
+        model = ECFPLinear(head=cfg['ml']['head'],
+                           dim=cfg['ml']['nbits'])
+        # split train script into sklearn - vs - torch
 
     wandb_logger = WandbLogger(
-        project='aqueous-solu' if cfg['property'] == 'aq' else cfg['property']
+        project='aqueous-solu' if cfg['ds']['task'] == 'aq' else cfg['ds']['task']
     )
     wandb_logger.experiment.config.update(cfg)
 
     trainer = pl.Trainer(
-        max_epochs=cfg['n_epochs'],
+        max_epochs=cfg['ml']['n_epochs'],
         accelerator='gpu',
         gpus=1,
         precision=16,
@@ -64,13 +70,12 @@ for fold in range(cfg['n_splits']):
     )
 
     trainer.fit(model, train_loader, valid_loader)
-    trainer.test(model, test_loader)
+    metrics[fold] = trainer.validate(model, valid_loader)
 
-    basepath = f"/workspace/{cfg['property']}_prod/{cfg['split']}"
-    ft = '-ft' if (cfg['finetune'] and cfg['model'] == 'mmb') else ''
-    mdir = f"{cfg['model']}{ft}-{head}"
+    basepath = f"/workspace/out/{cfg['ds']['property']}/{cfg['ds']['split']}"
+    mdir = f"{cfg['ml']['model']}-{cfg['ml']['head']}"
 
-    if cfg['finetune']:
+    if cfg['ml']['finetune']:
         path = f"{basepath}/{mdir}/mmb{fold}.pt"
         trainer.save_checkpoint(path)
     else:
@@ -81,5 +86,19 @@ for fold in range(cfg['n_splits']):
         artifact.add_file(path)
         wandb_logger.experiment.log_artifact(artifact)
 
-    # model.head.load_state_dict(torch.load(
-    #                f"{basepath}/aq_head{i}_{suffix}.pt")
+# select best model based on valid score, test of test set, save best ckpt
+# TODO fix RMSE and change to val_rmse
+best_fold = torch.argmax([metrics.get(f)['val_mae'] for f in range(
+    cfg['ds']['n_splits'])])
+ckpt_path = f"{basepath}/{mdir}/head{best_fold}.pt"
+
+if cfg['ml']['model'] == 'mmb-ft' or cfg['ml']['finetune']:
+    model = model.load_from_checkpoint(ckpt_path, head=cfg['ml']['head'])
+else:
+    model.head.load_state_dict(torch.load(ckpt_path))
+
+metrics['valid'] = trainer.validate(model, valid_loader)
+metrics['test'] = trainer.test(model, test_loader)
+print(metrics)
+with open(f"{basepath}/{mdir}/metrics.json", 'w') as f:
+    json.dump(metrics, f)
