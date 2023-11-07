@@ -1,6 +1,6 @@
 ds:
   task: aq
-  split: accurate
+  split: random
   n_splits: 1
   split_frac: 0.9
   scaffold_k: 3

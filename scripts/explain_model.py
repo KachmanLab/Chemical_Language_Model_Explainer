@@ -3,8 +3,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
-# from rdkit.Chem import Draw, AllChem
-# from rdkit import Chem, rdBase
+from rdkit.Chem import Draw, AllChem
+from rdkit import Chem, rdBase
 
 import seaborn as sns
 import pandas as pd
@@ -85,7 +85,7 @@ reg.fit(yhat.reshape(-1, 1), y)
 slo = f"{reg.coef_[0]:.3f}"
 
 # text formatting for plot
-split = f"{int(round(1.-cfg['ml']['split_frac'], 2)*100)}% "
+split = f"{int(round(1.-cfg['ds']['split_frac'], 2)*100)}% "
 color = cfg['ds']["color"]
 _acc = cfg['ds']["split"]
 
@@ -94,10 +94,10 @@ p = sns.jointplot(x=y, y=yhat, kind='hex', color=color,
                   xlim=[-12, 2], ylim=[-12, 2])
 sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
             color='grey', ci=None, scatter=False)
-p.fig.suptitle(f"{cfg['ds']['plot_tite']} parity plot \n{_acc} {split}test set")
+p.fig.suptitle(f"{cfg['ds']['plot_title']} parity plot \n{_acc} {split}test set")
 # p.set_axis_labels('Experimental log(S), 298K [mol/L]', 'Model log(S), 298K [mol/L]')
-p.set_axis_labels(f"Experimental {cfg['ds']['plot_desc']}",
-                  f"Model {cfg['ds']['plot_desc']}")
+p.set_axis_labels(f"Experimental {cfg['ds']['plot_propname']}",
+                  f"Model {cfg['ds']['plot_propname']}")
    
 p.fig.subplots_adjust(top=0.95)
 p.fig.tight_layout()

@@ -73,6 +73,7 @@ stages:
 
   explain_model:
     cmd:
+      - mkdir -p out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
       - python3 scripts/explain_model.py ${ds} ${ml} ${xai}
       #${ml.model} ${ml.head} ${ml.xai}
     deps:
