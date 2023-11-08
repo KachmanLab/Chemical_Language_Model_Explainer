@@ -27,6 +27,7 @@ stages:
       # - data/AqueousSolu.csv
       # - cfg/data_config.json
       - src/dataloader.py
+      - scripts/split_data.py
     outs:
       - data/${ds.task}/${ds.split}/
 

@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 from src.model import AqueousRegModel, BaselineAqueousModel, ECFPLinear
+from src.dataloader import ECFPDataSplit
 import pickle
 import dvc.api
 import json
@@ -25,6 +26,8 @@ root = f"/workspace/data/{cfg['ds']['task']}/{cfg['ds']['split']}"
 
 with open(f"{root}/test.pkl", 'rb') as f:
     test = pickle.load(f)
+    if cfg['ml']['model'] == 'ecfp':
+        test = ECFPDataSplit(test, nbits=cfg['ml']['nbits'])
 test_loader = DataLoader(test, batch_size=cfg['ml']['n_batch'],
                          shuffle=False, num_workers=8)
 
@@ -35,6 +38,9 @@ for fold in range(cfg['ds']['n_splits']):
         train = pickle.load(f)
     with open(f"{root}/valid{fold}.pkl", 'rb') as f:
         valid = pickle.load(f)
+    if cfg['ml']['model'] == 'ecfp':
+        train = ECFPDataSplit(train, nbits=cfg['ml']['nbits'])
+        valid = ECFPDataSplit(valid, nbits=cfg['ml']['nbits'])
     print('len train, val', len(train), len(valid))
     train_loader = DataLoader(train, batch_size=cfg['ml']['n_batch'],
                               shuffle=True, num_workers=8)

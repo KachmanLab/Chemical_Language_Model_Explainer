@@ -23,6 +23,7 @@ test_ds = AqSolDataset(
     cfg['ds']['split_frac'], cfg['ds']['n_splits'], cfg['ds']['data_seed'])
 
 test = test_ds[:]
+print(len(test), 'test len')
 with open(f"{root}/test.pkl", 'wb') as f:
     pickle.dump(test, f)
 
@@ -30,12 +31,13 @@ for fold in range(cfg['ds']['n_splits']):
     train = train_ds[fold]
     with open(f"{root}/train{fold}.pkl", 'wb') as f:
         pickle.dump(train, f)
+        print(len(train), 'train len', fold)
 
 for fold in range(cfg['ds']['n_splits']):
     valid = valid_ds[fold]
     with open(f"{root}/valid{fold}.pkl", 'wb') as f:
         pickle.dump(valid, f)
-
+        print(len(valid), 'valid len', fold)
 
 # write split into csv for reproducibility
 propname = cfg['ds']['propname']

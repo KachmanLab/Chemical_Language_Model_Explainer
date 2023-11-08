@@ -415,26 +415,30 @@ stages:
   split_data:
     cmd:
     - cd /workspace && echo "aq random"
-    - echo "TEST p--task aq --split random --n_splits 1 --split_frac 0.9 --scaffold_k
+    - echo "TEST p--task aq --split random --n_splits 5 --split_frac 0.9 --scaffold_k
       3 --color r --data_seed 42 --filepath /workspace/data/AqueousSolu.csv --propname
       logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility log([mol/L])'
       --plot_propname 'log(S)'"
     - mkdir -p data/aq/random/
-    - python3 scripts/split_data.py --task aq --split random --n_splits 1 --split_frac
+    - python3 scripts/split_data.py --task aq --split random --n_splits 5 --split_frac
       0.9 --scaffold_k 3 --color r --data_seed 42 --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility
       log([mol/L])' --plot_propname 'log(S)'
     deps:
+    - path: scripts/split_data.py
+      hash: md5
+      md5: f743a4aeb941075030e1b8e78d1f110b
+      size: 2153
     - path: src/dataloader.py
       hash: md5
-      md5: 47be5d97153bf8cb62856ba905d76be2
-      size: 15296
+      md5: f48f5812c09eab1771144bda49b30f88
+      size: 16057
     params:
       params.yaml:
         ds:
           task: aq
           split: random
-          n_splits: 1
+          n_splits: 5
           split_frac: 0.9
           scaffold_k: 3
           color: r
@@ -447,9 +451,9 @@ stages:
     outs:
     - path: data/aq/random/
       hash: md5
-      md5: ab04af1f4e681e6e9877ced5759d1af1.dir
-      size: 1303380
-      nfiles: 4
+      md5: eef11dfe41f31f80ecf5e1d8d49924f5.dir
+      size: 3045173
+      nfiles: 12
   train_model:
     cmd:
     - mkdir -p out/aq/random/mmb-hier/{viz,model}

@@ -1,7 +1,7 @@
 ds:
   task: aq
   split: random
-  n_splits: 1
+  n_splits: 5
   split_frac: 0.9
   scaffold_k: 3
   color: r
@@ -13,12 +13,13 @@ ds:
   plot_title: "Aqueous solubility log([mol/L])"
   plot_propname: "log(S)"
 ml:
-  model: mmb
+  model: ecfp
   head: hier
   xai: ours
   n_batch: 64
   seed: 42
   n_epochs: 1
+  nbits: 2048
   # del
   finetune: False
 xai:

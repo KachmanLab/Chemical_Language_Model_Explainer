@@ -8,6 +8,7 @@ from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from typing import List
 
+
 class AqSolDataset(Dataset):
     def __init__(self, file_path, subset, split, split_frac,
                  n_splits=5, data_seed=42, augment=False):
@@ -28,14 +29,14 @@ class AqSolDataset(Dataset):
 
         splitter = ShuffleSplit(
             n_splits=5,
-            test_size=self.split_frac,
+            test_size=1.-self.split_frac,
             random_state=self.data_seed
         )
         if split == 'scaffold':
             test_splitter = MurckoScaffoldSplitter(
                 smiles=df['smiles solute'].to_list(),
                 n_splits=5,
-                test_size=self.split_frac,
+                test_size=1.-self.split_frac,
                 seed=self.data_seed
             )
         else:
@@ -76,7 +77,8 @@ class AqSolDataset(Dataset):
             self.data = DataSplit(
                     smiles = test_df['smiles solute'].to_list(),
                     labels = torch.tensor(
-                        test_df['logS_aq_avg'].to_list(), dtype=torch.float32),
+                        test_df['logS_aq_avg'].to_list(),
+                        dtype=torch.float32),
                     subset = self.subset
                 )
         else:
@@ -87,6 +89,7 @@ class AqSolDataset(Dataset):
             self.data = []
             for fold in range(self.n_splits):
                 train_idx, val_idx = next(self.tr_va_splitter)
+                assert len(train_idx) > len(val_idx)
                 if self.subset == 'train':
                     df = self.tr_va_df.iloc[train_idx]
                 elif self.subset == 'valid':
@@ -96,7 +99,8 @@ class AqSolDataset(Dataset):
                     DataSplit(
                         smiles = df['smiles solute'].to_list(),
                         labels = torch.tensor(
-                            df['logS_aq_avg'].to_list(), dtype=torch.float32),
+                            df['logS_aq_avg'].to_list(),
+                            dtype=torch.float16),
                         subset = self.subset)
                     )
 
@@ -120,11 +124,31 @@ class DataSplit(Dataset):
         return len(self.smiles)
 
     def __getitem__(self, idx):
-        smiles_data = self.smiles[idx]
+        data = self.smiles[idx]
         # if self.subset == 'train' and self.augment:
         #     smiles_data, _ = aug_smiles(smiles_data)
         labels = self.labels[idx]
-        return smiles_data, labels
+        return data, labels
+
+
+class ECFPDataSplit(DataSplit):
+    def __init__(self, ds, nbits=512): 
+        self.smiles = ds.smiles
+        self.labels = ds.labels
+        self.subset = ds.subset
+        self.nbits = nbits
+        self.make_ecfp()
+
+    def make_ecfp(self):
+        ecfp = [AllChem.GetMorganFingerprintAsBitVect(
+                    Chem.MolFromSmiles(smi), radius=2, nBits=self.nbits
+               ) for smi in self.smiles]
+        self.ecfp = torch.tensor(ecfp, dtype=torch.float16)
+
+    def __getitem__(self, idx):
+        data = self.ecfp[idx]
+        labels = self.labels[idx]
+        return data, labels
 
 
 class MurckoScaffoldSplitter():
@@ -165,39 +189,40 @@ class MurckoScaffoldSplitter():
         return splitter.split(smiles, groups=scaffolds)
 
 
-class AqSolECFP(AqSolDataset):
-    def __init__(self, file_path, subset, split, split_frac, data_seed=42,
-                 nbits=512):
-        super().__init__(file_path, subset, split, split, data_seed)
-        self.nbits = nbits
-        self.make_ecfp()
 
-    def make_ecfp(self):
-        ''' TODO fix self.nbits during next_split()'''
-        ecfp = [AllChem.GetMorganFingerprintAsBitVect(
-                    Chem.MolFromSmiles(smi), radius=2, nBits=512  # self.nbits
-               ) for smi in self.smiles]
-        self.ecfp = torch.tensor(ecfp, dtype=torch.float32)
-
-        assert len(self.ecfp) == len(self.smiles)
-
-    def next_split(self):
-        train_idx, val_idx = next(self.tr_va_splitter)
-
-        if self.subset == 'train':
-            df = self.tr_va_df.iloc[train_idx]
-        elif self.subset == 'valid':
-            df = self.tr_va_df.iloc[val_idx]
-
-        self.smiles = df['smiles solute'].to_list()
-        self.labels = torch.tensor(
-            df['logS_aq_avg'].to_list(), dtype=torch.float32)
-        self.make_ecfp()
-
-    def __getitem__(self, idx):
-        ecfp = self.ecfp[idx]
-        labels = self.labels[idx]
-        return ecfp, labels
+# class AqSolECFP(AqSolDataset):
+#     def __init__(self, file_path, subset, split, split_frac, data_seed=42,
+#                  nbits=512):
+#         super().__init__(file_path, subset, split, split, data_seed)
+#         self.nbits = nbits
+#         self.make_ecfp()
+#
+#     def make_ecfp(self):
+#         ''' TODO fix self.nbits during next_split()'''
+#         ecfp = [AllChem.GetMorganFingerprintAsBitVect(
+#                     Chem.MolFromSmiles(smi), radius=2, nBits=512  # self.nbits
+#                ) for smi in self.smiles]
+#         self.ecfp = torch.tensor(ecfp, dtype=torch.float32)
+#
+#         assert len(self.ecfp) == len(self.smiles)
+#
+#     def next_split(self):
+#         train_idx, val_idx = next(self.tr_va_splitter)
+#
+#         if self.subset == 'train':
+#             df = self.tr_va_df.iloc[train_idx]
+#         elif self.subset == 'valid':
+#             df = self.tr_va_df.iloc[val_idx]
+#
+#         self.smiles = df['smiles solute'].to_list()
+#         self.labels = torch.tensor(
+#             df['logS_aq_avg'].to_list(), dtype=torch.float32)
+#         self.make_ecfp()
+#
+#     def __getitem__(self, idx):
+#         ecfp = self.ecfp[idx]
+#         labels = self.labels[idx]
+        # return ecfp, labels
 
 
 class CombiSoluDataset(Dataset):
@@ -237,11 +262,14 @@ class CombiSoluDataset(Dataset):
             self.solv_smi = df['solvent_smiles'][:split_index].to_list()
 
             self.temperature = torch.tensor(
-                df['temperature'][:split_index].to_list(), dtype=torch.float32)
+                df['temperature'][:split_index].to_list(),
+                dtype=torch.float16)
             self.density = torch.tensor(
-                df['solvent_density [kg/m3]'][:split_index].to_list(), dtype=torch.float32)
+                df['solvent_density [kg/m3]'][:split_index].to_list(),
+                dtype=torch.float16)
             self.logS = torch.tensor(
-                df['experimental_logS [mol/L]'][:split_index].to_list(), dtype=torch.float32)
+                df['experimental_logS [mol/L]'][:split_index].to_list(),
+                dtype=torch.float16)
             if self.scale_logS:
                 self.logS = self.scale(self.logS)
 
@@ -250,11 +278,14 @@ class CombiSoluDataset(Dataset):
             self.solv_smi = df['solvent_smiles'][split_index:].to_list()
 
             self.temperature = torch.tensor(
-                df['temperature'][split_index:].to_list(), dtype=torch.float32)
+                df['temperature'][split_index:].to_list(),
+                dtype=torch.float16)
             self.density = torch.tensor(
-                df['solvent_density [kg/m3]'][split_index:].to_list(), dtype=torch.float32)
+                df['solvent_density [kg/m3]'][split_index:].to_list(),
+                dtype=torch.float16)
             self.logS = torch.tensor(
-                df['experimental_logS [mol/L]'][split_index:].to_list(), dtype=torch.float32)
+                df['experimental_logS [mol/L]'][split_index:].to_list(),
+                dtype=torch.float16)
             if self.scale_logS:
                 self.logS = self.scale(self.logS)
 
@@ -263,11 +294,14 @@ class CombiSoluDataset(Dataset):
             self.solv_smi = test_df['solvent_smiles'].to_list()
 
             self.temperature = torch.tensor(
-                test_df['temperature'].to_list(), dtype=torch.float32)
+                test_df['temperature'].to_list(),
+                dtype=torch.float16)
             self.density = torch.tensor(
-                test_df['solvent_density [kg/m3]'].to_list(), dtype=torch.float32)
+                test_df['solvent_density [kg/m3]'].to_list(),
+                dtype=torch.float16)
             self.logS = torch.tensor(
-                test_df['experimental_logS [mol/L]'].to_list(), dtype=torch.float32)
+                test_df['experimental_logS [mol/L]'].to_list(),
+                dtype=torch.float16)
             if self.scale_logS:
                 self.logS = self.scale(self.logS)
 

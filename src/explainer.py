@@ -15,19 +15,17 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 
+
 class MolecularSelfAttentionViz():
     """ apply self-attention update rule only """
-       
+
     def __init__(self, n_layers=6, save_heatmap=False):
         self.n_layers = n_layers
         self.save_heatmap = save_heatmap
 
     def avg_heads(self, attn, grad):
         """ identical, increased readability """
-        #print('pre', attn.shape)
-        #print('permuted', attn.permute(0,2,1).shape)
         attn = grad.permute(0, 2, 1) * attn.permute(0, 2, 1)
-        #print('post', attn.shape)
         return attn.clamp(min=0).mean(dim=0)
 
     def agg_relevance(self, attn, grad, ml, token=None):
@@ -44,17 +42,15 @@ class MolecularSelfAttentionViz():
                 attn[layer, :, :ml, :ml], 
                 grad[layer, :, :ml, :ml]
             ).cpu().detach()
-
             # apply update rule
             a_bar = torch.matmul(attn_map, rel) 
             rel = rel + a_bar
-            
+
             # optionally save heatmaps
             if self.save_heatmap:
-                save_heat(a_bar, ml, token, prefix='a_bar_l{layer}' )
+                save_heat(a_bar, ml, token, prefix='a_bar_l{layer}')
         if self.save_heatmap:
-            save_heat(rel - torch.eye(ml), ml, token, f'full_rel' )
-        
+            save_heat(rel - torch.eye(ml), ml, token, f'full_rel')
         return rel
 
     def get_weights(self, rel, ml):
@@ -80,7 +76,7 @@ class ColorMapper():
         self.atoms = ['C', 'c', 'O', 'o', 'N', 'B', 'Br', 'F', 'S', 'Cl', 'P',
             '[P]', 'I', 'n', '[n]', 's', '[s]', '[S]',  '[P+]', '[B]', '[N+]',
             '[O-]', '[#6]', '[#7]', '[C@H]', '[C@]', '[C@@]', '[C@@H]', '[nH]',
-            '[NH]', '[NH0]', '[SH0]', '[H]', '[N]', '[N@]', '[15N]', '[15NH]',  
+            '[NH]', '[NH0]', '[SH0]', '[H]', '[N]',
             # logP specific below
             '[13C]', '[CH2]', '[CH2+]', '[3H]', '[13C@@H]', '[13CH2]', '[I-]',
             '[Cl+]', '[CH+]', '[CH]', '[2H]', '[11CH]', '[35Cl]', '[P+]',
@@ -190,7 +186,6 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix="", sa
         f.write(d.GetDrawingText())
 
 
-        
 # TODO
 # draw full molecule in the corner
 # draw ecfp4 fragments for whole dataset 
@@ -205,3 +200,5 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix="", sa
 # obtain individual attribution weight
 
 # show sum(per-feature-attrib) == total-feature-attrib
+
+

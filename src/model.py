@@ -3,16 +3,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import pytorch_lightning as pl
-from copy import deepcopy
 from typing import List
 # from nemo_chem.tokenizer.regex_tokenizer import RegExTokenizer
 # from nemo_chem.models.megamolbart.infer import NeMoMegaMolBARTWrapper
 from nemo_src.regex_tokenizer import RegExTokenizer
 from nemo_src.infer import NeMoMegaMolBARTWrapper
-from src.explainer import *
+from src.explainer import ColorMapper, MolecularSelfAttentionViz
 from src.maskedhead import (
-    MaskedRegressionHead, MaskedLinearRegressionHead
-)
+    MaskedRegressionHead, MaskedLinearRegressionHead)
+
 
 class REGRegExTokenizer(RegExTokenizer):
     def __init__(self):
@@ -79,7 +78,8 @@ class RegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None):
         super().__init__()
         self.dim = dim
-        self.norm = nn.LayerNorm(normalized_shape=[dim])
+        # self.norm = nn.LayerNorm(normalized_shape=dim, dtype='bf16-true')
+        self.norm = lambda x: x
         self.fc1 = nn.Linear(dim, 64)
         self.fc2 = nn.Linear(64, 64)
         self.fc3 = nn.Linear(64, 1)
@@ -90,8 +90,7 @@ class RegressionHead(pl.LightningModule):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
-        return x.squeeze(1)
-
+        return x.squeeze(1)  # .bfloat16()
 
 class LinearRegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None):
@@ -103,7 +102,7 @@ class LinearRegressionHead(pl.LightningModule):
 
     def forward(self, x):
         self.fc1(x)
-        return x.squeeze(1)
+        return x.squeeze(1)  # .bfloat16()
 
 class AqueousRegModel(pl.LightningModule):
     def __init__(self, head):
