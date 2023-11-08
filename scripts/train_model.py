@@ -9,18 +9,19 @@ import pickle
 import dvc.api
 import json
 import gc
+import numpy as np
 
-# @hydra.main(version_base=None, config_path='cfg', config_name='config')
-# def main(cfg: DictConfig = None):
-#     if cfg is None:
-#     cfg = dvc.api.params_show()
-#     return cfg
-# cfg = get_config()
+# import hydra
+# from omegaconf import OmegaConf, DictConfig
+# @hydra.main(version_base=None, config_path="cfg", config_name="config")
+# def main(cfg: DictConfig):
+    # print(OmegaConf.to_yaml(conf))
+
+# print('ds', cfg['ml']['model'], cfg['ml']['head'])
+# print('ml', cfg['ds']['task'], cfg['ds']['split'])
 
 cfg = dvc.api.params_show()
-print('ds', cfg['ml']['model'], cfg['ml']['head'])
-print('ml', cfg['ds']['task'], cfg['ds']['split'])
-
+print(cfg)
 pl.seed_everything(cfg['ml']['seed'])
 root = f"/workspace/data/{cfg['ds']['task']}/{cfg['ds']['split']}"
 
@@ -47,12 +48,12 @@ for fold in range(cfg['ds']['n_splits']):
     valid_loader = DataLoader(valid, batch_size=cfg['ml']['n_batch'],
                               shuffle=False, num_workers=8)
 
-    if fold > 0:
-        del model
-        del trainer
-        del wandb_logger
-        torch.cuda.empty_cache()
-        gc.collect()
+    # if fold > 0:
+    #     del model
+    #     del trainer
+    #     del wandb_logger
+    #     torch.cuda.empty_cache()
+    #     gc.collect()
 
     # configure model
     if cfg['ml']['model'] == 'mmb':
@@ -108,7 +109,7 @@ print(metrics)
 best_fold = [v['val_mae'] for k, v in metrics.items()]
 print(best_fold)
 if len(best_fold) > 1:
-    best_fold = torch.argmax(best_fold)
+    best_fold = np.argmax(best_fold)
 else:
     best_fold = 0
 ckpt_path = f"{basepath}/{mdir}/model/head{best_fold}.pt"

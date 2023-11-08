@@ -78,8 +78,8 @@ class RegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None):
         super().__init__()
         self.dim = dim
-        # self.norm = nn.LayerNorm(normalized_shape=dim, dtype='bf16-true')
-        self.norm = lambda x: x
+        self.norm = nn.LayerNorm(normalized_shape=dim)
+        # self.norm = lambda x: x
         self.fc1 = nn.Linear(dim, 64)
         self.fc2 = nn.Linear(64, 64)
         self.fc3 = nn.Linear(64, 1)

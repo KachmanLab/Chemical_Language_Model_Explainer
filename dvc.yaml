@@ -1,5 +1,10 @@
 params:
   - params.yaml
+  # - config.yaml
+  # - ds/task: aq
+  # - ds/split: scaffold
+  # - ml/model: mmb
+  # - ml/head: hier
     #- config.yaml
     #- cfg/ds
   
@@ -17,7 +22,7 @@ stages:
     cmd: 
       # - echo "${item.ds.task} ${item.ds.split}"
       - cd /workspace && echo "${ds.task} ${ds.split}"
-      - echo "TEST p${ds}"
+      - echo "TEST ${ds}"
       - mkdir -p data/${ds.task}/${ds.split}/
       - python3 scripts/split_data.py ${ds}
       #        ${ds.task} ${ds.split}

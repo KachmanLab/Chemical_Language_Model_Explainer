@@ -139,7 +139,8 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix=""):
     # todo legend
     d.FinishDrawing()
 
-    with open(file=f'/workspace/results/aqueous/viz/{prefix}_MolViz.png',
+
+    with open(file=f"{basepath}/{mdir}/viz/{prefix}_MolViz.png",
               mode='wb') as f:
         f.write(d.GetDrawingText())
 

@@ -3,11 +3,16 @@ from src.dataloader import AqSolDataset
 import pickle
 import pandas as pd
 import dvc.api
+# import hydra
+# from omegaconf import OmegaConf, DictConfig
 
+# @hydra.main(config_path="cfg", config_name="config")
+# def main(cfg: DictConfig):
+# print('ds', cfg['ml']['model'], cfg['ml']['head'])
+# print('ml', cfg['ds']['task'], cfg['ds']['split'])
+# print(OmegaConf.to_yaml(conf))
+# print(cfg)
 cfg = dvc.api.params_show()
-print('ds', cfg['ml']['model'], cfg['ml']['head'])
-print('ml', cfg['ds']['task'], cfg['ds']['split'])
-
 pl.seed_everything(cfg['ml']['seed'])
 root = f"/workspace/data/{cfg['ds']['task']}/{cfg['ds']['split']}"
 
@@ -58,3 +63,6 @@ for subset, data in list(zip(['test', 'val', 'train'], [test, valid, train])):
 results = results.reset_index(drop=True)
 results = results.reset_index().rename(columns={'index': 'uid'})
 results.to_csv(f"{root}/{cfg['ds']['split']}_df.csv")
+
+# if __name__ == "__main__":
+#     main()
