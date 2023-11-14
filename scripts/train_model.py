@@ -12,11 +12,13 @@ import hydra
 from omegaconf import OmegaConf, DictConfig
 
 
-@hydra.main(version_base="1.3",
-            config_path="/workspace/conf",
-            config_name="config")
+@hydra.main(
+    version_base="1.3", config_path="/workspace/conf", config_name="config")
 def train(cfg: DictConfig) -> None:
-    print('CONFIG')
+    # print(OmegaConf.to_yaml(cfg))
+
+    print('TRAIN CONFIG from params.yaml')
+    cfg = OmegaConf.load('/workspace/params.yaml')
     print(OmegaConf.to_yaml(cfg))
 
     pl.seed_everything(cfg.model.seed)
@@ -29,6 +31,8 @@ def train(cfg: DictConfig) -> None:
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
                              shuffle=False, num_workers=8)
 
+    basepath = f"/workspace/out/{cfg.task.task}/{cfg.split.split}"
+    mdir = f"{cfg.model.model}-{cfg.head.head}"
     metrics = {}
     for fold in range(cfg.split.n_splits):
         # Load pickle
@@ -45,28 +49,29 @@ def train(cfg: DictConfig) -> None:
         valid_loader = DataLoader(valid, batch_size=cfg.model.n_batch,
                                   shuffle=False, num_workers=8)
 
-        # if fold > 0:
-        #     del model
-        #     del trainer
-        #     del wandb_logger
-        #     torch.cuda.empty_cache()
-        #     gc.collect()
-
         # configure model
-        if cfg.model.model == 'mmb':
-            model = AqueousRegModel(head=cfg.head.head)
-        elif cfg.model.finetune or cfg.model.model == 'mmb-ft':
-            # unfreeze to train the whole model instead of just the head
-            # cfg['finetune'] = True
-            model = AqueousRegModel(head=cfg.head.head)
-            model.mmb.unfreeze()
-        elif cfg.model.model == 'mmb-avg':
-            model = BaselineAqueousModel(head=cfg.head.head)
-        elif cfg.model.model == 'ecfp':
-            # model = ECFPLinear(head=head)
-            model = ECFPLinear(head=cfg.head.head,
-                               dim=cfg.model.nbits)
-            # split train script into sklearn - vs - torch
+        if fold == 0:
+            if cfg.model.model == 'mmb':
+                model = AqueousRegModel(head=cfg.head.head)
+            elif cfg.model.finetune or cfg.model.model == 'mmb-ft':
+                # unfreeze to train the whole model instead of just the head
+                # cfg['finetune'] = True
+                model = AqueousRegModel(head=cfg.head.head)
+                model.mmb.unfreeze()
+                torch.save(model.mmb.state_dict(),
+                           f"{basepath}/{mdir}/model/mmb.pt")
+            elif cfg.model.model == 'mmb-avg':
+                model = BaselineAqueousModel(head=cfg.head.head)
+            elif cfg.model.model == 'ecfp':
+                model = ECFPLinear(head=cfg.head.head,
+                                   dim=cfg.model.nbits)
+        else:
+            # only reset head instead of re-initializing full mmb model
+            if cfg.model.finetune or cfg.model.model == 'mmb-ft':
+                # restore base MMB core
+                model.mmb.load_state_dict(
+                    torch.load(f"{basepath}/{mdir}/model/mmb.pt"))
+            model.reset_head()
 
         wandb_logger = WandbLogger(
             project='aqueous-solu' if cfg.task.task == 'aq' else cfg.task.task
@@ -83,37 +88,36 @@ def train(cfg: DictConfig) -> None:
         )
 
         trainer.fit(model, train_loader, valid_loader)
+        print('validating fold', fold)
         metrics[fold] = trainer.validate(model, valid_loader)[0]
+        # wandb.finish()
 
-        basepath = f"/workspace/out/{cfg.task.task}/{cfg.split.split}"
-        mdir = f"{cfg.model.model}-{cfg.head.head}"
-
+        path = f"{basepath}/{mdir}/model/head{fold}.pt"
         if cfg.model.finetune:
-            path = f"{basepath}/{mdir}/model/mmb{fold}.pt"
-            trainer.save_checkpoint(path)
-        else:
-            path = f"{basepath}/{mdir}/model/head{fold}.pt"
+            # trainer.save_checkpoint(path)
+            mmbpath = f"{basepath}/{mdir}/model/mmb{fold}.pt"
+            torch.save(model.mmb.state_dict(), mmbpath)
             torch.save(model.head.state_dict(), path)
-            # artifact = wandb.Artifact(f"head{fold}_{mdir}", type='model')
-            # artifact.add_file(path)
-            # wandb_logger.experiment.log_artifact(artifact)
+        else:
+            torch.save(model.head.state_dict(), path)
 
     # select best model based on valid score, test of test set, save best ckpt
     # TODO fix RMSE and change to val_rmse
-    # best_fold = torch.argmax([v['val_mae'] for k, v in metrics.items()])
-
+    best_fold = np.argmin([v['val_mae'] for k, v in metrics.items()])
     print(metrics)
-    best_fold = [v['val_mae'] for k, v in metrics.items()]
-    print(best_fold)
-    if len(best_fold) > 1:
-        best_fold = np.argmax(best_fold)
-    else:
-        best_fold = 0
-    ckpt_path = f"{basepath}/{mdir}/model/head{best_fold}.pt"
+    print('best fold was fold', best_fold)
 
+    # with open(f"{basepath}/{mdir}/best.pt", 'wb') as f:
+    #     tmp = torch.load(f"{basepath}/{mdir}/model/model{best_fold}.pt")
+    #     torch.save(tmp, f)
+
+    ckpt_path = f"{basepath}/{mdir}/model/head{best_fold}.pt"
     if cfg.model.finetune or cfg.model.model == 'mmb-ft':
-        model = model.load_from_checkpoint(ckpt_path, head=cfg.head.head)
-        trainer.save_checkpoint(f"{basepath}/{mdir}/best.pt")
+        mmb_path = f"{basepath}/{mdir}/model/mmb{best_fold}.pt"
+        model.mmb.load_state_dict(torch.load(mmb_path))
+        model.head.load_state_dict(torch.load(ckpt_path))
+        torch.save(model.mmb.state_dict(), f"{basepath}/{mdir}/best_mmb.pt")
+        torch.save(model.head.state_dict(), f"{basepath}/{mdir}/best.pt")
     else:
         model.head.load_state_dict(torch.load(ckpt_path))
         torch.save(model.head.state_dict(), f"{basepath}/{mdir}/best.pt")

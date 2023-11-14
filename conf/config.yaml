@@ -1,8 +1,10 @@
 defaults:
   - task: aq
-  - split: random
-  - model: mmb
-  - head: hier
+  - split: [accurate, scaffold, random]
+  - model: [mmb, mmb-ft, mmb-avg, ecfp]
+  - head: [hier, lin]
+
+
   # seed: 42
   # ds:
   #   task: aq

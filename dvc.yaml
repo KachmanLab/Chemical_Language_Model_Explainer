@@ -1,7 +1,8 @@
 params:
-  - conf
-  - conf/config
-  # - params.yaml
+  - params.yaml
+#   - params.yaml
+  # - conf
+  # - conf/config
   # - conf/config.yaml
   # - config.yaml
   # - task: aq
@@ -24,11 +25,9 @@ stages:
     #   split: ${data.split}
     cmd: 
       # - echo "${item.task} ${item.split}"
-      - echo "TEST ${split} ${task}"
-      - cd /workspace && echo "DATA ${task} ${split}"
+      - cd /workspace && echo "SPLIT DATA ${task} ${split}"
       - mkdir -p data/${task.task}/${split.split}/
       - python3 scripts/split_data.py #${task} ${split}
-      #        ${task} ${split}
     params:
       - task
       - split
@@ -43,10 +42,11 @@ stages:
   train_model:
     cmd: 
       - mkdir -p out/${task.task}/${split.split}/${model.model}-${head.head}/{viz,model}
-      - echo "${model} ${head}"
-      - python3 scripts/train_model.py #${ ${
-            # ${model} ${head}
+      - echo "TRAIN ${model} ${head}"
+      - python3 scripts/train_model.py #${task} ${split} ${model} ${head}
     params:
+      - task
+      - split
       - model
       - head
     # matrix:
@@ -58,8 +58,8 @@ stages:
       - src/model.py
       # - scripts/model_config.json
       # - scripts/train_model.py
-    metrics:
-      - out/${task.task}/${split.split}/${model.model}-${head.head}/metrics.json
+    # metrics:
+    #   - out/${task.task}/${split.split}/${model.model}-${head.head}/metrics.json
     outs:
       - out/${task.task}/${split.split}/${model.model}-${head.head}/model/
       - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
@@ -84,13 +84,15 @@ stages:
   explain_model:
     cmd:
       - mkdir -p out/${task.task}/${split.split}/${model.model}-${head.head}/viz
-      - python3 scripts/explain_model.py #${model} ${head}
+      - python3 scripts/explain_model.py #${task} ${split} ${model} ${head} 
     deps:
       - scripts/explain_model.py
       - data/${task.task}/${split.split}/test.pkl
       - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
       - src/maskedhead.py
     params:
+      - task
+      - split
       - model
       - head
       # - xai

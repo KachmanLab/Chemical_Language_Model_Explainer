@@ -2,25 +2,18 @@ import pytorch_lightning as pl
 from src.dataloader import AqSolDataset
 import pickle
 import pandas as pd
-# import dvc.api
+import dvc.api
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-# @hydra.main(config_path="cfg", config_name="config")
-# def main(cfg: DictConfig):
-# print('ds', cfg['ml']['model'], cfg['ml']['head'])
-# print('ml', cfg['ds']['task'], cfg['ds']['split'])
-# print(OmegaConf.to_yaml(conf))
-# print(cfg)
 
-# cfg = dvc.api.params_show()
-
-
-@hydra.main(version_base="1.3",
-            config_path="/workspace/conf",
-            config_name="config")
+@hydra.main(
+    version_base="1.3", config_path="/workspace/conf", config_name="config")
 def split(cfg: DictConfig) -> None:
-    print('CONFIG')
+    # print(OmegaConf.to_yaml(cfg))
+
+    cfg = OmegaConf.load('/workspace/params.yaml')
+    print('SPLIT CONFIG from params.yaml')
     print(OmegaConf.to_yaml(cfg))
 
     pl.seed_everything(cfg.split.data_seed)
@@ -77,4 +70,7 @@ def split(cfg: DictConfig) -> None:
 
 
 if __name__ == "__main__":
+    import dvc.api
+    dvccfg = DictConfig(dvc.api.params_show())
+    print(dvccfg)
     split()

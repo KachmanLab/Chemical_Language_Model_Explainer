@@ -3,5 +3,5 @@ nbits: 512
 finetune: false
 n_batch: 64
 seed: 42
-n_epochs: 1
+n_epochs: 50
 xai: ecfp

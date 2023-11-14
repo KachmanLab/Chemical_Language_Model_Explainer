@@ -1,9 +1,0 @@
-property: 'aq'
-split: ['scaffold', 'random', 'accurate']
-  #model: ['mmb-lin,mmb-hier,mmb-ft-hier,mmb-ft-lin,mmb-avg,ecfp-hier,ecfp-lin
-model: ['mmb', 'ecfp']
-head: ['hier', 'lin']
-finetune: false
-  #name: 'mmb-hier'
-
-# https://dvc.org/doc/user-guide/project-structure/dvcyaml-files#matrix-stages

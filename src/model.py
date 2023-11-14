@@ -109,6 +109,18 @@ class AqueousRegModel(pl.LightningModule):
         super().__init__()
         self.init_molbart()
         self.tokenizer = REGRegExTokenizer()
+        self.make_head(head)
+        print(self.head, head)
+        self.explainer = MolecularSelfAttentionViz(save_heatmap=False)
+        self.cmapper = ColorMapper()
+
+        self.criterion = nn.HuberLoss()
+        self.criterion_mse = nn.MSELoss()
+        self.criterion_mae = nn.L1Loss()
+        # self.criterion_rmse = nn.MSELoss(reduction='none')
+        self.learning_rate = 1e-5
+
+    def make_head(self, head):
         if head == 'lin':
             self.head = LinearRegressionHead()
         elif head == 'hier':
@@ -119,15 +131,12 @@ class AqueousRegModel(pl.LightningModule):
             self.head = MaskedRegressionHead()
         else:
             raise NotImplementedError
-        print(self.head, head)
-        self.explainer = MolecularSelfAttentionViz(save_heatmap=False)
-        self.cmapper = ColorMapper()
 
-        self.criterion = nn.HuberLoss()
-        self.criterion_mse = nn.MSELoss()
-        self.criterion_mae = nn.L1Loss()
-        # self.criterion_rmse = nn.MSELoss(reduction='none')
-        self.learning_rate = 1e-5
+    def reset_head(self):
+        #self.head.reset_params()
+        for layer in self.head.children():
+           if hasattr(layer, 'reset_parameters'):
+               layer.reset_parameters()
 
     def init_molbart(self):
         molbart_model = NeMoMegaMolBARTWrapper()

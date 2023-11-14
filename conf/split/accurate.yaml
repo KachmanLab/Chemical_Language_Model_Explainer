@@ -1,5 +1,5 @@
 split: accurate
-n_splits: 5
+n_splits: 3
 split_frac: 0.9
 data_seed: 42
 scaffold_k: 3
