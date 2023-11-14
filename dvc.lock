@@ -402,29 +402,29 @@ stages:
   aq:
     cmd: echo "Finished full aqueous solubility pipeline"
     deps:
-    - path: out/aq/accurate/
+    - path: out/aq/scaffold/
       hash: md5
-      md5: 6e3be5f04f62fe849c04635b1c70a648.dir
-      size: 26422963
-      nfiles: 576
-    - path: out/aq/accurate/mmb-hier/best.pt
+      md5: 8f9ec9db7c61e0afb94cd5851c1d0577.dir
+      size: 24903919
+      nfiles: 460
+    - path: out/aq/scaffold/mmb-hier/best.pt
       hash: md5
-      md5: 076239b8c8cf3a12a75b59d9ef7f9633
+      md5: 488bf29cb4b16ee119619e02d23a148a
       size: 154575
-    - path: out/aq/accurate/mmb-hier/viz
+    - path: out/aq/scaffold/mmb-hier/viz
       hash: md5
-      md5: 509c168cc72d343d1109c1e71f83e566.dir
-      size: 26073235
-      nfiles: 571
+      md5: a9e1a7dbae7dd4c8114f75a48758fb61.dir
+      size: 24555523
+      nfiles: 455
   split_data:
     cmd:
-    - cd /workspace && echo "aq accurate"
-    - echo "TEST --task aq --split accurate --n_splits 1 --split_frac 0.9 --scaffold_k
+    - cd /workspace && echo "DATA aq scaffold"
+    - echo "TEST --task aq --split scaffold --n_splits 1 --split_frac 0.9 --scaffold_k
       3 --color r --data_seed 42 --filepath /workspace/data/AqueousSolu.csv --propname
       logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility' --plot_propname
       'log(S) log([mol/L])'"
-    - mkdir -p data/aq/accurate/
-    - python3 scripts/split_data.py --task aq --split accurate --n_splits 1 --split_frac
+    - mkdir -p data/aq/scaffold/
+    - python3 scripts/split_data.py --task aq --split scaffold --n_splits 1 --split_frac
       0.9 --scaffold_k 3 --color r --data_seed 42 --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
       --plot_propname 'log(S) log([mol/L])'
@@ -441,7 +441,7 @@ stages:
       params.yaml:
         ds:
           task: aq
-          split: accurate
+          split: scaffold
           n_splits: 1
           split_frac: 0.9
           scaffold_k: 3
@@ -453,26 +453,26 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: data/aq/accurate/
+    - path: data/aq/scaffold/
       hash: md5
-      md5: 1a73898e5120be1a2b73be253dc65a15.dir
-      size: 1215465
+      md5: 01ac855d59f2e01a6617a79dad02e24e.dir
+      size: 1214738
       nfiles: 4
   train_model:
     cmd:
-    - mkdir -p out/aq/accurate/mmb-hier/{viz,model}
+    - mkdir -p out/aq/scaffold/mmb-hier/{viz,model}
     - echo --model mmb --head hier --xai ours --n_batch 64 --seed 42 --n_epochs 51
       --nbits 2048
-    - python3 scripts/train_model.py --task aq --split accurate --n_splits 1 --split_frac
+    - python3 scripts/train_model.py --task aq --split scaffold --n_splits 1 --split_frac
       0.9 --scaffold_k 3 --color r --data_seed 42 --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
       --plot_propname 'log(S) log([mol/L])' --model mmb --head hier --xai ours --n_batch
       64 --seed 42 --n_epochs 51 --nbits 2048
     deps:
-    - path: data/aq/accurate/
+    - path: data/aq/scaffold/
       hash: md5
-      md5: 1a73898e5120be1a2b73be253dc65a15.dir
-      size: 1215465
+      md5: 01ac855d59f2e01a6617a79dad02e24e.dir
+      size: 1214738
       nfiles: 4
     - path: src/model.py
       hash: md5
@@ -483,35 +483,35 @@ stages:
         ml.head: hier
         ml.model: mmb
     outs:
-    - path: out/aq/accurate/mmb-hier/best.pt
+    - path: out/aq/scaffold/mmb-hier/best.pt
       hash: md5
-      md5: 076239b8c8cf3a12a75b59d9ef7f9633
+      md5: 488bf29cb4b16ee119619e02d23a148a
       size: 154575
-    - path: out/aq/accurate/mmb-hier/metrics.json
+    - path: out/aq/scaffold/mmb-hier/metrics.json
       hash: md5
-      md5: 97ee9d985c63116bdf29840866284e8c
+      md5: ff8ef07c813ebfb9609e61f4a5a97d43
       size: 217
-    - path: out/aq/accurate/mmb-hier/model/
+    - path: out/aq/scaffold/mmb-hier/model/
       hash: md5
-      md5: b4b0cead755aaf90013ad634b95a27f7.dir
+      md5: cf58dfff2b7b756d84f6bd58dbcea205.dir
       size: 154575
       nfiles: 1
   explain_model:
     cmd:
-    - mkdir -p out/aq/accurate/mmb-hier/viz
-    - python3 scripts/explain_model.py --task aq --split accurate --n_splits 1 --split_frac
+    - mkdir -p out/aq/scaffold/mmb-hier/viz
+    - python3 scripts/explain_model.py --task aq --split scaffold --n_splits 1 --split_frac
       0.9 --scaffold_k 3 --color r --data_seed 42 --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
       --plot_propname 'log(S) log([mol/L])' --model mmb --head hier --xai ours --n_batch
       64 --seed 42 --n_epochs 51 --nbits 2048 --method ours --fid None --head mask
     deps:
-    - path: data/aq/accurate/test.pkl
+    - path: data/aq/scaffold/test.pkl
       hash: md5
-      md5: 3efb24caf768f8444a022da7abb357e3
-      size: 20038
-    - path: out/aq/accurate/mmb-hier/best.pt
+      md5: bba75354b55a8d7bbb7032e2cde94fb9
+      size: 23902
+    - path: out/aq/scaffold/mmb-hier/best.pt
       hash: md5
-      md5: 076239b8c8cf3a12a75b59d9ef7f9633
+      md5: 488bf29cb4b16ee119619e02d23a148a
       size: 154575
     - path: scripts/explain_model.py
       hash: md5
@@ -530,12 +530,12 @@ stages:
           fid: None
           head: mask
     outs:
-    - path: out/aq/accurate/mmb-hier/parity_plot.png
+    - path: out/aq/scaffold/mmb-hier/parity_plot.png
       hash: md5
-      md5: e7fd19f470a8d1ec5223ef860521a573
-      size: 40309
-    - path: out/aq/accurate/mmb-hier/viz
+      md5: 4e1e5878294c1b3ebcda3d19abdad0e2
+      size: 38977
+    - path: out/aq/scaffold/mmb-hier/viz
       hash: md5
-      md5: 509c168cc72d343d1109c1e71f83e566.dir
-      size: 26073235
-      nfiles: 571
+      md5: a9e1a7dbae7dd4c8114f75a48758fb61.dir
+      size: 24555523
+      nfiles: 455

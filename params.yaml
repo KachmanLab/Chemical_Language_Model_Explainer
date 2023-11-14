@@ -1,28 +1,26 @@
 ds:
-  task: aq
-  split: accurate
-  n_splits: 1
-  split_frac: 0.9
-  scaffold_k: 3
-  color: r
-  data_seed: 42
-  # del
-  filepath: /workspace/data/AqueousSolu.csv
-  propname: logS_aq_avg
-  smilesname: smiles solute
-  plot_title: Aqueous solubility
-  plot_propname: log(S) log([mol/L])
+  task:
+    task: aq
+    property: aq
+    filepath: /workspace/data/AqueousSolu.csv
+    propname: logS_aq_avg
+    smilesname: smiles solute
+    plot_title: Aqueous solubility
+    plot_propname: log(S) log([mol/L])
+  split:
+    split: random
+    n_folds: 5
+    split_frac: 0.9
+    data_seed: 42
+    scaffold_k: 3
+    color: c
 ml:
-  model: mmb
-  head: hier
-  xai: ours
-  n_batch: 64
-  seed: 42
-  n_epochs: 51
-  nbits: 2048
-  # del
-  finetune: false
-xai:
-  method: ours
-  fid: None
-  head: mask
+  model:
+    model: mmb
+    finetune: false
+    xai: ours
+    n_batch: 64
+    seed: 42
+    n_epochs: 1
+  head:
+    head: lin

@@ -2,7 +2,8 @@ defaults:
   - ds/task: aq
   - ds/split: random
   - ml/model: mmb
-  - ml/head: hier
+  - ml/head: lin
+
   # ds:
   #   task: aq
   #   split: random
@@ -21,4 +22,3 @@ defaults:
   #   method: ours
   #   fid: None
   #   head: mask
-
