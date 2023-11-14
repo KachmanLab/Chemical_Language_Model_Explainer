@@ -1,9 +1,9 @@
 defaults:
-  - ds/task: aq
-  - ds/split: random
-  - ml/model: mmb
-  - ml/head: lin
-
+  - task: aq
+  - split: random
+  - model: mmb
+  - head: hier
+  # seed: 42
   # ds:
   #   task: aq
   #   split: random

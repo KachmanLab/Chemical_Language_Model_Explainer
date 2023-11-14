@@ -4,10 +4,10 @@ params:
   # - params.yaml
   # - conf/config.yaml
   # - config.yaml
-  # - ds/task: aq
-  # - ds/split: scaffold
-  # - ml/model: mmb
-  # - ml/head: hier
+  # - task: aq
+  # - split: scaffold
+  # - model: mmb
+  # - head: hier
     #- config.yaml
     #- cfg/ds
   
@@ -23,84 +23,84 @@ stages:
     # matrix:
     #   split: ${data.split}
     cmd: 
-      # - echo "${item.ds.task} ${item.ds.split}"
-      - echo "TEST ${ds}"
-      - cd /workspace && echo "DATA ${ds.task} ${ds.split}"
-      - mkdir -p data/${ds.task.task}/${ds.split.split}/
-      - python3 scripts/split_data.py #${ds.task} ${ds.split}
-      #        ${ds.task} ${ds.split}
+      # - echo "${item.task} ${item.split}"
+      - echo "TEST ${split} ${task}"
+      - cd /workspace && echo "DATA ${task} ${split}"
+      - mkdir -p data/${task.task}/${split.split}/
+      - python3 scripts/split_data.py #${task} ${split}
+      #        ${task} ${split}
     params:
-      - ds.task
-      - ds.split
+      - task
+      - split
     deps:
       # - data/AqueousSolu.csv
       # - cfg/data_config.json
       - src/dataloader.py
       - scripts/split_data.py
     outs:
-      - data/${ds.task.task}/${ds.split.split}/
+      - data/${task.task}/${split.split}/
 
   train_model:
     cmd: 
-      - mkdir -p out/${ds.task.task}/${ds.split.split}/${ml.model.model}-${ml.head.head}/{viz,model}
-      - echo ${ml}
-      - python3 scripts/train_model.py #${ds} ${ml}
-            # ${ml.model} ${ml.head}
+      - mkdir -p out/${task.task}/${split.split}/${model.model}-${head.head}/{viz,model}
+      - echo "${model} ${head}"
+      - python3 scripts/train_model.py #${ ${
+            # ${model} ${head}
     params:
-      - ml.model
-      - ml.head
+      - model
+      - head
     # matrix:
-    #   model: ${ml.model}
-    #   head: ${ml.head}
+    #   model: ${model}
+    #   head: ${head}
     #   split: ${data.split}
     deps:
-      - data/${ds.task.task}/${ds.split.split}/
+      - data/${task.task}/${split.split}/
       - src/model.py
       # - scripts/model_config.json
       # - scripts/train_model.py
     metrics:
-      - out/${ds.task.task}/${ds.split.split}/${ml.model.model}-${ml.head.head}/metrics.json
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/metrics.json
     outs:
-      - out/${ds.task.task}/${ds.split.split}/${ml.model.model}-${ml.head.head}/model/
-      - out/${ds.task.task}/${ds.split.split}/${ml.model.model}-${ml.head.head}/best.pt
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/model/
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
 
   # predict_aqueous:
-  #   cmd: python3 scripts/predict_aqueous.py ${ml}
+  #   cmd: python3 scripts/predict_aqueous.py ${
   #   params:
-  #     - ml.model
-  #     - ml.head
-  #     - ml.xai
+  #     - model
+  #     - head
+  #     - xai
   #   deps:
   #     - src/model.py
   #     - scripts/predict_aqueous.py
-  #     - data/${ds.task}/${ds.split}/
-  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/model/
+  #     - data/${task}/${split}/
+  #     - out/${task}/${split}/${model}-${head}/model/
   #   outs:
-  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/metrics.json 
-  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/preds.csv 
-  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt 
-  #     - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/plots/
+  #     - out/${task}/${split}/${model}-${head}/metrics.json 
+  #     - out/${task}/${split}/${model}-${head}/precsv 
+  #     - out/${task}/${split}/${model}-${head}/best.pt 
+  #     - out/${task}/${split}/${model}-${head}/plots/
 
   explain_model:
     cmd:
-      - mkdir -p out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
-      - python3 scripts/explain_model.py ${ds} ${ml}
+      - mkdir -p out/${task.task}/${split.split}/${model.model}-${head.head}/viz
+      - python3 scripts/explain_model.py #${model} ${head}
     deps:
       - scripts/explain_model.py
-      - data/${ds.task}/${ds.split}/test.pkl
-      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
+      - data/${task.task}/${split.split}/test.pkl
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
       - src/maskedhead.py
     params:
-      - ml.model
-      - ml.head
+      - model
+      - head
       # - xai
     outs:
-      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
-      - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/parity_plot.png
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/viz
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/parity_plot.png
 
   aq:
     cmd: echo "Finished full aqueous solubility pipeline"
     deps:
-    - out/${ds.task}/${ds.split}/
-    - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/best.pt
-    - out/${ds.task}/${ds.split}/${ml.model}-${ml.head}/viz
+    - out/${task.task}/${split.split}/
+    - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
+    - out/${task.task}/${split.split}/${model.model}-${head.head}/viz

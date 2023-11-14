@@ -418,61 +418,58 @@ stages:
       nfiles: 455
   split_data:
     cmd:
-    - cd /workspace && echo "DATA aq scaffold"
-    - echo "TEST --task aq --split scaffold --n_splits 1 --split_frac 0.9 --scaffold_k
-      3 --color r --data_seed 42 --filepath /workspace/data/AqueousSolu.csv --propname
-      logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility' --plot_propname
-      'log(S) log([mol/L])'"
-    - mkdir -p data/aq/scaffold/
-    - python3 scripts/split_data.py --task aq --split scaffold --n_splits 1 --split_frac
-      0.9 --scaffold_k 3 --color r --data_seed 42 --filepath /workspace/data/AqueousSolu.csv
+    - echo "TEST --split random --n_splits 1 --split_frac 0.9 --data_seed 42 --scaffold_k
+      3 --color g --task aq --property aq --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S) log([mol/L])'
+      --plot_propname 'log(S) log([mol/L])'"
+    - cd /workspace && echo "DATA --task aq --property aq --filepath /workspace/data/AqueousSolu.csv
+      --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
+      --plot_propname 'log(S) log([mol/L])' --split random --n_splits 1 --split_frac
+      0.9 --data_seed 42 --scaffold_k 3 --color g"
+    - mkdir -p data/aq/random/
+    - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
       hash: md5
-      md5: 3ab77c8b35ae2f5a04003eb29a3fe18b
-      size: 2390
+      md5: 7b3c26557f1cace6499d2ceddfb5eda2
+      size: 2712
     - path: src/dataloader.py
       hash: md5
       md5: e5c6207cb8665fd1675d71f5c62eda46
       size: 16200
     params:
       params.yaml:
-        ds:
-          task: aq
-          split: scaffold
+        split:
+          split: random
           n_splits: 1
           split_frac: 0.9
-          scaffold_k: 3
-          color: r
           data_seed: 42
+          scaffold_k: 3
+          color: g
+        task:
+          task: aq
+          property: aq
           filepath: /workspace/data/AqueousSolu.csv
           propname: logS_aq_avg
           smilesname: smiles solute
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: data/aq/scaffold/
+    - path: data/aq/random/
       hash: md5
-      md5: 01ac855d59f2e01a6617a79dad02e24e.dir
-      size: 1214738
+      md5: cbfd392bcf6be06bb348efae58c34936.dir
+      size: 1222383
       nfiles: 4
   train_model:
     cmd:
-    - mkdir -p out/aq/scaffold/mmb-hier/{viz,model}
-    - echo --model mmb --head hier --xai ours --n_batch 64 --seed 42 --n_epochs 51
-      --nbits 2048
-    - python3 scripts/train_model.py --task aq --split scaffold --n_splits 1 --split_frac
-      0.9 --scaffold_k 3 --color r --data_seed 42 --filepath /workspace/data/AqueousSolu.csv
-      --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S) log([mol/L])' --model mmb --head hier --xai ours --n_batch
-      64 --seed 42 --n_epochs 51 --nbits 2048
+    - mkdir -p out/aq/random/mmb-hier/{viz,model}
+    - echo "--model mmb --xai ours --n_batch 64 --seed 42 --n_epochs 1 --head hier"
+    - python3 scripts/train_model.py
     deps:
-    - path: data/aq/scaffold/
+    - path: data/aq/random/
       hash: md5
-      md5: 01ac855d59f2e01a6617a79dad02e24e.dir
-      size: 1214738
+      md5: cbfd392bcf6be06bb348efae58c34936.dir
+      size: 1222383
       nfiles: 4
     - path: src/model.py
       hash: md5
@@ -480,20 +477,27 @@ stages:
       size: 20809
     params:
       params.yaml:
-        ml.head: hier
-        ml.model: mmb
+        head:
+          head: hier
+        model:
+          model: mmb
+          finetune: false
+          xai: ours
+          n_batch: 64
+          seed: 42
+          n_epochs: 1
     outs:
-    - path: out/aq/scaffold/mmb-hier/best.pt
+    - path: out/aq/random/mmb-hier/best.pt
       hash: md5
-      md5: 488bf29cb4b16ee119619e02d23a148a
+      md5: 2ee301f9a3e9e5ff5bfbeb55b299edbc
       size: 154575
-    - path: out/aq/scaffold/mmb-hier/metrics.json
+    - path: out/aq/random/mmb-hier/metrics.json
       hash: md5
-      md5: ff8ef07c813ebfb9609e61f4a5a97d43
+      md5: b885f8d47b53435306fd8a4ce7eacd31
       size: 217
-    - path: out/aq/scaffold/mmb-hier/model/
+    - path: out/aq/random/mmb-hier/model/
       hash: md5
-      md5: cf58dfff2b7b756d84f6bd58dbcea205.dir
+      md5: 3a5ef9d0591745e61363461229fdf924.dir
       size: 154575
       nfiles: 1
   explain_model:
