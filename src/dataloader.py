@@ -9,23 +9,27 @@ from rdkit.Chem.Scaffolds import MurckoScaffold
 from typing import List
 
 
-class AqSolDataset(Dataset):
-    def __init__(self, file_path, subset, split, split_frac,
-                 n_splits=5, data_seed=42, augment=False):
+class PropertyDataset(Dataset):
+    def __init__(self, subset, file_path, smilesname, propname,
+                 split, split_frac, n_splits=5, data_seed=42,
+                 augment=False):
         self.subset = subset
         self.split = split
         self.split_frac = split_frac
         self.n_splits = n_splits
+        self.smilesname = smilesname
+        self.propname = propname
         self.data_seed = data_seed
         self.augment = augment
+        print(smilesname, propname)
         print(split, n_splits)
 
         # split data into accurate test set according to SolProp
         df = pd.read_csv(file_path)
-        # drop one extreme outlier (logS 6.4)
-        df = df[df['logS_aq_avg'] < 2.05].reset_index()
-        self.min = df['logS_aq_avg'].min()
-        self.max = df['logS_aq_avg'].max()
+        df = self.custom_preprocess(df)
+        self.min = df[propname].min()
+        self.max = df[propname].max()
+        print('min', self.min, 'max', self.max)
 
         splitter = ShuffleSplit(
             n_splits=5,
@@ -34,7 +38,7 @@ class AqSolDataset(Dataset):
         )
         if split == 'scaffold':
             test_splitter = MurckoScaffoldSplitter(
-                smiles=df['smiles solute'].to_list(),
+                smiles=df[smilesname].to_list(),
                 n_splits=5,
                 test_size=1.-self.split_frac,
                 seed=self.data_seed
@@ -43,14 +47,12 @@ class AqSolDataset(Dataset):
             test_splitter = splitter
 
         # split into train+val/test,
-        if split == 'accurate':
-            # predefined accurate split: >2 measuments with low std
-            test_idx = np.where(
-                (df['count'] > 1) & (df['logS_aq_std'] < 0.2))[0]
+        if split == 'accurate' or split == 'custom':
+            test_idx = self.custom_split(df)
             _sanity = None
         else:
             _sanity, test_idx = next(
-                test_splitter.split(df['smiles solute'].to_list()))
+                test_splitter.split(df[smilesname].to_list()))
 
         if _sanity is not None:
             assert len(_sanity)+len(test_idx) == len(df)
@@ -65,26 +67,29 @@ class AqSolDataset(Dataset):
         # sanity check: assert train/test non-overlapping
         if _sanity is not None:
             assert tr_va_df.shape == sane_train.shape
-            assert len(set(df['smiles solute'].to_list()) ^
-                   set(sane_train['smiles solute'].to_list()) ^
-                   set(sane_test['smiles solute'].to_list())) == 0
-            assert len(set(tr_va_df['smiles solute'].to_list()) ^
-                       set(sane_train['smiles solute'].to_list())) == 0
-            assert len(set(test_df['smiles solute'].to_list()) ^
-                       set(sane_test['smiles solute'].to_list())) == 0
+            print(len(set(df[smilesname].to_list())))
+            print(len(set(sane_train[smilesname].to_list())))
+            print(len(set(sane_test[smilesname].to_list())))
+            assert len(set(df[smilesname].to_list()) ^
+                   set(sane_train[smilesname].to_list()) ^
+                   set(sane_test[smilesname].to_list())) == 0
+            assert len(set(tr_va_df[smilesname].to_list()) ^
+                       set(sane_train[smilesname].to_list())) == 0
+            assert len(set(test_df[smilesname].to_list()) ^
+                       set(sane_test[smilesname].to_list())) == 0
 
         if self.subset == 'test':
             self.data = DataSplit(
-                    smiles = test_df['smiles solute'].to_list(),
-                    labels = torch.tensor(
-                        test_df['logS_aq_avg'].to_list(),
+                    smiles=test_df[smilesname].to_list(),
+                    labels=torch.tensor(
+                        test_df[propname].to_list(),
                         dtype=torch.float32),
-                    subset = self.subset
+                    subset=self.subset
                 )
         else:
             # split remaining df into train/val
             self.tr_va_splitter = splitter.split(
-                tr_va_df['smiles solute'].to_list())
+                tr_va_df[smilesname].to_list())
 
             self.data = []
             for fold in range(self.n_splits):
@@ -97,11 +102,11 @@ class AqSolDataset(Dataset):
 
                 self.data.append(
                     DataSplit(
-                        smiles = df['smiles solute'].to_list(),
-                        labels = torch.tensor(
-                            df['logS_aq_avg'].to_list(),
+                        smiles=df[smilesname].to_list(),
+                        labels=torch.tensor(
+                            df[propname].to_list(),
                             dtype=torch.float16),
-                        subset = self.subset)
+                        subset=self.subset)
                     )
 
     def __len__(self):
@@ -112,6 +117,13 @@ class AqSolDataset(Dataset):
             return self.data
         else:
             return self.data[idx]
+
+    def custom_preprocess(self, df):
+        raise NotImplementedError
+        # return df
+
+    def custom_split(self, df):
+        raise NotImplementedError
 
 
 class DataSplit(Dataset):
@@ -132,7 +144,7 @@ class DataSplit(Dataset):
 
 
 class ECFPDataSplit(DataSplit):
-    def __init__(self, ds, nbits=512): 
+    def __init__(self, ds, nbits=512):
         self.smiles = ds.smiles
         self.labels = ds.labels
         self.subset = ds.subset
@@ -174,7 +186,8 @@ class MurckoScaffoldSplitter():
         ''' get list of most frequent murcko-* scaffolds '''
         vals, cnts = np.unique(scaffolds, return_counts=True)
         print(sorted(cnts, reverse=True)[:10])
-        print(sorted(list(zip(vals, cnts)), key=lambda x: x[1], reverse=True)[:10])
+        print(sorted(list(zip(vals, cnts)), key=lambda x: x[1],
+                     reverse=True)[:10])
         # filter out scaffolds with less than 5 occurances
         return [scf for scf, cnt in list(zip(vals, cnts)) if cnt >= self.top_k]
 
@@ -188,6 +201,67 @@ class MurckoScaffoldSplitter():
                                      random_state=self.seed)
         return splitter.split(smiles, groups=scaffolds)
 
+
+class AqSolDataset(PropertyDataset):
+    def __init__(self, subset, file_path, smilesname, propname,
+                 split, split_frac, n_splits=5, data_seed=42,
+                 augment=False):
+        super().__init__(subset, file_path, smilesname, propname,
+                         split, split_frac, n_splits, data_seed,
+                         augment)
+        # self.smilesname = 'smiles solute'
+        # self.propname = 'logS_aq_avg'
+
+    def custom_preprocess(self, df):
+        # drop one extreme outlier (logS 6.4)
+        return df[df[self.propname] < 2.05].reset_index()
+
+    def custom_split(self, df):
+        # predefined accurate split: >2 measuments with low std
+        test_idx = np.where(
+            (df['count'] > 1) & (df['logS_aq_std'] < 0.2))[0]
+        return test_idx
+
+
+class CMCDataset(PropertyDataset):
+    def __init__(self, subset, file_path, smilesname, propname,
+                 split, split_frac, n_splits=5, data_seed=42,
+                 augment=False):
+        super().__init__(subset, file_path, smilesname, propname,
+                         split, split_frac, n_splits, data_seed,
+                         augment)
+
+    def custom_preprocess(self, df):
+        # drop empty (NaN) columns + one extreme outlier (pCMC ~ 20)
+        # df = df[~pd.isna(df[self.propname])]#.reset_index()
+        df.at[1003, self.propname] = np.nan
+        # print(df.at[1003, self.propname])
+        df = df.dropna(axis=0, subset=[self.propname]).reset_index()
+        df = df[
+                (df[self.propname] < 20.05) & (df[self.propname] > 0.)
+            ].reset_index()
+        print('n unique', len(np.unique(df[self.smilesname])))
+        return df
+
+
+class ToyDataset(PropertyDataset):
+    def __init__(self, file_path, subset, split, split_frac,
+                 smilesname, propname, n_splits=5, data_seed=42,
+                 augment=False):
+        super().__init__(file_path, subset, split, split_frac,
+                         smilesname, propname, n_splits, data_seed,
+                         augment=False)
+
+    def count_carbons(self, smi):
+        mol = Chem.MolFromSmiles(smi)
+        return sum(1 for atom in mol.GetAtoms() if atom.GetSymbol() == 'C')
+
+    def custom_preprocess(self, df):
+        smiles = df[self.smilesname].to_list()
+        numcarbon = [self.count_carbons(smi) for smi in smiles]
+        df[self.propname] = numcarbon
+        print('custom toy prep, avg:', np.mean(numcarbon))
+        return df
 
 
 # class AqSolECFP(AqSolDataset):

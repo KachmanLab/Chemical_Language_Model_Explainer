@@ -1,5 +1,6 @@
 task: aq
 property: aq
+loader: AqSolDataset
 filepath: "/workspace/data/AqueousSolu.csv"
 propname: "logS_aq_avg"
 smilesname: "smiles solute"

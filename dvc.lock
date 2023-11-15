@@ -418,44 +418,45 @@ stages:
       nfiles: 571
   split_data:
     cmd:
-    - cd /workspace && echo "SPLIT DATA --task aq --property aq --filepath /workspace/data/AqueousSolu.csv
-      --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S) log([mol/L])' --split accurate --n_splits 5 --split_frac
-      0.9 --data_seed 42 --scaffold_k 3 --color r"
-    - mkdir -p data/aq/accurate/
+    - cd /workspace && echo "SPLIT DATA --task sft --property sft --loader CMCDataset
+      --filepath /workspace/data/cmcdata_micellization.csv --propname AW_ST_CMC --smilesname
+      SMILES --plot_title 'Surface tension at CMC' --plot_desc SFT@CMC --split random
+      --n_splits 3 --split_frac 0.9 --data_seed 42 --scaffold_k 3 --color y"
+    - mkdir -p data/sft/random/
     - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
       hash: md5
-      md5: 551c22dca74c037211020612ed62538c
-      size: 2618
+      md5: 6d24729a119e3d632b0296856a0e7573
+      size: 2871
     - path: src/dataloader.py
       hash: md5
-      md5: e5c6207cb8665fd1675d71f5c62eda46
-      size: 16200
+      md5: 7b3113c2362a518f7b95234ffb76902d
+      size: 18492
     params:
       params.yaml:
         split:
-          split: accurate
-          n_splits: 5
+          split: random
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           scaffold_k: 3
-          color: r
+          color: y
         task:
-          task: aq
-          property: aq
-          filepath: /workspace/data/AqueousSolu.csv
-          propname: logS_aq_avg
-          smilesname: smiles solute
-          plot_title: Aqueous solubility
-          plot_propname: log(S) log([mol/L])
+          task: sft
+          property: sft
+          loader: CMCDataset
+          filepath: /workspace/data/cmcdata_micellization.csv
+          propname: AW_ST_CMC
+          smilesname: SMILES
+          plot_title: Surface tension at CMC
+          plot_desc: SFT@CMC
     outs:
-    - path: data/aq/accurate/
+    - path: data/sft/random/
       hash: md5
-      md5: ace97904f0f490dcc6790c2cac627225.dir
-      size: 2974279
-      nfiles: 12
+      md5: 0b2c0c69e7bf46c148c1e5bdb7960a64.dir
+      size: 4862
+      nfiles: 8
   train_model:
     cmd:
     - mkdir -p out/aq/accurate/mmb-hier/{viz,model}

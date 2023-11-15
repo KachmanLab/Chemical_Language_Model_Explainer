@@ -1,7 +1,8 @@
+task: toy
 property: toy
+loader: ToyDataset
 filepath: "/workspace/data/AqueousSolu.csv"
-filepath: "/workspace/data/Aqueous_Toy.csv"
-propname: "num_carbon"
+propname: "carboncount"
 smilesname: "smiles solute"
 plot_title: "Toy test: Carbon count prediction"
-plot_desc: "num_carbon"
+plot_desc: "Number of carbon atoms"

@@ -1,4 +1,6 @@
+task: cmc
 property: cmc
+loader: CMCDataset
 filepath: "/workspace/data/cmcdata.csv"
 propname: "pCMC"
 smilesname: "SMILES"

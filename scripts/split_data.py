@@ -1,11 +1,11 @@
 import pytorch_lightning as pl
-from src.dataloader import AqSolDataset
+# from src.dataloader import *
 import pickle
 import pandas as pd
 import dvc.api
 import hydra
 from omegaconf import DictConfig, OmegaConf
-
+import importlib
 
 @hydra.main(
     version_base="1.3", config_path="/workspace/conf", config_name="config")
@@ -19,16 +19,21 @@ def split(cfg: DictConfig) -> None:
     pl.seed_everything(cfg.split.data_seed)
     root = f"/workspace/data/{cfg.task.task}/{cfg.split.split}"
 
-    train_ds = AqSolDataset(
-        cfg.task.filepath, 'train', cfg.split.split,
-        cfg.split.split_frac, cfg.split.n_splits, cfg.split.data_seed,
-        augment=False)
-    valid_ds = AqSolDataset(
-        cfg.task.filepath, 'valid', cfg.split.split,
-        cfg.split.split_frac, cfg.split.n_splits, cfg.split.data_seed)
-    test_ds = AqSolDataset(
-        cfg.task.filepath, 'test', cfg.split.split,
-        cfg.split.split_frac, cfg.split.n_splits, cfg.split.data_seed)
+    module = importlib.import_module('src.dataloader')
+    DatasetLoader = getattr(module, cfg.task.loader)
+
+    train_ds = DatasetLoader('train',
+        cfg.task.filepath, cfg.task.smilesname, cfg.task.propname,
+        cfg.split.split, cfg.split.split_frac, cfg.split.n_splits,
+        cfg.split.data_seed, augment=False)
+    valid_ds = DatasetLoader('valid',
+        cfg.task.filepath, cfg.task.smilesname, cfg.task.propname,
+        cfg.split.split, cfg.split.split_frac, cfg.split.n_splits,
+        cfg.split.data_seed)
+    test_ds = DatasetLoader('test', 
+        cfg.task.filepath, cfg.task.smilesname, cfg.task.propname,
+        cfg.split.split, cfg.split.split_frac, cfg.split.n_splits,
+        cfg.split.data_seed)
 
     test = test_ds[:]
     print(len(test), 'test len')
