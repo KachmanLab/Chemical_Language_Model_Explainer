@@ -38,10 +38,11 @@ def explain(cfg: DictConfig) -> None:
     ckpt_path = f"{basepath}/{mdir}/best.pt"
 
     head = cfg.head.head
-    if head == 'lin_mask' or head == 'lin':
-        head = 'lin_mask'   # MaskedLinearRegressionHead()
-    elif head == 'hier_mask' or head == 'hier':
-        head = 'hier_mask'  # MaskedRegressionHead()
+    if cfg.xai.mask:
+        if head == 'lin_mask' or head == 'lin':
+            head = 'lin_mask'   # MaskedLinearRegressionHead()
+        elif head == 'hier_mask' or head == 'hier':
+            head = 'hier_mask'  # MaskedRegressionHead()
 
     if cfg.model.model == 'mmb':
         model = AqueousRegModel(head=head)

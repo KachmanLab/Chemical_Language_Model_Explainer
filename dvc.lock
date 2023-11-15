@@ -404,9 +404,9 @@ stages:
     deps:
     - path: out/aq/accurate/
       hash: md5
-      md5: 8f83b9701bf724b9dbbd0575fe4ff575.dir
-      size: 270520468
-      nfiles: 704
+      md5: 064953f982ca98c67b9b5ac7ff181dec.dir
+      size: 27071668
+      nfiles: 578
     - path: out/aq/accurate/mmb-hier/best.pt
       hash: md5
       md5: a27bbdd3a56f5378ac83d52c5b6d07a9
