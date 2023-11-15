@@ -404,23 +404,23 @@ stages:
     deps:
     - path: out/aq/accurate/
       hash: md5
-      md5: 5b9354473fed5e66f8689b53d8ca6eac.dir
-      size: 26743193
-      nfiles: 580
+      md5: 8f83b9701bf724b9dbbd0575fe4ff575.dir
+      size: 270520468
+      nfiles: 704
     - path: out/aq/accurate/mmb-hier/best.pt
       hash: md5
-      md5: 9224173656f6742fe272159d2d0225fc
+      md5: a27bbdd3a56f5378ac83d52c5b6d07a9
       size: 154575
     - path: out/aq/accurate/mmb-hier/viz
       hash: md5
-      md5: 0cc2324632773b82b21a30697547a127.dir
-      size: 25776646
+      md5: 68615c9d10b9b3bf980ca75fab540b2b.dir
+      size: 26105388
       nfiles: 571
   split_data:
     cmd:
     - cd /workspace && echo "SPLIT DATA --task aq --property aq --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S) log([mol/L])' --split accurate --n_splits 2 --split_frac
+      --plot_propname 'log(S) log([mol/L])' --split accurate --n_splits 5 --split_frac
       0.9 --data_seed 42 --scaffold_k 3 --color r"
     - mkdir -p data/aq/accurate/
     - python3 scripts/split_data.py
@@ -437,7 +437,7 @@ stages:
       params.yaml:
         split:
           split: accurate
-          n_splits: 2
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           scaffold_k: 3
@@ -453,21 +453,21 @@ stages:
     outs:
     - path: data/aq/accurate/
       hash: md5
-      md5: 2e7763157df62e13136add2a5401a410.dir
-      size: 1656853
-      nfiles: 6
+      md5: ace97904f0f490dcc6790c2cac627225.dir
+      size: 2974279
+      nfiles: 12
   train_model:
     cmd:
-    - mkdir -p out/aq/accurate/mmb-ft-hier/{viz,model}
-    - echo "TRAIN --model mmb-ft --finetune --xai ours --n_batch 64 --seed 42 --n_epochs
-      2 --head hier"
+    - mkdir -p out/aq/accurate/mmb-hier/{viz,model}
+    - echo "TRAIN --model mmb --xai ours --n_batch 64 --seed 42 --n_epochs 30 --head
+      hier"
     - python3 scripts/train_model.py
     deps:
     - path: data/aq/accurate/
       hash: md5
-      md5: 2e7763157df62e13136add2a5401a410.dir
-      size: 1656853
-      nfiles: 6
+      md5: ace97904f0f490dcc6790c2cac627225.dir
+      size: 2974279
+      nfiles: 12
     - path: src/model.py
       hash: md5
       md5: 40f95322eb6268af985a8dc658e9b86a
@@ -477,15 +477,15 @@ stages:
         head:
           head: hier
         model:
-          model: mmb-ft
-          finetune: true
+          model: mmb
+          finetune: false
           xai: ours
           n_batch: 64
           seed: 42
-          n_epochs: 2
+          n_epochs: 30
         split:
           split: accurate
-          n_splits: 2
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           scaffold_k: 3
@@ -499,15 +499,15 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: out/aq/accurate/mmb-ft-hier/best.pt
+    - path: out/aq/accurate/mmb-hier/best.pt
       hash: md5
-      md5: b02835646fd8778eda5046c5fa34a16f
+      md5: a27bbdd3a56f5378ac83d52c5b6d07a9
       size: 154575
-    - path: out/aq/accurate/mmb-ft-hier/model/
+    - path: out/aq/accurate/mmb-hier/model/
       hash: md5
-      md5: d98cf4ef54c4d16deefa7b466366d872.dir
-      size: 159040666
-      nfiles: 4
+      md5: a351ab0e36155e1ec2d0faf46b9e5a4a.dir
+      size: 772875
+      nfiles: 5
   explain_model:
     cmd:
     - mkdir -p out/aq/accurate/mmb-hier/viz
@@ -515,16 +515,16 @@ stages:
     deps:
     - path: data/aq/accurate/test.pkl
       hash: md5
-      md5: 458eb38601563d2177e8082dc74f557a
+      md5: e61e5c38a4ee396aa540cc52b48474dd
       size: 20038
     - path: out/aq/accurate/mmb-hier/best.pt
       hash: md5
-      md5: 9224173656f6742fe272159d2d0225fc
+      md5: a27bbdd3a56f5378ac83d52c5b6d07a9
       size: 154575
     - path: scripts/explain_model.py
       hash: md5
-      md5: 476d023563f6d62f452998bba4acb01f
-      size: 6291
+      md5: 9ece8dd1ccbf79a8f0527ef0d7a7d78c
+      size: 6459
     - path: src/maskedhead.py
       hash: md5
       md5: 7e95d59742139b020474ce4dc988a81c
@@ -539,7 +539,7 @@ stages:
           xai: ours
           n_batch: 64
           seed: 42
-          n_epochs: 20
+          n_epochs: 30
         split:
           split: accurate
           n_splits: 5
@@ -558,10 +558,10 @@ stages:
     outs:
     - path: out/aq/accurate/mmb-hier/parity_plot.png
       hash: md5
-      md5: 30d6e9c924ec313bdaeb5866751a4871
-      size: 38560
+      md5: b164d1b7b4754fc604e3ca468b50cb77
+      size: 38830
     - path: out/aq/accurate/mmb-hier/viz
       hash: md5
-      md5: 0cc2324632773b82b21a30697547a127.dir
-      size: 25776646
+      md5: 68615c9d10b9b3bf980ca75fab540b2b.dir
+      size: 26105388
       nfiles: 571
