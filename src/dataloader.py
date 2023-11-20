@@ -169,7 +169,7 @@ class ECFPDataSplit(DataSplit):
         ecfp = [AllChem.GetMorganFingerprintAsBitVect(
                     Chem.MolFromSmiles(smi), radius=2, nBits=self.nbits
                ) for smi in self.smiles]
-        self.ecfp = torch.tensor(ecfp, dtype=torch.float16)
+        self.ecfp = torch.tensor(ecfp, dtype=torch.float32)
 
     def __getitem__(self, idx):
         data = self.ecfp[idx]

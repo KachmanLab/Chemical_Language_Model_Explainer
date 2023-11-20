@@ -101,7 +101,7 @@ class LinearRegressionHead(pl.LightningModule):
         self.fids = None
 
     def forward(self, x):
-        self.fc1(x)
+        x = self.fc1(x)
         return x.squeeze(1)  # .bfloat16()
 
 class AqueousRegModel(pl.LightningModule):
@@ -399,8 +399,9 @@ class ECFPLinear(pl.LightningModule):
 
     def reset_head(self):
         for layer in self.head.children():
-           if hasattr(layer, 'reset_parameters'):
-               layer.reset_parameters()
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()
+
 
 ##########################################
 class BaselineAqueousModel(AqueousRegModel):

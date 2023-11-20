@@ -421,9 +421,9 @@ stages:
     - cd /workspace && echo "SPLIT DATA --task aq --property aq --loader AqSolDataset
       --filepath /workspace/data/AqueousSolu.csv --propname logS_aq_avg --smilesname
       'smiles solute' --plot_title 'Aqueous solubility' --plot_propname 'log(S) log([mol/L])'
-      --split accurate --n_splits 3 --split_frac 0.9 --data_seed 42 --scaffold_k 3
-      --color r"
-    - mkdir -p data/aq/accurate/
+      --split random --n_splits 2 --split_frac 0.9 --data_seed 42 --scaffold_k 3 --color
+      y"
+    - mkdir -p data/aq/random/
     - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
@@ -432,17 +432,17 @@ stages:
       size: 2871
     - path: src/dataloader.py
       hash: md5
-      md5: eaa528c3b441184def360af8c0a1fc21
+      md5: 5b0c5d0eaf2358f1638a6a7c167144cb
       size: 20460
     params:
       params.yaml:
         split:
-          split: accurate
-          n_splits: 3
+          split: random
+          n_splits: 2
           split_frac: 0.9
           data_seed: 42
           scaffold_k: 3
-          color: r
+          color: y
         task:
           task: aq
           property: aq
@@ -453,45 +453,45 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: data/aq/accurate/
+    - path: data/aq/random/
       hash: md5
-      md5: 886bc274eac1ab0ace5e83ef5c9581e4.dir
-      size: 2095995
-      nfiles: 8
+      md5: c0bd2554528d6173dd01ee9a95465dc2.dir
+      size: 1634227
+      nfiles: 6
   train_model:
     cmd:
-    - mkdir -p out/aq/accurate/ecfp-hier/{viz,model}
-    - echo "TRAIN --model ecfp --nbits 512 --n_batch 64 --seed 42 --n_epochs 50 --head
+    - mkdir -p out/aq/random/mmb-hier/{viz,model}
+    - echo "TRAIN --model mmb --xai ours --n_batch 64 --seed 42 --n_epochs 50 --head
       hier"
     - python3 scripts/train_model.py
     deps:
-    - path: data/aq/accurate/
+    - path: data/aq/random/
       hash: md5
-      md5: 886bc274eac1ab0ace5e83ef5c9581e4.dir
-      size: 2095995
-      nfiles: 8
+      md5: c0bd2554528d6173dd01ee9a95465dc2.dir
+      size: 1634227
+      nfiles: 6
     - path: src/model.py
       hash: md5
-      md5: c3f23945a1419ff2cf8d37a43235b784
-      size: 21156
+      md5: 311f2bfe1a977873f928ed32d19725d2
+      size: 21163
     params:
       params.yaml:
         head:
           head: hier
         model:
-          model: ecfp
-          nbits: 512
+          model: mmb
           finetune: false
+          xai: ours
           n_batch: 64
           seed: 42
           n_epochs: 50
         split:
-          split: accurate
-          n_splits: 3
+          split: random
+          n_splits: 2
           split_frac: 0.9
           data_seed: 42
           scaffold_k: 3
-          color: r
+          color: y
         task:
           task: aq
           property: aq
@@ -502,36 +502,36 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: out/aq/accurate/ecfp-hier/best.pt
+    - path: out/aq/random/mmb-hier/best.pt
       hash: md5
-      md5: e0097cbf167a54435e133a841f4fbb4b
+      md5: b112b35cf55bd68c99503fa584f72abc
       size: 154575
-    - path: out/aq/accurate/ecfp-hier/metrics.json
+    - path: out/aq/random/mmb-hier/metrics.json
       hash: md5
-      md5: af107588c2ec639c390a3f3d0510dc4d
-      size: 480
-    - path: out/aq/accurate/ecfp-hier/model/
+      md5: 9f9b05cc775ff259c81f7ac35f99f41d
+      size: 291
+    - path: out/aq/random/mmb-hier/model/
       hash: md5
-      md5: a0827bebea4e0ad94468ba515cd3f9c8.dir
-      size: 463725
-      nfiles: 3
+      md5: 1cdc496c9c4d5472ef51a2005825e5a3.dir
+      size: 309150
+      nfiles: 2
   explain_model:
     cmd:
-    - mkdir -p out/aq/accurate/mmb-hier/viz
-    - python3 scripts/explain_model.py
+    - mkdir -p out/aq/random/mmb-hier/viz
+    - python3 scripts/explain_mmb.py
     deps:
-    - path: data/aq/accurate/test.pkl
+    - path: data/aq/random/test.pkl
       hash: md5
-      md5: e61e5c38a4ee396aa540cc52b48474dd
-      size: 20038
-    - path: out/aq/accurate/mmb-hier/best.pt
+      md5: bd497c71bb12cf4f4d770227caf0e04c
+      size: 48533
+    - path: out/aq/random/mmb-hier/best.pt
       hash: md5
-      md5: a27bbdd3a56f5378ac83d52c5b6d07a9
+      md5: b112b35cf55bd68c99503fa584f72abc
       size: 154575
-    - path: scripts/explain_model.py
+    - path: scripts/explain_mmb.py
       hash: md5
-      md5: 9ece8dd1ccbf79a8f0527ef0d7a7d78c
-      size: 6459
+      md5: 423fc8cb2220210bae5a7831c1216bb0
+      size: 7257
     - path: src/maskedhead.py
       hash: md5
       md5: 7e95d59742139b020474ce4dc988a81c
@@ -546,29 +546,114 @@ stages:
           xai: ours
           n_batch: 64
           seed: 42
-          n_epochs: 30
+          n_epochs: 50
         split:
-          split: accurate
-          n_splits: 5
+          split: random
+          n_splits: 2
           split_frac: 0.9
           data_seed: 42
           scaffold_k: 3
-          color: r
+          color: y
         task:
           task: aq
           property: aq
+          loader: AqSolDataset
+          filepath: /workspace/data/AqueousSolu.csv
+          propname: logS_aq_avg
+          smilesname: smiles solute
+          plot_title: Aqueous solubility
+          plot_propname: log(S) log([mol/L])
+        xai:
+          model: mmb
+          mask: false
+    outs:
+    - path: out/aq/random/mmb-hier/attributions.csv
+      hash: md5
+      md5: 0ec4e57ece3ea12c583313c70239fa11
+      size: 2094859
+    - path: out/aq/random/mmb-hier/viz
+      hash: md5
+      md5: 8900b95f00744ac99dcaa4d24f1e2795.dir
+      size: 55789817
+      nfiles: 1171
+  predict_model:
+    cmd: python3 scripts/predict_model.py
+    deps:
+    - path: data/aq/random/
+      hash: md5
+      md5: c0bd2554528d6173dd01ee9a95465dc2.dir
+      size: 1634227
+      nfiles: 6
+    - path: out/aq/random/mmb-hier/best.pt
+      hash: md5
+      md5: b112b35cf55bd68c99503fa584f72abc
+      size: 154575
+    - path: scripts/predict_model.py
+      hash: md5
+      md5: 6338a09dfaa0e91b399a855be09f4491
+      size: 5940
+    - path: src/model.py
+      hash: md5
+      md5: 311f2bfe1a977873f928ed32d19725d2
+      size: 21163
+    params:
+      params.yaml:
+        head:
+          head: hier
+        model:
+          model: mmb
+          finetune: false
+          xai: ours
+          n_batch: 64
+          seed: 42
+          n_epochs: 50
+        split:
+          split: random
+          n_splits: 2
+          split_frac: 0.9
+          data_seed: 42
+          scaffold_k: 3
+          color: y
+        task:
+          task: aq
+          property: aq
+          loader: AqSolDataset
           filepath: /workspace/data/AqueousSolu.csv
           propname: logS_aq_avg
           smilesname: smiles solute
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: out/aq/accurate/mmb-hier/parity_plot.png
+    - path: out/aq/random/mmb-hier/parity_plot.png
       hash: md5
-      md5: b164d1b7b4754fc604e3ca468b50cb77
-      size: 38830
-    - path: out/aq/accurate/mmb-hier/viz
+      md5: 2bf1d3f680a39131c0cb43a2dea8bc50
+      size: 37727
+    - path: out/aq/random/mmb-hier/predictions.csv
       hash: md5
-      md5: 68615c9d10b9b3bf980ca75fab540b2b.dir
-      size: 26105388
-      nfiles: 571
+      md5: 732ec76562ca62469e0fb101bafb13f9
+      size: 531656
+  all:
+    cmd: echo "Finished full aq pipeline with mmb"
+    deps:
+    - path: out/aq/random/
+      hash: md5
+      md5: 073a7031e478fd207b83a87eb0c8d8c2.dir
+      size: 58920101
+      nfiles: 1179
+    - path: out/aq/random/mmb-hier/attributions.csv
+      hash: md5
+      md5: 0ec4e57ece3ea12c583313c70239fa11
+      size: 2094859
+    - path: out/aq/random/mmb-hier/best.pt
+      hash: md5
+      md5: b112b35cf55bd68c99503fa584f72abc
+      size: 154575
+    - path: out/aq/random/mmb-hier/predictions.csv
+      hash: md5
+      md5: 732ec76562ca62469e0fb101bafb13f9
+      size: 531656
+    - path: out/aq/random/mmb-hier/viz
+      hash: md5
+      md5: 8900b95f00744ac99dcaa4d24f1e2795.dir
+      size: 55789817
+      nfiles: 1171
