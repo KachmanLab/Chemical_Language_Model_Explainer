@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
@@ -60,6 +61,7 @@ def explain(cfg: DictConfig) -> None:
         xai = 'mmb-avg'
 
     model.mmb.unfreeze()
+    model.eval()
 
     trainer = pl.Trainer(
         accelerator='gpu',
@@ -104,8 +106,11 @@ def explain(cfg: DictConfig) -> None:
     _acc = cfg.split.split
 
     # plot a hexagonal parity plot
+    ally = np.array(torch.concat([y, yhat], axis=0))
+    lim = [np.floor(np.min(ally)), np.ceil(np.max(ally))]
+    print('lim', lim)
     p = sns.jointplot(x=y, y=yhat, kind='hex', color=color,
-                      xlim=[-12, 2], ylim=[-12, 2])
+                      xlim=lim, ylim=lim)
     sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
                 color='grey', ci=None, scatter=False)
     p.fig.suptitle(f"{cfg.task.plot_title} parity plot \
@@ -116,7 +121,7 @@ def explain(cfg: DictConfig) -> None:
     p.fig.subplots_adjust(top=0.95)
     p.fig.tight_layout()
     txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo}"
-    plt.text(2, -11.5,
+    plt.text(lim[1], -lim[0],
              txt, ha="right", va="bottom", fontsize=14)
     p.savefig(f"{basepath}/{mdir}/parity_plot.png")
 

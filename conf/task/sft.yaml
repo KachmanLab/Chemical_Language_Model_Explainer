@@ -1,8 +1,9 @@
 task: sft
 property: sft
-loader: CMCDataset
+loader: SFTDataset
 filepath: "/workspace/data/cmcdata_micellization.csv"
 propname: "AW_ST_CMC"
 smilesname: "SMILES"
 plot_title: "Surface tension at CMC"
-plot_desc: "SFT@CMC"
+plot_desc: "ST@CMC"
+plot_propname: "Surface tension at CMC"

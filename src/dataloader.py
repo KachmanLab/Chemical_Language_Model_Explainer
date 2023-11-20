@@ -26,6 +26,13 @@ class PropertyDataset(Dataset):
 
         # split data into accurate test set according to SolProp
         df = pd.read_csv(file_path)
+
+        print('n unique', len(np.unique(df[self.smilesname])))
+        print('len df', len(df))
+        uni, cnt = np.unique(df[self.smilesname], return_counts=True)
+        uncount = list(zip(uni, cnt))
+        print(sorted(uncount, key=lambda x: x[1], reverse=True)[:50])
+
         df = self.custom_preprocess(df)
         self.min = df[propname].min()
         self.max = df[propname].max()
@@ -53,15 +60,18 @@ class PropertyDataset(Dataset):
         else:
             _sanity, test_idx = next(
                 test_splitter.split(df[smilesname].to_list()))
+            print(min(test_idx), max(test_idx))
+            print(min(_sanity), max(_sanity))
+            print(len(df))
 
         if _sanity is not None:
             assert len(_sanity)+len(test_idx) == len(df)
-            sane_train = df.iloc[_sanity].reset_index()
-            sane_test = df.iloc[test_idx].reset_index()
+            sane_train = df.iloc[_sanity, :].reset_index(drop=True)
+            sane_test = df.iloc[test_idx].reset_index(drop=True)
 
         # set aside test set
-        test_df = df.iloc[test_idx].reset_index()
-        tr_va_df = df.drop(test_idx).reset_index()
+        test_df = df.iloc[test_idx].reset_index(drop=True)
+        tr_va_df = df.drop(test_idx).reset_index(drop=True)
         self.tr_va_df = tr_va_df
 
         # sanity check: assert train/test non-overlapping
@@ -144,7 +154,7 @@ class DataSplit(Dataset):
 
 
 class ECFPDataSplit(DataSplit):
-    def __init__(self, ds, nbits=512):
+    def __init__(self, ds, nbits=2048):
         self.smiles = ds.smiles
         self.labels = ds.labels
         self.subset = ds.subset
@@ -152,6 +162,10 @@ class ECFPDataSplit(DataSplit):
         self.make_ecfp()
 
     def make_ecfp(self):
+        # try:
+        #     print([Chem.MolFromSmiles(smi) for smi in self.smiles])
+        # except:
+        #     print(smi)
         ecfp = [AllChem.GetMorganFingerprintAsBitVect(
                     Chem.MolFromSmiles(smi), radius=2, nBits=self.nbits
                ) for smi in self.smiles]
@@ -214,7 +228,7 @@ class AqSolDataset(PropertyDataset):
 
     def custom_preprocess(self, df):
         # drop one extreme outlier (logS 6.4)
-        return df[df[self.propname] < 2.05].reset_index()
+        return df[df[self.propname] < 2.05].reset_index(drop=True)
 
     def custom_split(self, df):
         # predefined accurate split: >2 measuments with low std
@@ -233,13 +247,37 @@ class CMCDataset(PropertyDataset):
 
     def custom_preprocess(self, df):
         # drop empty (NaN) columns + one extreme outlier (pCMC ~ 20)
-        # df = df[~pd.isna(df[self.propname])]#.reset_index()
         df.at[1003, self.propname] = np.nan
         # print(df.at[1003, self.propname])
-        df = df.dropna(axis=0, subset=[self.propname]).reset_index()
+        df = df.dropna(axis=0, subset=[self.propname]).reset_index(drop=True)
         df = df[
                 (df[self.propname] < 20.05) & (df[self.propname] > 0.)
-            ].reset_index()
+            ].reset_index(drop=True)
+
+        uni, index = np.unique(df[self.smilesname], return_index=True)
+        df = df.iloc[index].reset_index(drop=True)
+
+        print('n unique', len(np.unique(df[self.smilesname])))
+        return df
+
+
+class SFTDataset(PropertyDataset):
+    def __init__(self, subset, file_path, smilesname, propname,
+                 split, split_frac, n_splits=5, data_seed=42,
+                 augment=False):
+        super().__init__(subset, file_path, smilesname, propname,
+                         split, split_frac, n_splits, data_seed,
+                         augment)
+
+    def custom_preprocess(self, df):
+        # drop empty (NaN) columns + one extreme outlier (pCMC ~ 20)
+        df = df.dropna(axis=0, subset=[self.propname]).reset_index(drop=True)
+
+        print('LEN DF', len(df))
+        print('n unique', len(np.unique(df[self.smilesname])))
+
+        _, index = np.unique(df[self.smilesname], return_index=True)
+        df = df.iloc[index].reset_index(drop=True)
         print('n unique', len(np.unique(df[self.smilesname])))
         return df
 

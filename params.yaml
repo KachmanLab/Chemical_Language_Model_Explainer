@@ -1,26 +1,28 @@
 task:
-  task: cmc
-  property: cmc
-  loader: CMCDataset
-  filepath: /workspace/data/cmcdata.csv
-  propname: pCMC
-  smilesname: SMILES
-  plot_title: Critical micelle concentration
-  plot_desc: p(CMC)
+  task: aq
+  property: aq
+  loader: AqSolDataset
+  filepath: /workspace/data/AqueousSolu.csv
+  propname: logS_aq_avg
+  smilesname: smiles solute
+  plot_title: Aqueous solubility
+  plot_propname: log(S) log([mol/L])
 split:
-  split: scaffold
-  n_splits: 4
+  split: accurate
+  n_splits: 3
   split_frac: 0.9
   data_seed: 42
   scaffold_k: 3
-  color: b
+  color: r
 model:
   model: ecfp
+  nbits: 512
   finetune: false
-  xai: ecfp
   n_batch: 64
   seed: 42
   n_epochs: 50
-  nbits: 512
 head:
-  head: lin
+  head: hier
+xai:
+  mask: false
+  nbits: 9

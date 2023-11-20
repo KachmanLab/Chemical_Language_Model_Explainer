@@ -336,7 +336,8 @@ class ECFPLinear(pl.LightningModule):
         self.learning_rate = 1e-5
 
     def configure_optimizers(self):
-        return optim.AdamW(self.parameters(), lr = self.learning_rate,
+        return optim.AdamW(self.parameters(),
+                           lr=self.learning_rate,
                            betas=(0.9, 0.999))
 
     def forward(self, ecfp):
@@ -384,7 +385,7 @@ class ECFPLinear(pl.LightningModule):
         test_mae = self.criterion_mae(outputs, labels)
         test_mse = self.criterion_mse(outputs, labels)
         metrics = {
-        'test_mae': test_mae,
+            'test_mae': test_mae,
             'test_mse': test_mse,
         }
         self.log_dict(metrics)
@@ -396,17 +397,20 @@ class ECFPLinear(pl.LightningModule):
             preds = self(inputs)
         return {"preds": preds, "labels": labels}
 
+    def reset_head(self):
+        for layer in self.head.children():
+           if hasattr(layer, 'reset_parameters'):
+               layer.reset_parameters()
 
 ##########################################
 class BaselineAqueousModel(AqueousRegModel):
-    def __init__(self):
+    def __init__(self, head):
         """ uses average pooling instead of <REG> token """
         super().__init__()
         self.init_molbart()
-        if head == 'lin':
-            self.head = LinearRegressionHead().cuda()
-        elif head == 'hier':
-            self.head = RegressionHead().cuda()
+
+        self.make_head(head)
+        self.head.cuda()
         self.cmapper = ColorMapper()
 
         self.criterion = nn.HuberLoss()

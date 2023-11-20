@@ -418,11 +418,12 @@ stages:
       nfiles: 571
   split_data:
     cmd:
-    - cd /workspace && echo "SPLIT DATA --task sft --property sft --loader CMCDataset
-      --filepath /workspace/data/cmcdata_micellization.csv --propname AW_ST_CMC --smilesname
-      SMILES --plot_title 'Surface tension at CMC' --plot_desc SFT@CMC --split random
-      --n_splits 3 --split_frac 0.9 --data_seed 42 --scaffold_k 3 --color y"
-    - mkdir -p data/sft/random/
+    - cd /workspace && echo "SPLIT DATA --task aq --property aq --loader AqSolDataset
+      --filepath /workspace/data/AqueousSolu.csv --propname logS_aq_avg --smilesname
+      'smiles solute' --plot_title 'Aqueous solubility' --plot_propname 'log(S) log([mol/L])'
+      --split accurate --n_splits 3 --split_frac 0.9 --data_seed 42 --scaffold_k 3
+      --color r"
+    - mkdir -p data/aq/accurate/
     - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
@@ -431,62 +432,13 @@ stages:
       size: 2871
     - path: src/dataloader.py
       hash: md5
-      md5: 7b3113c2362a518f7b95234ffb76902d
-      size: 18492
+      md5: eaa528c3b441184def360af8c0a1fc21
+      size: 20460
     params:
       params.yaml:
-        split:
-          split: random
-          n_splits: 3
-          split_frac: 0.9
-          data_seed: 42
-          scaffold_k: 3
-          color: y
-        task:
-          task: sft
-          property: sft
-          loader: CMCDataset
-          filepath: /workspace/data/cmcdata_micellization.csv
-          propname: AW_ST_CMC
-          smilesname: SMILES
-          plot_title: Surface tension at CMC
-          plot_desc: SFT@CMC
-    outs:
-    - path: data/sft/random/
-      hash: md5
-      md5: 0b2c0c69e7bf46c148c1e5bdb7960a64.dir
-      size: 4862
-      nfiles: 8
-  train_model:
-    cmd:
-    - mkdir -p out/aq/accurate/mmb-hier/{viz,model}
-    - echo "TRAIN --model mmb --xai ours --n_batch 64 --seed 42 --n_epochs 30 --head
-      hier"
-    - python3 scripts/train_model.py
-    deps:
-    - path: data/aq/accurate/
-      hash: md5
-      md5: ace97904f0f490dcc6790c2cac627225.dir
-      size: 2974279
-      nfiles: 12
-    - path: src/model.py
-      hash: md5
-      md5: 40f95322eb6268af985a8dc658e9b86a
-      size: 21064
-    params:
-      params.yaml:
-        head:
-          head: hier
-        model:
-          model: mmb
-          finetune: false
-          xai: ours
-          n_batch: 64
-          seed: 42
-          n_epochs: 30
         split:
           split: accurate
-          n_splits: 5
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           scaffold_k: 3
@@ -494,21 +446,75 @@ stages:
         task:
           task: aq
           property: aq
+          loader: AqSolDataset
           filepath: /workspace/data/AqueousSolu.csv
           propname: logS_aq_avg
           smilesname: smiles solute
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: out/aq/accurate/mmb-hier/best.pt
+    - path: data/aq/accurate/
       hash: md5
-      md5: a27bbdd3a56f5378ac83d52c5b6d07a9
+      md5: 886bc274eac1ab0ace5e83ef5c9581e4.dir
+      size: 2095995
+      nfiles: 8
+  train_model:
+    cmd:
+    - mkdir -p out/aq/accurate/ecfp-hier/{viz,model}
+    - echo "TRAIN --model ecfp --nbits 512 --n_batch 64 --seed 42 --n_epochs 50 --head
+      hier"
+    - python3 scripts/train_model.py
+    deps:
+    - path: data/aq/accurate/
+      hash: md5
+      md5: 886bc274eac1ab0ace5e83ef5c9581e4.dir
+      size: 2095995
+      nfiles: 8
+    - path: src/model.py
+      hash: md5
+      md5: c3f23945a1419ff2cf8d37a43235b784
+      size: 21156
+    params:
+      params.yaml:
+        head:
+          head: hier
+        model:
+          model: ecfp
+          nbits: 512
+          finetune: false
+          n_batch: 64
+          seed: 42
+          n_epochs: 50
+        split:
+          split: accurate
+          n_splits: 3
+          split_frac: 0.9
+          data_seed: 42
+          scaffold_k: 3
+          color: r
+        task:
+          task: aq
+          property: aq
+          loader: AqSolDataset
+          filepath: /workspace/data/AqueousSolu.csv
+          propname: logS_aq_avg
+          smilesname: smiles solute
+          plot_title: Aqueous solubility
+          plot_propname: log(S) log([mol/L])
+    outs:
+    - path: out/aq/accurate/ecfp-hier/best.pt
+      hash: md5
+      md5: e0097cbf167a54435e133a841f4fbb4b
       size: 154575
-    - path: out/aq/accurate/mmb-hier/model/
+    - path: out/aq/accurate/ecfp-hier/metrics.json
       hash: md5
-      md5: a351ab0e36155e1ec2d0faf46b9e5a4a.dir
-      size: 772875
-      nfiles: 5
+      md5: af107588c2ec639c390a3f3d0510dc4d
+      size: 480
+    - path: out/aq/accurate/ecfp-hier/model/
+      hash: md5
+      md5: a0827bebea4e0ad94468ba515cd3f9c8.dir
+      size: 463725
+      nfiles: 3
   explain_model:
     cmd:
     - mkdir -p out/aq/accurate/mmb-hier/viz
