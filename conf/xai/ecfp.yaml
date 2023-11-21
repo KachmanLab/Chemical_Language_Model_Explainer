@@ -1,0 +1,4 @@
+model: ecfp
+xai: ecfp
+topk: 9
+mask: false

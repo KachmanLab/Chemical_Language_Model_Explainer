@@ -8,18 +8,18 @@ from omegaconf import DictConfig, OmegaConf
 import importlib
 
 @hydra.main(
-    version_base="1.3", config_path="/workspace/conf", config_name="config")
+    version_base="1.3", config_path="../conf", config_name="config")
 def split(cfg: DictConfig) -> None:
     # print(OmegaConf.to_yaml(cfg))
 
-    cfg = OmegaConf.load('/workspace/params.yaml')
+    cfg = OmegaConf.load('../params.yaml')
     print('SPLIT CONFIG from params.yaml')
     print(OmegaConf.to_yaml(cfg))
 
     pl.seed_everything(cfg.split.data_seed)
-    root = f"/workspace/data/{cfg.task.task}/{cfg.split.split}"
+    root = f"../data/{cfg.task.task}/{cfg.split.split}"
 
-    module = importlib.import_module('src.dataloader')
+    module = importlib.import_module('..src.dataloader')
     DatasetLoader = getattr(module, cfg.task.loader)
 
     train_ds = DatasetLoader('train',

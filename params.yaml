@@ -9,20 +9,19 @@ task:
   plot_propname: log(S) log([mol/L])
 split:
   split: random
-  n_splits: 2
+  n_splits: 5
   split_frac: 0.9
   data_seed: 42
-  scaffold_k: 3
   color: 'y'
 model:
   model: mmb
   finetune: false
-  xai: ours
   n_batch: 64
   seed: 42
-  n_epochs: 50
+  n_epochs: 25
 head:
-  head: hier
+  head: lin
 xai:
   model: mmb
+  xai: mmb
   mask: false

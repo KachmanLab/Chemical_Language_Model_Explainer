@@ -25,7 +25,8 @@ stages:
     #   split: ${data.split}
     cmd: 
       # - echo "${item.task} ${item.split}"
-      - cd /workspace && echo "SPLIT DATA ${task} ${split}"
+      - pwd
+      - echo "SPLIT DATA ${task} ${split}"
       - mkdir -p data/${task.task}/${split.split}/
       - python3 scripts/split_data.py #${task} ${split}
     params:
@@ -64,28 +65,28 @@ stages:
       - out/${task.task}/${split.split}/${model.model}-${head.head}/model/
       - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
 
-  predict_model:
-    cmd: python3 scripts/predict_model.py
-    deps:
-      - src/model.py
-      - scripts/predict_model.py
-      - data/${task.task}/${split.split}/
-      - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
-    params:
-      - task
-      - split
-      - model
-      - head
-    outs:
-      - out/${task.task}/${split.split}/${model.model}-${head.head}/parity_plot.png
-      - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv
+  # predict_model:
+  #   cmd: python3 scripts/predict_model.py
+  #   deps:
+  #     - src/model.py
+  #     - scripts/predict_model.py
+  #     - data/${task.task}/${split.split}/
+  #     - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
+  #   params:
+  #     - task
+  #     - split
+  #     - model
+  #     - head
+  #   outs:
+  #     - out/${task.task}/${split.split}/${model.model}-${head.head}/parity_plot.png
+  #     - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv
 
   explain_model:
     cmd:
       - mkdir -p out/${task.task}/${split.split}/${model.model}-${head.head}/viz
-      - python3 scripts/explain_${xai.model}.py #${task} ${split} ${model} ${head} 
+      - python3 scripts/explain_${xai.xai}.py #${task} ${split} ${model} ${head} 
     deps:
-      - scripts/explain_${xai.model}.py
+      - scripts/explain_${xai.xai}.py
       - data/${task.task}/${split.split}/test.pkl
       - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
       - src/maskedhead.py
@@ -104,7 +105,8 @@ stages:
     deps:
     - out/${task.task}/${split.split}/
     - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
-    - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv
+    # - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv
+    # - out/${task.task}/${split.split}/${model.model}-${head.head}/parity_plot.png
     - out/${task.task}/${split.split}/${model.model}-${head.head}/attributions.csv
     - out/${task.task}/${split.split}/${model.model}-${head.head}/viz
 

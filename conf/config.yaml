@@ -3,7 +3,7 @@ defaults:
   - split: [accurate, scaffold, random]
   - model: [mmb, mmb-ft, mmb-avg, ecfp]
   - head: [hier, lin]
-  - xai: [ours, ecfp]
+  - xai: [ours, shap, ecfp]
 
   # seed: 42
   # ds:

@@ -418,18 +418,21 @@ stages:
       nfiles: 571
   split_data:
     cmd:
-    - cd /workspace && echo "SPLIT DATA --task aq --property aq --loader AqSolDataset
-      --filepath /workspace/data/AqueousSolu.csv --propname logS_aq_avg --smilesname
-      'smiles solute' --plot_title 'Aqueous solubility' --plot_propname 'log(S) log([mol/L])'
-      --split random --n_splits 2 --split_frac 0.9 --data_seed 42 --scaffold_k 3 --color
-      y"
+    - echo "{pwd}"
+    - $pwd
+    - cd ..
+    - pwd
+    - echo "SPLIT DATA --task aq --property aq --loader AqSolDataset --filepath /workspace/data/AqueousSolu.csv
+      --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
+      --plot_propname 'log(S) log([mol/L])' --split random --n_splits 5 --split_frac
+      0.9 --data_seed 42 --color y"
     - mkdir -p data/aq/random/
     - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
       hash: md5
-      md5: 6d24729a119e3d632b0296856a0e7573
-      size: 2871
+      md5: abd82840d1593c7bca10ef580a85f806
+      size: 2845
     - path: src/dataloader.py
       hash: md5
       md5: 5b0c5d0eaf2358f1638a6a7c167144cb
@@ -438,10 +441,9 @@ stages:
       params.yaml:
         split:
           split: random
-          n_splits: 2
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
-          scaffold_k: 3
           color: y
         task:
           task: aq
@@ -455,21 +457,20 @@ stages:
     outs:
     - path: data/aq/random/
       hash: md5
-      md5: c0bd2554528d6173dd01ee9a95465dc2.dir
-      size: 1634227
-      nfiles: 6
+      md5: ecb1b569553507f0b20607d1930c5b90.dir
+      size: 2869759
+      nfiles: 12
   train_model:
     cmd:
-    - mkdir -p out/aq/random/mmb-hier/{viz,model}
-    - echo "TRAIN --model mmb --xai ours --n_batch 64 --seed 42 --n_epochs 50 --head
-      hier"
+    - mkdir -p out/aq/random/mmb-lin/{viz,model}
+    - echo "TRAIN --model mmb --n_batch 64 --seed 42 --n_epochs 25 --head lin"
     - python3 scripts/train_model.py
     deps:
     - path: data/aq/random/
       hash: md5
-      md5: c0bd2554528d6173dd01ee9a95465dc2.dir
-      size: 1634227
-      nfiles: 6
+      md5: ecb1b569553507f0b20607d1930c5b90.dir
+      size: 2869759
+      nfiles: 12
     - path: src/model.py
       hash: md5
       md5: 311f2bfe1a977873f928ed32d19725d2
@@ -477,20 +478,18 @@ stages:
     params:
       params.yaml:
         head:
-          head: hier
+          head: lin
         model:
           model: mmb
           finetune: false
-          xai: ours
           n_batch: 64
           seed: 42
-          n_epochs: 50
+          n_epochs: 25
         split:
           split: random
-          n_splits: 2
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
-          scaffold_k: 3
           color: y
         task:
           task: aq
@@ -502,19 +501,19 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: out/aq/random/mmb-hier/best.pt
+    - path: out/aq/random/mmb-lin/best.pt
       hash: md5
-      md5: b112b35cf55bd68c99503fa584f72abc
-      size: 154575
-    - path: out/aq/random/mmb-hier/metrics.json
+      md5: ba3ffb00b09bdbccd9b26bb82e86316a
+      size: 3047
+    - path: out/aq/random/mmb-lin/metrics.json
       hash: md5
-      md5: 9f9b05cc775ff259c81f7ac35f99f41d
-      size: 291
-    - path: out/aq/random/mmb-hier/model/
+      md5: 8796d666765e47075b38b54f0482c3b2
+      size: 498
+    - path: out/aq/random/mmb-lin/model/
       hash: md5
-      md5: 1cdc496c9c4d5472ef51a2005825e5a3.dir
-      size: 309150
-      nfiles: 2
+      md5: 77c65a192658c9899582884955d88383.dir
+      size: 15235
+      nfiles: 5
   explain_model:
     cmd:
     - mkdir -p out/aq/random/mmb-hier/viz

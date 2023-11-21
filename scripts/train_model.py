@@ -13,16 +13,16 @@ from omegaconf import OmegaConf, DictConfig
 
 
 @hydra.main(
-    version_base="1.3", config_path="/workspace/conf", config_name="config")
+    version_base="1.3", config_path="../conf", config_name="config")
 def train(cfg: DictConfig) -> None:
     # print(OmegaConf.to_yaml(cfg))
 
     print('TRAIN CONFIG from params.yaml')
-    cfg = OmegaConf.load('/workspace/params.yaml')
+    cfg = OmegaConf.load('../params.yaml')
     print(OmegaConf.to_yaml(cfg))
 
     pl.seed_everything(cfg.model.seed)
-    root = f"/workspace/data/{cfg.task.task}/{cfg.split.split}"
+    root = f"../data/{cfg.task.task}/{cfg.split.split}"
 
     with open(f"{root}/test.pkl", 'rb') as f:
         test = pickle.load(f)
@@ -31,7 +31,7 @@ def train(cfg: DictConfig) -> None:
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
                              shuffle=False, num_workers=8)
 
-    basepath = f"/workspace/out/{cfg.task.task}/{cfg.split.split}"
+    basepath = f"../out/{cfg.task.task}/{cfg.split.split}"
     mdir = f"{cfg.model.model}-{cfg.head.head}"
     metrics = {}
     for fold in range(cfg.split.n_splits):
