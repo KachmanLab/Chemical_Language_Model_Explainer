@@ -18,11 +18,11 @@ def train(cfg: DictConfig) -> None:
     # print(OmegaConf.to_yaml(cfg))
 
     print('TRAIN CONFIG from params.yaml')
-    cfg = OmegaConf.load('../params.yaml')
+    cfg = OmegaConf.load('./params.yaml')
     print(OmegaConf.to_yaml(cfg))
 
     pl.seed_everything(cfg.model.seed)
-    root = f"../data/{cfg.task.task}/{cfg.split.split}"
+    root = f"./data/{cfg.task.task}/{cfg.split.split}"
 
     with open(f"{root}/test.pkl", 'rb') as f:
         test = pickle.load(f)
@@ -31,7 +31,7 @@ def train(cfg: DictConfig) -> None:
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
                              shuffle=False, num_workers=8)
 
-    basepath = f"../out/{cfg.task.task}/{cfg.split.split}"
+    basepath = f"./out/{cfg.task.task}/{cfg.split.split}"
     mdir = f"{cfg.model.model}-{cfg.head.head}"
     metrics = {}
     for fold in range(cfg.split.n_splits):
@@ -52,26 +52,30 @@ def train(cfg: DictConfig) -> None:
         # configure model
         if fold == 0:
             if cfg.model.model == 'mmb':
-                model = AqueousRegModel(head=cfg.head.head)
+                model = AqueousRegModel(head=cfg.head.head,
+                                        finetune=cfg.model.finetune)
             elif cfg.model.finetune or cfg.model.model == 'mmb-ft':
                 # unfreeze to train the whole model instead of just the head
                 # cfg['finetune'] = True
-                model = AqueousRegModel(head=cfg.head.head)
+                model = AqueousRegModel(head=cfg.head.head,
+                                        finetune=cfg.model.finetune)
                 model.mmb.unfreeze()
                 torch.save(model.mmb.state_dict(),
                            f"{basepath}/{mdir}/model/mmb.pt")
             elif cfg.model.model == 'mmb-avg':
-                model = BaselineAqueousModel(head=cfg.head.head)
+                model = BaselineAqueousModel(head=cfg.head.head,
+                                             finetune=cfg.model.finetune)
             elif cfg.model.model == 'ecfp':
                 model = ECFPLinear(head=cfg.head.head,
                                    dim=cfg.model.nbits)
         else:
             # only reset head instead of re-initializing full mmb model
+            model.reset_head()
             if cfg.model.finetune or cfg.model.model == 'mmb-ft':
                 # restore base MMB core
                 model.mmb.load_state_dict(
                     torch.load(f"{basepath}/{mdir}/model/mmb.pt"))
-            model.reset_head()
+                    model.mmb.unfreeze()
 
         wandb_logger = WandbLogger(
             project='aqueous-solu' if cfg.task.task == 'aq' else cfg.task.task

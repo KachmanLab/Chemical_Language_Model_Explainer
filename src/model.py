@@ -105,9 +105,11 @@ class LinearRegressionHead(pl.LightningModule):
         return x.squeeze(1)  # .bfloat16()
 
 class AqueousRegModel(pl.LightningModule):
-    def __init__(self, head):
+    def __init__(self, head, finetune):
         super().__init__()
+        self.finetune = finetune
         self.init_molbart()
+
         self.tokenizer = REGRegExTokenizer()
         self.make_head(head)
         print(self.head, head)
@@ -142,6 +144,8 @@ class AqueousRegModel(pl.LightningModule):
         molbart_model = NeMoMegaMolBARTWrapper()
         self.mmb = molbart_model.model
         self.mmb.enc_dec_model.enc_dec_model.decoder = None
+        if self.finetune:
+            self.mmb.unfreeze()
    
     def configure_optimizers(self):
         return optim.AdamW(self.parameters(), lr = self.learning_rate,
@@ -165,6 +169,8 @@ class AqueousRegModel(pl.LightningModule):
         return self.head(solu)
 
     def training_step(self, batch, batch_idx):
+        if self.finetune:
+            self.mmb.unfreeze()
         inputs, labels = batch
         outputs = self(inputs)
         loss = self.criterion(outputs, labels)

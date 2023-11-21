@@ -38,7 +38,8 @@ stages:
       - src/dataloader.py
       - scripts/split_data.py
     outs:
-      - data/${task.task}/${split.split}/
+      - data/${task.task}/${split.split}/:
+          persist: true
 
   train_model:
     cmd: 
@@ -60,26 +61,31 @@ stages:
       # - scripts/model_config.json
       # - scripts/train_model.py
     metrics:
-      - out/${task.task}/${split.split}/${model.model}-${head.head}/metrics.json
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/metrics.json:
+          persist: true
     outs:
-      - out/${task.task}/${split.split}/${model.model}-${head.head}/model/
-      - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/model/:
+          persist: true
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt:
+          persist: true
 
-  # predict_model:
-  #   cmd: python3 scripts/predict_model.py
-  #   deps:
-  #     - src/model.py
-  #     - scripts/predict_model.py
-  #     - data/${task.task}/${split.split}/
-  #     - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
-  #   params:
-  #     - task
-  #     - split
-  #     - model
-  #     - head
-  #   outs:
-  #     - out/${task.task}/${split.split}/${model.model}-${head.head}/parity_plot.png
-  #     - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv
+  predict_model:
+    cmd: python3 scripts/predict_model.py
+    deps:
+      - src/model.py
+      - scripts/predict_model.py
+      - data/${task.task}/${split.split}/
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
+    params:
+      - task
+      - split
+      - model
+      - head
+    outs:
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/parity_plot.png:
+          persist: true
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv:
+          persist: true
 
   explain_model:
     cmd:
@@ -107,8 +113,8 @@ stages:
     - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
     # - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv
     # - out/${task.task}/${split.split}/${model.model}-${head.head}/parity_plot.png
-    - out/${task.task}/${split.split}/${model.model}-${head.head}/attributions.csv
-    - out/${task.task}/${split.split}/${model.model}-${head.head}/viz
+    # - out/${task.task}/${split.split}/${model.model}-${head.head}/attributions.csv
+    # - out/${task.task}/${split.split}/${model.model}-${head.head}/viz
 
 # TODO compare explainabilty
 # csv attributions from 3 models (shap, ours, ours)

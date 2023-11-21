@@ -12,14 +12,14 @@ import importlib
 def split(cfg: DictConfig) -> None:
     # print(OmegaConf.to_yaml(cfg))
 
-    cfg = OmegaConf.load('../params.yaml')
+    cfg = OmegaConf.load('./params.yaml')
     print('SPLIT CONFIG from params.yaml')
     print(OmegaConf.to_yaml(cfg))
 
     pl.seed_everything(cfg.split.data_seed)
-    root = f"../data/{cfg.task.task}/{cfg.split.split}"
+    root = f"./data/{cfg.task.task}/{cfg.split.split}"
 
-    module = importlib.import_module('..src.dataloader')
+    module = importlib.import_module('src.dataloader')
     DatasetLoader = getattr(module, cfg.task.loader)
 
     train_ds = DatasetLoader('train',
