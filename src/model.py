@@ -92,6 +92,7 @@ class RegressionHead(pl.LightningModule):
         x = self.fc3(x)
         return x.squeeze(1)  # .bfloat16()
 
+
 class LinearRegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None):
         super().__init__()
@@ -103,6 +104,7 @@ class LinearRegressionHead(pl.LightningModule):
     def forward(self, x):
         x = self.fc1(x)
         return x.squeeze(1)  # .bfloat16()
+
 
 class AqueousRegModel(pl.LightningModule):
     def __init__(self, head, finetune):
@@ -135,10 +137,9 @@ class AqueousRegModel(pl.LightningModule):
             raise NotImplementedError
 
     def reset_head(self):
-        #self.head.reset_params()
         for layer in self.head.children():
-           if hasattr(layer, 'reset_parameters'):
-               layer.reset_parameters()
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()
 
     def init_molbart(self):
         molbart_model = NeMoMegaMolBARTWrapper()
@@ -146,9 +147,10 @@ class AqueousRegModel(pl.LightningModule):
         self.mmb.enc_dec_model.enc_dec_model.decoder = None
         if self.finetune:
             self.mmb.unfreeze()
-   
+
     def configure_optimizers(self):
-        return optim.AdamW(self.parameters(), lr = self.learning_rate,
+        return optim.AdamW(self.parameters(),
+                           lr=self.learning_rate,
                            betas=(0.9, 0.999))
 
     def forward(self, solu_smi):
@@ -169,8 +171,8 @@ class AqueousRegModel(pl.LightningModule):
         return self.head(solu)
 
     def training_step(self, batch, batch_idx):
-        if self.finetune:
-            self.mmb.unfreeze()
+        if not self.finetune:
+            self.mmb.freeze()
         inputs, labels = batch
         outputs = self(inputs)
         loss = self.criterion(outputs, labels)
@@ -186,8 +188,8 @@ class AqueousRegModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         inputs, labels = batch
-        self.mmb.unfreeze()
         with torch.set_grad_enabled(True):
+            self.mmb.unfreeze()
             outputs = self(inputs)
         val_loss = self.criterion(outputs, labels)
         val_mae = self.criterion_mae(outputs, labels)

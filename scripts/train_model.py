@@ -59,7 +59,6 @@ def train(cfg: DictConfig) -> None:
                 # cfg['finetune'] = True
                 model = AqueousRegModel(head=cfg.head.head,
                                         finetune=cfg.model.finetune)
-                model.mmb.unfreeze()
                 torch.save(model.mmb.state_dict(),
                            f"{basepath}/{mdir}/model/mmb.pt")
             elif cfg.model.model == 'mmb-avg':
@@ -75,7 +74,6 @@ def train(cfg: DictConfig) -> None:
                 # restore base MMB core
                 model.mmb.load_state_dict(
                     torch.load(f"{basepath}/{mdir}/model/mmb.pt"))
-                    model.mmb.unfreeze()
 
         wandb_logger = WandbLogger(
             project='aqueous-solu' if cfg.task.task == 'aq' else cfg.task.task

@@ -53,16 +53,19 @@ def predict_model(cfg: DictConfig) -> None:
 
     head = cfg.head.head
     if cfg.model.model == 'mmb':
-        model = AqueousRegModel(head=head)
+        model = AqueousRegModel(head=head,
+                                finetune=cfg.model.finetune)
         model.head.load_state_dict(torch.load(ckpt_path))
     if cfg.model.finetune or cfg.model.model == 'mmb-ft':
-        model = AqueousRegModel(head=head)
+        model = AqueousRegModel(head=head,
+                                finetune=cfg.model.finetune)
         # model = model.load_from_checkpoint(ckpt_path, head=head)
         mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
         model.mmb.load_state_dict(torch.load(mmb_path))
         model.head.load_state_dict(torch.load(ckpt_path))
     elif cfg.model.model == 'mmb-avg':
-        model = BaselineAqueousModel(head=head)
+        model = BaselineAqueousModel(head=head,
+                                     finetune=cfg.model.finetune)
     elif cfg.model.model == 'ecfp':
         model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
         model.head.load_state_dict(torch.load(ckpt_path))

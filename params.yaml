@@ -8,12 +8,11 @@ task:
   plot_title: Aqueous solubility
   plot_propname: log(S) log([mol/L])
 split:
-  split: scaffold
+  split: random
   n_splits: 5
   split_frac: 0.9
   data_seed: 42
-  scaffold_k: 3
-  color: b
+  color: 'y'
 model:
   model: mmb
   finetune: false
@@ -21,7 +20,7 @@ model:
   seed: 42
   n_epochs: 2
 head:
-  head: lin
+  head: hier
 xai:
   model: mmb
   xai: mmb
