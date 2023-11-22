@@ -147,6 +147,8 @@ class AqueousRegModel(pl.LightningModule):
         self.mmb.enc_dec_model.enc_dec_model.decoder = None
         if self.finetune:
             self.mmb.unfreeze()
+        else:
+            self.mmb.freeze()
 
     def configure_optimizers(self):
         return optim.AdamW(self.parameters(),
@@ -174,7 +176,8 @@ class AqueousRegModel(pl.LightningModule):
         if not self.finetune:
             self.mmb.freeze()
         inputs, labels = batch
-        outputs = self(inputs)
+        with torch.set_grad_enabled(True):
+            outputs = self(inputs)
         loss = self.criterion(outputs, labels)
         mae = self.criterion_mae(outputs, labels)
         mse = self.criterion_mse(outputs, labels)
@@ -227,6 +230,7 @@ class AqueousRegModel(pl.LightningModule):
         inputs, labels = batch
 
         with torch.set_grad_enabled(True):
+            self.mmb.unfreeze()
             self.zero_grad()
             preds = self(inputs)
         preds.backward(torch.ones_like(preds))

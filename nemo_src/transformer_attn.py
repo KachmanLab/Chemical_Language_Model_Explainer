@@ -451,7 +451,8 @@ class CoreAttention(MegatronModule):
         # ===========================
         # CLM EXPLAINABILTIY: SAVE ATTENTION + GRAD
         # ===========================
-        if not self.training:
+        # if not self.training:
+        if attention_probs.requires_grad:
             self.save_attn(attention_probs)
             attention_probs.register_hook(self.save_attn_gradients)
 
