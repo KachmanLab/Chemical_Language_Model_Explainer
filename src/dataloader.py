@@ -31,7 +31,7 @@ class PropertyDataset(Dataset):
         print('len df', len(df))
         uni, cnt = np.unique(df[self.smilesname], return_counts=True)
         uncount = list(zip(uni, cnt))
-        print(sorted(uncount, key=lambda x: x[1], reverse=True)[:50])
+        # print(sorted(uncount, key=lambda x: x[1], reverse=True)[:50])
 
         df = self.custom_preprocess(df)
         self.min = df[propname].min()

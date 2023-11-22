@@ -75,7 +75,7 @@ def split(cfg: DictConfig) -> None:
 
 
 if __name__ == "__main__":
-    import dvc.api
-    dvccfg = DictConfig(dvc.api.params_show())
-    print(dvccfg)
+    # import dvc.api
+    # dvccfg = DictConfig(dvc.api.params_show())
+    # print(dvccfg)
     split()

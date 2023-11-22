@@ -19,22 +19,22 @@ from omegaconf import OmegaConf, DictConfig
 
 
 @hydra.main(
-    version_base="1.3", config_path="/workspace/conf", config_name="config")
+    version_base="1.3", config_path="../conf", config_name="config")
 def explain_mmb(cfg: DictConfig) -> None:
     # print(OmegaConf.to_yaml(cfg))
 
-    cfg = OmegaConf.load('/workspace/params.yaml')
+    cfg = OmegaConf.load('./params.yaml')
     print('EXPLAIN CONFIG from params.yaml')
     print(OmegaConf.to_yaml(cfg))
 
     pl.seed_everything(cfg.model.seed)
-    root = f"/workspace/data/{cfg.task.task}/{cfg.split.split}"
+    root = f"./data/{cfg.task.task}/{cfg.split.split}"
     with open(f"{root}/test.pkl", 'rb') as f:
         test = pickle.load(f)
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
                              shuffle=False, num_workers=8)
 
-    basepath = f"/workspace/out/{cfg.task.task}/{cfg.split.split}"
+    basepath = f"./out/{cfg.task.task}/{cfg.split.split}"
     mdir = f"{cfg.model.model}-{cfg.head.head}"
     ckpt_path = f"{basepath}/{mdir}/best.pt"
 
@@ -164,10 +164,11 @@ def explain_mmb(cfg: DictConfig) -> None:
 
         mismatch = int(mol.GetNumAtoms()) - len(atom_colors.keys())
         if mismatch != 0:
-            print(f"Warning: {mismatch}")
-            print(f"count mismatch for {smiles}:\
-                 {[t for t in token if t  not in vocab]}")
-            print(f'{token}')
+            print(f"Warning: {mismatch}: \
+                 {[t for t in token if t not in vocab]}")
+            # print(f"count mismatch for {smiles}:\
+                 # {[t for t in token if t not in vocab]}")
+            # print(f'{token}')
             d.DrawMolecule(mol)
 
         else:

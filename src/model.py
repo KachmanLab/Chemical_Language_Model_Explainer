@@ -79,7 +79,6 @@ class RegressionHead(pl.LightningModule):
         super().__init__()
         self.dim = dim
         self.norm = nn.LayerNorm(normalized_shape=dim)
-        # self.norm = lambda x: x
         self.fc1 = nn.Linear(dim, 64)
         self.fc2 = nn.Linear(64, 64)
         self.fc3 = nn.Linear(64, 1)
@@ -176,8 +175,8 @@ class AqueousRegModel(pl.LightningModule):
         if not self.finetune:
             self.mmb.freeze()
         inputs, labels = batch
-        with torch.set_grad_enabled(True):
-            outputs = self(inputs)
+        # with torch.set_grad_enabled(True):
+        outputs = self(inputs)
         loss = self.criterion(outputs, labels)
         mae = self.criterion_mae(outputs, labels)
         mse = self.criterion_mse(outputs, labels)
@@ -191,8 +190,9 @@ class AqueousRegModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         inputs, labels = batch
-        with torch.set_grad_enabled(True):
+        if not self.finetune:
             self.mmb.unfreeze()
+        with torch.set_grad_enabled(True):
             outputs = self(inputs)
         val_loss = self.criterion(outputs, labels)
         val_mae = self.criterion_mae(outputs, labels)
@@ -207,7 +207,8 @@ class AqueousRegModel(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         inputs, labels = batch
-        self.mmb.unfreeze()
+        if not self.finetune:
+            self.mmb.unfreeze()
         with torch.set_grad_enabled(True):
             outputs = self(inputs)
         test_mae = self.criterion_mae(outputs, labels)
@@ -228,9 +229,9 @@ class AqueousRegModel(pl.LightningModule):
             call color mapper: map atom-token weights to colors for rdkit plot
         """
         inputs, labels = batch
-
-        with torch.set_grad_enabled(True):
+        if not self.finetune:
             self.mmb.unfreeze()
+        with torch.set_grad_enabled(True):
             self.zero_grad()
             preds = self(inputs)
         preds.backward(torch.ones_like(preds))

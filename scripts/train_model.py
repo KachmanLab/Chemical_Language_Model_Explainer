@@ -54,6 +54,7 @@ def train(cfg: DictConfig) -> None:
             if cfg.model.model == 'mmb':
                 model = AqueousRegModel(head=cfg.head.head,
                                         finetune=cfg.model.finetune)
+                _sanity_mmb = model.mmb.state_dict().numpy()
             elif cfg.model.finetune or cfg.model.model == 'mmb-ft':
                 # unfreeze to train the whole model instead of just the head
                 # cfg['finetune'] = True
@@ -70,15 +71,23 @@ def train(cfg: DictConfig) -> None:
         else:
             # only reset head instead of re-initializing full mmb model
             model.reset_head()
+            model.mmb.freeze()
             if cfg.model.finetune or cfg.model.model == 'mmb-ft':
                 # restore base MMB core
                 model.mmb.load_state_dict(
                     torch.load(f"{basepath}/{mdir}/model/mmb.pt"))
+                model.mmb.unfreeze()
 
         wandb_logger = WandbLogger(
             project='aqueous-solu' if cfg.task.task == 'aq' else cfg.task.task
         )
         wandb_logger.experiment.config.update(cfg)
+        wandb_logger.experiment.config.update({
+            'split': cfg.split.split,
+            'model': cfg.model.model,
+            'head': cfg.head.head,
+            'n_epochs': cfg.model.n_epochs,
+        })
 
         trainer = pl.Trainer(
             max_epochs=cfg.model.n_epochs,
@@ -122,6 +131,8 @@ def train(cfg: DictConfig) -> None:
         torch.save(model.head.state_dict(), f"{basepath}/{mdir}/best.pt")
     else:
         model.head.load_state_dict(torch.load(ckpt_path))
+        # check mmb backbone is unchanged
+        assert np.allclose(model.mmb.state_dict().numpy(), _sanity_mmb)
         torch.save(model.head.state_dict(), f"{basepath}/{mdir}/best.pt")
 
     metrics['valid'] = trainer.validate(model, valid_loader)[0]

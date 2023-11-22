@@ -428,12 +428,12 @@ stages:
     deps:
     - path: scripts/split_data.py
       hash: md5
-      md5: abd82840d1593c7bca10ef580a85f806
-      size: 2845
+      md5: 4efeee9cf778f18e6b9e1d4ef56942c5
+      size: 2851
     - path: src/dataloader.py
       hash: md5
-      md5: 5b0c5d0eaf2358f1638a6a7c167144cb
-      size: 20460
+      md5: 76ff60a67a068ca392b187813a746780
+      size: 20462
     params:
       params.yaml:
         split:
@@ -454,36 +454,36 @@ stages:
     outs:
     - path: data/aq/random/
       hash: md5
-      md5: 2c86025d548d0ccd1f3cc8168f568bf3.dir
+      md5: 6514445132b75a216a67f03c836618b2.dir
       size: 2869759
       nfiles: 12
   train_model:
     cmd:
-    - mkdir -p out/aq/random/mmb-ft-hier/{viz,model}
+    - mkdir -p out/aq/random/mmb-ft-lin/{viz,model}
     - echo "TRAIN --model mmb-ft --finetune --xai ours --n_batch 64 --seed 42 --n_epochs
-      2 --head hier"
+      25 --head lin"
     - python3 scripts/train_model.py
     deps:
     - path: data/aq/random/
       hash: md5
-      md5: 2c86025d548d0ccd1f3cc8168f568bf3.dir
+      md5: 6514445132b75a216a67f03c836618b2.dir
       size: 2869759
       nfiles: 12
     - path: src/model.py
       hash: md5
-      md5: c6ea98fc78587988e2374cbbb8687ab7
-      size: 21321
+      md5: 5856f7939471179e72c3b478ca257a74
+      size: 21501
     params:
       params.yaml:
         head:
-          head: hier
+          head: lin
         model:
           model: mmb-ft
           finetune: true
           xai: ours
           n_batch: 64
           seed: 42
-          n_epochs: 2
+          n_epochs: 25
         split:
           split: random
           n_splits: 5
@@ -500,36 +500,40 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: out/aq/random/mmb-ft-hier/best.pt
+    - path: out/aq/random/mmb-ft-lin/best.pt
       hash: md5
-      md5: baa2d9113ff4bcb825e3e62595ef459d
-      size: 154575
-    - path: out/aq/random/mmb-ft-hier/metrics.json
+      md5: 7db0ffc9a9790d40290c6eb9565f623c
+      size: 3047
+    - path: out/aq/random/mmb-ft-lin/metrics.json
       hash: md5
-      md5: edf8524da9ce7737904f42803a1179a8
-      size: 494
-    - path: out/aq/random/mmb-ft-hier/model/
+      md5: 4098fe5e41b33bcb3e35b897c8e6386f
+      size: 500
+    - path: out/aq/random/mmb-ft-lin/model/
       hash: md5
-      md5: c9b12d9483581e8d7a028f3ffb87dab1.dir
-      size: 476968575
+      md5: c3f218b044cd3973bc7f80eb810bf4e9.dir
+      size: 476210935
       nfiles: 11
   explain_model:
     cmd:
-    - mkdir -p out/aq/random/mmb-ft-hier/viz
+    - mkdir -p out/aq/random/mmb-ft-lin/viz
     - python3 scripts/explain_mmb.py
     deps:
     - path: data/aq/random/test.pkl
       hash: md5
-      md5: c9747bb1a8ae2a10957ab47e8b57c94b
+      md5: c1676ee7c89da3bf8a51a3f0e72e2bb5
       size: 48533
-    - path: out/aq/random/mmb-ft-hier/best.pt
+    - path: out/aq/random/mmb-ft-lin/best.pt
       hash: md5
-      md5: baa2d9113ff4bcb825e3e62595ef459d
-      size: 154575
+      md5: 7db0ffc9a9790d40290c6eb9565f623c
+      size: 3047
     - path: scripts/explain_mmb.py
       hash: md5
-      md5: d253eadad1b59d8b7b3c99f646a9be3e
-      size: 7445
+      md5: fc85ed8ddc208987e1801ead76e99ce5
+      size: 7474
+    - path: src/explainer.py
+      hash: md5
+      md5: 20cb4a56f039e6f3865e301f7a4a1cec
+      size: 7428
     - path: src/maskedhead.py
       hash: md5
       md5: 7e95d59742139b020474ce4dc988a81c
@@ -537,14 +541,14 @@ stages:
     params:
       params.yaml:
         head:
-          head: hier
+          head: lin
         model:
           model: mmb-ft
           finetune: true
           xai: ours
           n_batch: 64
           seed: 42
-          n_epochs: 2
+          n_epochs: 25
         split:
           split: random
           n_splits: 5
@@ -565,46 +569,46 @@ stages:
           xai: mmb
           mask: false
     outs:
-    - path: out/aq/random/mmb-ft-hier/attributions.csv
+    - path: out/aq/random/mmb-ft-lin/attributions.csv
       hash: md5
-      md5: 2f0bcff6af2dcbf68c4297c2494b6392
-      size: 2088060
-    - path: out/aq/random/mmb-ft-hier/viz
+      md5: ccde27f83669d691c2b93831c5872a77
+      size: 2067752
+    - path: out/aq/random/mmb-ft-lin/viz
       hash: md5
-      md5: ea92dff45573396f9b4f422e750716cc.dir
-      size: 56181704
+      md5: c0f244d83c52044f1d97747055d64c6c.dir
+      size: 56530247
       nfiles: 1171
   predict_model:
     cmd: python3 scripts/predict_model.py
     deps:
     - path: data/aq/random/
       hash: md5
-      md5: 2c86025d548d0ccd1f3cc8168f568bf3.dir
+      md5: 6514445132b75a216a67f03c836618b2.dir
       size: 2869759
       nfiles: 12
-    - path: out/aq/random/mmb-ft-hier/best.pt
+    - path: out/aq/random/mmb-ft-lin/best.pt
       hash: md5
-      md5: baa2d9113ff4bcb825e3e62595ef459d
-      size: 154575
+      md5: 7db0ffc9a9790d40290c6eb9565f623c
+      size: 3047
     - path: scripts/predict_model.py
       hash: md5
-      md5: e432a7dcad05cf116017d3208fbe7c16
-      size: 6128
+      md5: b4297cf152134917e33d3fbbb8b5ebfa
+      size: 6047
     - path: src/model.py
       hash: md5
-      md5: c6ea98fc78587988e2374cbbb8687ab7
-      size: 21321
+      md5: 5856f7939471179e72c3b478ca257a74
+      size: 21501
     params:
       params.yaml:
         head:
-          head: hier
+          head: lin
         model:
           model: mmb-ft
           finetune: true
           xai: ours
           n_batch: 64
           seed: 42
-          n_epochs: 2
+          n_epochs: 25
         split:
           split: random
           n_splits: 5
@@ -621,23 +625,25 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: out/aq/random/mmb-ft-hier/parity_plot.png
+    - path: out/aq/random/mmb-ft-lin/parity_plot.png
       hash: md5
-      md5: e58da4c84f5a4b1a5b3ba384e51730e1
-      size: 48577
-    - path: out/aq/random/mmb-ft-hier/predictions.csv
+      md5: 1b6923bb485394c92043acfdc507affb
+      size: 59839
+    - path: out/aq/random/mmb-ft-lin/predictions.csv
       hash: md5
-      md5: 4f37281fb69f9a3b2211e74139b30674
-      size: 526961
+      md5: 29149bb49d3ba790a3c0b93c67030bd5
+      size: 516850
   all:
-    cmd: echo "Finished full aq pipeline with mmb-ft"
+    cmd:
+    - echo "Finished full aq pipeline with mmb-ft"
+    - pwd
     deps:
     - path: out/aq/random/
       hash: md5
-      md5: 0e60b473662e4d829b5d30ff7d6a2f72.dir
-      size: 615336472
-      nfiles: 1190
-    - path: out/aq/random/mmb-ft-hier/best.pt
+      md5: 05cbb36c2062c8688a9f10de2dc7ae4a.dir
+      size: 614874476
+      nfiles: 1193
+    - path: out/aq/random/mmb-ft-lin/best.pt
       hash: md5
-      md5: baa2d9113ff4bcb825e3e62595ef459d
-      size: 154575
+      md5: 7db0ffc9a9790d40290c6eb9565f623c
+      size: 3047

@@ -16,17 +16,17 @@ import numpy as np
 import seaborn as sns
 
 @hydra.main(
-    version_base="1.3", config_path="/workspace/conf", config_name="config")
+    version_base="1.3", config_path="../conf", config_name="config")
 def predict_model(cfg: DictConfig) -> None:
     # print(OmegaConf.to_yaml(cfg))
 
-    cfg = OmegaConf.load('/workspace/params.yaml')
-    print('EXPLAIN CONFIG from params.yaml')
+    cfg = OmegaConf.load('./params.yaml')
+    print('PREDICT CONFIG from params.yaml')
     print(OmegaConf.to_yaml(cfg))
 
     pl.seed_everything(cfg.model.seed)
-    root = f"/workspace/data/{cfg.task.task}/{cfg.split.split}"
-    basepath = f"/workspace/out/{cfg.task.task}/{cfg.split.split}"
+    root = f"./data/{cfg.task.task}/{cfg.split.split}"
+    basepath = f"./out/{cfg.task.task}/{cfg.split.split}"
     mdir = f"{cfg.model.model}-{cfg.head.head}"
     ckpt_path = f"{basepath}/{mdir}/best.pt"
 
@@ -89,7 +89,6 @@ def predict_model(cfg: DictConfig) -> None:
     )
     for split, all in list(zip(['test', 'valid'], [all_test, all_valid])):
         # reverse order for consistency with plotting
-        print([f.get('smiles') for f in all])
         if cfg.model.model == 'ecfp':
             smiles = test.smiles if split == 'test' else valid.smiles
             tokens = None
