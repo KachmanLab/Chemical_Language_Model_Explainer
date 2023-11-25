@@ -146,7 +146,7 @@ def predict_model(cfg: DictConfig) -> None:
     p.fig.subplots_adjust(top=0.95)
     p.fig.tight_layout()
     txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo}"
-    plt.text(lim[1], lim[0], txt, ha="right", va="bottom", fontsize=14)
+    plt.text(lim[1], lim[0], txt, fontsize=14, ha="right", va="bottom")
     # plt.text(1, 0, txt, ha="right", va="bottom", fontsize=14)
     p.savefig(f"{basepath}/{mdir}/parity_plot.png")
 

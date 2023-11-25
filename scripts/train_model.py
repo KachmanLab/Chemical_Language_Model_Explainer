@@ -54,7 +54,7 @@ def train(cfg: DictConfig) -> None:
             if cfg.model.model == 'mmb':
                 model = AqueousRegModel(head=cfg.head.head,
                                         finetune=cfg.model.finetune)
-                _sanity_mmb = model.mmb.state_dict().numpy()
+                # _sanity_mmb = np.array(model.mmb.state_dict())
             elif cfg.model.finetune or cfg.model.model == 'mmb-ft':
                 # unfreeze to train the whole model instead of just the head
                 # cfg['finetune'] = True
@@ -71,7 +71,8 @@ def train(cfg: DictConfig) -> None:
         else:
             # only reset head instead of re-initializing full mmb model
             model.reset_head()
-            model.mmb.freeze()
+            if 'mmb' in cfg.model.model:
+                model.mmb.freeze()
             if cfg.model.finetune or cfg.model.model == 'mmb-ft':
                 # restore base MMB core
                 model.mmb.load_state_dict(
@@ -132,7 +133,7 @@ def train(cfg: DictConfig) -> None:
     else:
         model.head.load_state_dict(torch.load(ckpt_path))
         # check mmb backbone is unchanged
-        assert np.allclose(model.mmb.state_dict().numpy(), _sanity_mmb)
+        # assert np.allclose(np.array(model.mmb.state_dict()), _sanity_mmb)
         torch.save(model.head.state_dict(), f"{basepath}/{mdir}/best.pt")
 
     metrics['valid'] = trainer.validate(model, valid_loader)[0]

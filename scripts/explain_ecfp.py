@@ -1,13 +1,11 @@
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem import AllChem
-from rdkit.Chem.Draw import SimilarityMaps
-from rdkit.Chem.Draw import rdMolDraw2D
-import numpy as np
+# from rdkit.Chem.Draw import SimilarityMaps
+# from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem.Draw import IPythonConsole
-import json
-import os
 import matplotlib.pyplot as plt
+import numpy as np
 import pytorch_lightning as pl
 import seaborn as sns
 from matplotlib.colors import Normalize
@@ -17,9 +15,11 @@ from src.model import ECFPLinear
 import hydra
 import pickle
 from omegaconf import OmegaConf, DictConfig
+import pandas as pd
+
 
 @hydra.main(
-    version_base="1.3", config_path="./conf", config_name="config")
+    version_base="1.3", config_path="../conf", config_name="config")
 def explain_ecfp(cfg: DictConfig) -> None:
 
     cfg = OmegaConf.load('./params.yaml')
@@ -174,10 +174,12 @@ def explain_ecfp(cfg: DictConfig) -> None:
         return d
 
     # plot entire test set:
-    smiles = test_dataset.smiles[:100]
-    labels = test_dataset.labels[:100]
-    ecfps = test_dataset.ecfp[:100]
+    smiles = test_dataset.smiles
+    labels = test_dataset.labels
+    ecfps = test_dataset.ecfp
     vmin, vmax = 0., 0.
+    morgan_preds, morgan_weights = [], []
+    morgan_positive, morgan_negative = [], []
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
         pred = model(ecfp[None, ...]).detach().numpy().item()
         # pred = model.predict(ecfp[None, ...]).detach().numpy().item()
@@ -187,18 +189,36 @@ def explain_ecfp(cfg: DictConfig) -> None:
         bits_dict = sort_dict_by_weight(bits_dict, weights, topk=cfg.xai.topk)
         _ = draw_morgan_bits(bits_dict, uid=uid)
 
-        morgan_weights, morgan_pos, morgan_neg = attribute_morgan(
+        morgan_weight, morgan_pos, morgan_neg = attribute_morgan(
             smi, bits_dict, weights)
+
+        morgan_preds.append(pred)
+        morgan_weights.append(morgan_weight)
+        morgan_positive.append(morgan_pos)
+        morgan_negative.append(morgan_neg)
         # min, max = np.min(morgan_weights), np.max(morgan_weights)
         # vmin, vmax = np.min(min, vmin), np.max(max, vmax)
 
         # norm = Normalize(vmin=-7.29, vmax=2.04)
         norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_weights), smi, logs, pred, uid)
+        _ = plot_weighted_mol(to_rdkit_cmap(morgan_weight), smi, logs, pred, uid)
         norm = Normalize()
         _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos), smi, logs, pred, uid, '_pos')
         norm = Normalize()
         _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg), smi, logs, pred, uid, '_neg')
+
+    attributions = pd.DataFrame({
+        "smiles": smiles,
+        "atom_weights": morgan_weights,
+        "atom_pos": morgan_positive,
+        "atom_neg": morgan_negative,
+        "preds": morgan_preds,
+        # "labels": list(labels)
+        'split': 'test'
+    })
+
+    attributions = attributions.reset_index().rename(columns={'index': 'uid'})
+    attributions.to_csv(f"{basepath}/{mdir}/attributions.csv", index=False)
 #print(vmin, vmax)
 
 #https://github.com/rdkit/rdkit/blob/d9d1fe2838053484027ba9f5f74629069c6984dc/rdkit/Chem/Draw/__init__.py#L947
