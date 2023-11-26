@@ -49,6 +49,14 @@ def plot_models(task, split):
     colors_dark = plt.cm.viridis(np.linspace(0, 0.75, len(models)))
     colors_light = plt.cm.viridis(np.linspace(0.05, 0.8, len(models)))
 
+    # colors_light = colors_dark + np.array([0.3, 0.3, 0.3, 0])
+    # colors_light = np.clip(colors_light, 0, 1)  # Ensuring valid color values
+
+    # base_colors = plt.cm.tab10(np.linspace(0, 1, len(models)))
+    # colors_light = base_colors + np.array([0.3, 0.3, 0.3, 0])
+    # colors_light = np.clip(colors_light, 0, 1)  # Ensuring valid color values
+    # colors_dark = base_colors
+
     for i, model in enumerate(models):
         # Placeholder data for CV MAE and Test MAE
 
@@ -72,10 +80,10 @@ def plot_models(task, split):
 
     plt.tight_layout()
     basepath = f"/workspace/final/{task}/{split}"
-    plt.savefig(f"{basepath}/model_comparision_mae.png")
+    plt.savefig(f"{basepath}/viz/model_comparision_mae.png")
 
 
 if __name__ == "__main__":
-    # plot_models(task='aq', split='random')
-    plot_models(task='aq', split='accurate')
+    plot_models(task='aq', split='random')
+    # plot_models(task='aq', split='accurate')
     # plot_models(task='aq', split='scaffold')

@@ -161,11 +161,11 @@ class AqueousRegModel(pl.LightningModule):
             apply regression head to obtain logS
         """
         # tokenize smiles string of solute
-        solu_tokens, solu_mask = self.tokenizer.tokenize(solu_smi)
+        solu, mask = self.tokenizer.tokenize(solu_smi)
         # encode with MMB
-        solu = self.mmb.encode(solu_tokens, solu_mask)
+        solu = self.mmb.encode(solu, mask)
         # apply mask
-        solu = solu * solu_mask.unsqueeze(-1)
+        solu = solu * mask.unsqueeze(-1)
         # take only the <REG> token
         solu = solu[:, 0]
         # apply regression head and return logS prediction
@@ -546,26 +546,50 @@ class BaselineAqueousModel(AqueousRegModel):
         return self.head(solu)
 
 
-class MMBFeaturizer(BaselineAqueousModel):
-    def __init__(self):
-        super().__init__()
+class MMB_R_Featurizer(AqueousRegModel):
+    def __init__(self, head, finetune):
+        super().__init__(head=head,
+                         finetune=finetune)
 
     def featurize(self, inputs):
-        solu, mask = self._tokenize(inputs)
+        solu, mask = self.tokenizer.tokenize(inputs)
         solu = self.mmb.encode(solu, mask)
 
+        # apply mask
         solu = solu * mask.unsqueeze(-1)
-        solu = torch.mean(solu, dim=1)
-        return solu
+
+        # take only the <REG> token
+        return solu[:, 0]
 
     def predict_step(self, batch, batch_idx):
-
         inputs, labels = batch
         with torch.set_grad_enabled(True):
             self.zero_grad()
             feats = self.featurize(inputs)
         return feats
 
+
+class MMB_AVG_Featurizer(BaselineAqueousModel):
+    def __init__(self, head, finetune):
+        super().__init__(head=head,
+                         finetune=finetune)
+
+    def featurize(self, inputs):
+        solu, mask = self._tokenize(inputs)
+        solu = self.mmb.encode(solu, mask)
+
+        # apply mask
+        solu = solu * mask.unsqueeze(-1)
+
+        # take average of sequence
+        return torch.mean(solu, dim=1)
+
+    def predict_step(self, batch, batch_idx):
+        inputs, labels = batch
+        with torch.set_grad_enabled(True):
+            self.zero_grad()
+            feats = self.featurize(inputs)
+        return feats
 
 # from molfeat.trans.pretrained import PretrainedMolTransformer
 

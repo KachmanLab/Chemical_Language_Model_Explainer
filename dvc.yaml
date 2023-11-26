@@ -111,7 +111,6 @@ stages:
 
   all:
     cmd: 
-      - echo "Finished full ${task.task} ${split.split} pipeline with ${model.model}-${head.head}"
       - pwd
       - mkdir -p /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/{model,viz}
       - cp -r out/${task.task}/${split.split}/${model.model}-${head.head}/
@@ -119,7 +118,11 @@ stages:
       - cp -r dvc.lock /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/dvc.lock
       - cp -r params.yaml /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/params.yaml
       - python scripts/plot_models.py
+      - python scripts/plot_datasplit.py
+      - echo "Finished full ${task.task} ${split.split} pipeline with ${model.model}-${head.head}"
     deps:
+      - scripts/plot_models.py
+      - scripts/plot_datasplit.py
       - out/${task.task}/${split.split}/
       - out/${task.task}/${split.split}/${model.model}-${head.head}/model
       - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt

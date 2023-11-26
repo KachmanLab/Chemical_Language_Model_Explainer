@@ -428,8 +428,8 @@ stages:
     deps:
     - path: scripts/split_data.py
       hash: md5
-      md5: 4efeee9cf778f18e6b9e1d4ef56942c5
-      size: 2851
+      md5: f909b3b9832d98ba6141373dd5812a1e
+      size: 2972
     - path: src/dataloader.py
       hash: md5
       md5: 76ff60a67a068ca392b187813a746780
@@ -454,8 +454,8 @@ stages:
     outs:
     - path: data/aq/random/
       hash: md5
-      md5: 7064050b6862000e2bf6fe931e912a08.dir
-      size: 2869759
+      md5: c61e763d3aed447b8bf13a3fb1e91e7e.dir
+      size: 2880865
       nfiles: 12
   train_model:
     cmd:
