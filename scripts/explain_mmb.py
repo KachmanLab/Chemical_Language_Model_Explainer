@@ -60,6 +60,7 @@ def explain_mmb(cfg: DictConfig) -> None:
     elif cfg.model.model == 'mmb-avg':
         model = BaselineAqueousModel(head=head,
                                      finetune=cfg.model.finetune)
+        model.head.load_state_dict(torch.load(ckpt_path))
         xai = 'mmb-avg'
 
     model.mmb.unfreeze()
@@ -150,7 +151,7 @@ def explain_mmb(cfg: DictConfig) -> None:
         h_rads = {}  # ?
         h_lw_mult = {}  # ?
 
-        label = f'Exp logS: {logS:.2f}, predicted: {pred:.2f}\n{smiles}'
+        label = f'Exp {cfg.task.plot_propname}: {logS:.2f}, predicted: {pred:.2f}\n{smiles}'
 
         mol = Chem.MolFromSmiles(smiles)
         mol = Draw.PrepareMolForDrawing(mol)

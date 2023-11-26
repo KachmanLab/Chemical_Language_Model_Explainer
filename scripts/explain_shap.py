@@ -66,7 +66,7 @@ def explain_shap(cfg: DictConfig) -> None:
     cfg = OmegaConf.load('./params.yaml')
     print('SHAP EXPLAIN CONFIG from params.yaml')
     print(OmegaConf.to_yaml(cfg))
-    cfg.model.n_batch = 4
+    cfg.model.n_batch = 32
 
     pl.seed_everything(cfg.model.seed)
     root = f"./data/{cfg.task.task}/{cfg.split.split}"
@@ -83,59 +83,57 @@ def explain_shap(cfg: DictConfig) -> None:
         model = BaselineAqueousModel(head=cfg.head.head,
                                      finetune=cfg.model.finetune)
         model.head.load_state_dict(torch.load(ckpt_path))
-        # model.mmb.unfreeze()
-        # mmb_tokenizer = model.tokenizer
         xai = 'mmb-avg'
     else:
         raise NotImplementedError
 
     ###################################
 
-    trainer = pl.Trainer(
-        accelerator='gpu',
-        gpus=1,
-        precision=16,
-    )
-    all = trainer.predict(model, test_loader)
-    preds = [f.get('preds') for f in all]
-    labels = [f.get('labels') for f in all]
-
-    yhat = torch.concat(preds)
-    y = torch.concat(labels)
-
-    mse = nn.MSELoss()(yhat, y)
-    mae = nn.L1Loss()(yhat, y)
-    rmse = torch.sqrt(mse)
-
-    data = pd.DataFrame({'y': y, 'yhat': yhat})
-    reg = linear_model.LinearRegression()
-    reg.fit(yhat.reshape(-1, 1), y)
-    slo = f"{reg.coef_[0]:.3f}"
-
-    # text formatting for plot
-    split = f"{int(round(1.-cfg.split.split_frac, 2)*100)}% "
-    color = cfg.split.color
-    _acc = cfg.split.split
-
-    # plot a hexagonal parity plot
-    ally = np.array(torch.concat([y, yhat], axis=0))
-    lim = [np.floor(np.min(ally)), np.ceil(np.max(ally))]
-    print('lim', lim)
-    p = sns.jointplot(x=y, y=yhat, kind='hex', color=color,
-                      xlim=lim, ylim=lim)
-    sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
-                color='grey', ci=None, scatter=False)
-    p.fig.suptitle(f"{cfg.task.plot_title} parity plot \
-        \n{_acc} {split}test set")
-    p.set_axis_labels(f"Experimental {cfg.task.plot_propname}",
-                      f"Model {cfg.task.plot_propname}")
-
-    p.fig.subplots_adjust(top=0.95)
-    p.fig.tight_layout()
-    txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo}"
-    plt.text(lim[1], lim[0],
-             txt, ha="right", va="bottom", fontsize=14)
-    p.savefig(f"{basepath}/{mdir}/parity_plot.png")
+    # trainer = pl.Trainer(
+    #     accelerator='gpu',
+    #     gpus=1,
+    #     precision=16,
+    # )
+    # all = trainer.predict(model, test_loader)
+    # preds = [f.get('preds') for f in all]
+    # labels = [f.get('labels') for f in all]
+    #
+    # yhat = torch.concat(preds)
+    # y = torch.concat(labels)
+    #
+    # mse = nn.MSELoss()(yhat, y)
+    # mae = nn.L1Loss()(yhat, y)
+    # rmse = torch.sqrt(mse)
+    #
+    # data = pd.DataFrame({'y': y, 'yhat': yhat})
+    # reg = linear_model.LinearRegression()
+    # reg.fit(yhat.reshape(-1, 1), y)
+    # slo = f"{reg.coef_[0]:.3f}"
+    #
+    # # text formatting for plot
+    # split = f"{int(round(1.-cfg.split.split_frac, 2)*100)}% "
+    # color = cfg.split.color
+    # _acc = cfg.split.split
+    #
+    # # plot a hexagonal parity plot
+    # ally = np.array(torch.concat([y, yhat], axis=0))
+    # lim = [np.floor(np.min(ally)), np.ceil(np.max(ally))]
+    # print('lim', lim)
+    # p = sns.jointplot(x=y, y=yhat, kind='hex', color=color,
+    #                   xlim=lim, ylim=lim)
+    # sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
+    #             color='grey', ci=None, scatter=False)
+    # p.fig.suptitle(f"{cfg.task.plot_title} parity plot \
+    #     \n{_acc} {split}test set")
+    # p.set_axis_labels(f"Experimental {cfg.task.plot_propname}",
+    #                   f"Model {cfg.task.plot_propname}")
+    #
+    # p.fig.subplots_adjust(top=0.95)
+    # p.fig.tight_layout()
+    # txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo}"
+    # plt.text(lim[1], lim[0],
+    #          txt, ha="right", va="bottom", fontsize=14)
+    # p.savefig(f"{basepath}/{mdir}/parity_plot.png")
 
     ###################################
 
@@ -153,8 +151,8 @@ def explain_shap(cfg: DictConfig) -> None:
 
     for b_nr, batch in enumerate(test_loader):
         smiles, labels = batch
+
         shapvals = explainer(smiles).values
-        # shapvals = [explainer(smi.to('cuda:0')).values for smi in smiles]
         tokens = [tokenizer.text_to_tokens(s) for s in smiles]
         preds = model(smiles).cpu().detach().numpy()
         labels = labels.cpu().detach().numpy()
@@ -167,20 +165,21 @@ def explain_shap(cfg: DictConfig) -> None:
         for b_ix in range(len(smiles)):
             token = tokens[b_ix]
             smi = smiles[b_ix]
-            shapvalue = explainer(smiles).values
+            # shapvalue = explainer(smiles).values
             lab = labels[b_ix]
             pred = preds[b_ix]
             # uid = len(attributions) + b_ix
             uid = b_nr * cfg.model.n_batch + b_ix
 
-            # atom_color = cmapper(shapvals[b_ix], tokens[b_ix])
-            atom_color = cmapper(shapvalue, tokens[b_ix])
+            atom_color = cmapper(shapvals[b_ix], tokens[b_ix])
+            # atom_color = cmapper(shapvalue, tokens[b_ix])
             atom_color = cmapper.to_rdkit_cmap(atom_color)
 
-            if uid not in [39, 94, 210, 217]:
+            print(uid)
+            if uid not in [17, 39, 94, 210, 217]:
                 # segmentation fault, likely due to weird structure?
                 plot_weighted_molecule(atom_color, smi, token, lab, pred,
-                    f"{uid}_{xai}_{fid}", f"{basepath}/{mdir}/viz/")
+                    f"{uid}_{xai}", f"{basepath}/{mdir}/viz/")
         ###############################
 
         res = pd.DataFrame({
@@ -191,11 +190,10 @@ def explain_shap(cfg: DictConfig) -> None:
             'shap_weights': shapvals,
             'split': 'test'
             })
-        print(res)
         attributions = pd.concat([attributions, res], axis=0)
 
     print('token/shap equal len', all([len(t) == len(s) for t, s in zip(
-        attributions.Tokens, attributions.SHAP_weights
+        attributions.tokens, attributions.shap_weights
     )]))
 
     attributions = attributions.reset_index(drop=True).rename(columns={'index': 'uid'})

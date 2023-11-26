@@ -520,10 +520,12 @@ class BaselineAqueousModel(AqueousRegModel):
     def __call__(self, inputs):
         try:
             if 'MASK' in inputs[0]:
-                print(inputs)
+                # print(inputs)
                 raise TypeError
             else:
                 solu, mask = self._tokenize(inputs)
+                solu.cuda()
+                mask.cuda()
         except:
             inputs = [i.split(' ') for i in inputs]
             token_ids = self.tokenizer.tokens_to_ids(inputs)

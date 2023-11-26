@@ -2,12 +2,8 @@
 """ adapted from ref: https://arxiv.org/abs/2103.15679 """
 
 import torch
-import torch.nn as nn
 from rdkit.Chem import Draw
 from rdkit import Chem
-
-from rdkit import rdBase
-from rdkit.Chem import AllChem
 import seaborn as sns
 import numpy as np
 
@@ -34,23 +30,23 @@ class MolecularSelfAttentionViz():
 
         # cast to float32 for torch.clamp
         attn, grad = attn.float(), grad.float()
-        
+
         # loop through each layer
         for layer in range(self.n_layers):
             # calculate avg over heads using attn & gradient
             attn_map = self.avg_heads(
-                attn[layer, :, :ml, :ml], 
+                attn[layer, :, :ml, :ml],
                 grad[layer, :, :ml, :ml]
             ).cpu().detach()
             # apply update rule
-            a_bar = torch.matmul(attn_map, rel) 
+            a_bar = torch.matmul(attn_map, rel)
             rel = rel + a_bar
 
             # optionally save heatmaps
             if self.save_heatmap:
                 save_heat(a_bar, ml, token, prefix='a_bar_l{layer}')
         if self.save_heatmap:
-            save_heat(rel - torch.eye(ml), ml, token, f'full_rel')
+            save_heat(rel - torch.eye(ml), ml, token, 'full_rel')
         return rel
 
     def get_weights(self, rel, ml):
@@ -67,6 +63,7 @@ class MolecularSelfAttentionViz():
         rel = self.agg_relevance(attn, grad, ml, token)
         # extract token importance as relevance weights to <REG> token
         return self.get_weights(rel, ml)
+
 
 class ColorMapper():
     def __init__(self, cmap=None, vmin=None, vmax=None):
@@ -100,10 +97,11 @@ class ColorMapper():
             and scale by its own min/max'''
         self.norm = Normalize(self.vmin, self.vmax)
         return self.norm(self.filter_atoms(weight, token))
-   
+
     def to_rdkit_cmap(self, weight):
         '''helper to map to shape required by RDkit to visualize '''
         return {i: [tuple(self.cmap(w))] for i, w in enumerate(weight)}
+
 
 def make_legend():
     mapper = ColorMapper()
@@ -129,19 +127,19 @@ def save_heat(rel, ml, token, prefix=""):
     cmap = sns.cubehelix_palette(
         start=0.5, rot=-0.75, dark=0.15, light=0.95, reverse=True, as_cmap=True
     )
-    rel *= 100 / 0.8 #scale for visibility
+    rel *= 100 / 0.8  # scale for visibility
     ax = sns.heatmap(
         rel,
         square=True,
-        xticklabels = np.array(token), 
-        yticklabels = np.array(list(reversed(token))),
-        cmap = cmap,
-        vmin = 0., vmax = 1.
+        xticklabels=np.array(token),
+        yticklabels=np.array(list(reversed(token))),
+        cmap=cmap,
+        vmin=0., vmax=1.
     )
     plt.tight_layout()
     plt.savefig(f'/workspace/results/aqueous-solu/{prefix}_Aqueous_heatmap.png')
     plt.clf()
- 
+
     ax = sns.heatmap(rel,
         cmap = cmap,
         cbar=False,
@@ -153,21 +151,34 @@ def save_heat(rel, ml, token, prefix=""):
         bbox_inches='tight', pad_inches=0)
     plt.clf()
 
-def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix="", savedir=""):
+def plot_weighted_molecule(atom_colors, smiles, token, label, pred, prefix="", savedir=""):
     atom_colors = atom_colors
     bond_colors = {}
-    h_rads = {} #?
-    h_lw_mult = {} #?
+    h_rads = {}  # ?
+    h_lw_mult = {}  # ?
 
-    label = f'Exp logS: {logS:.2f}, predicted: {pred:.2f}\n{smiles}'
+    label = f'Experimental: {label:.2f}, predicted: {pred:.2f}\n{smiles}'
 
     mol = Chem.MolFromSmiles(smiles)
     mol = Draw.PrepareMolForDrawing(mol)
     d = Draw.rdMolDraw2D.MolDraw2DCairo(700, 700)
-    d.drawOptions().padding = 0.0 
+    d.drawOptions().padding = 0.0
 
-    # some plotting issues for 'C@@H' and 'C@H' tokens since 
-    # another H atom is rendered explicitly. 
+    mismatch = int(mol.GetNumAtoms()) - len(atom_colors.keys())
+    if mismatch != 0:
+        d.DrawMolecule(mol)
+    else:
+        d.DrawMoleculeWithHighlights(
+            mol, label, atom_colors, bond_colors, h_rads, h_lw_mult, -1
+        )
+
+    d.FinishDrawing()
+
+    with open(file=f'{savedir}/{prefix}_MolViz.png', mode='wb') as f:
+        f.write(d.GetDrawingText())
+
+    # some plotting issues for 'C@@H' and 'C@H' tokens since
+    # another H atom is rendered explicitly.
     # Might break for ultra long SMILES using |c:1:| notation
     # vocab = ft_model.cmapper.atoms + ft_model.cmapper.nonatoms
     # if int(mol.GetNumAtoms()) != len(atom_colors.keys()):
@@ -176,20 +187,15 @@ def plot_weighted_molecule(atom_colors, smiles, token, logS, pred, prefix="", sa
     #          {[t for t in token if t  not in vocab]}")
     #     print(f'{token}')
 
-    d.DrawMoleculeWithHighlights(
-        mol, label, atom_colors, bond_colors, h_rads, h_lw_mult, -1
-    )
-    # todo legend
-    d.FinishDrawing()
-    
-    with open(file=f'{savedir}/{prefix}_MolViz.png',
-        mode = 'wb') as f:
-        f.write(d.GetDrawingText())
-
+    # d.DrawMoleculeWithHighlights(
+    #     mol, label, atom_colors, bond_colors, h_rads, h_lw_mult, -1
+    # )
+    # # todo legend
+    # d.FinishDrawing()
 
 # TODO
 # draw full molecule in the corner
-# draw ecfp4 fragments for whole dataset 
+# draw ecfp4 fragments for whole dataset
 
 # draw aggregated ECFP4 fragments, aggregated & weighted by
 # regression head weights for each (?top-n) fragments

@@ -470,8 +470,8 @@ stages:
       nfiles: 12
     - path: src/model.py
       hash: md5
-      md5: ca134b977e027c5967c935e6d9d3e709
-      size: 21714
+      md5: 683e05dace1036cfa253a894ce1076f2
+      size: 21772
     params:
       params.yaml:
         head:
@@ -594,8 +594,8 @@ stages:
       size: 6047
     - path: src/model.py
       hash: md5
-      md5: ca134b977e027c5967c935e6d9d3e709
-      size: 21714
+      md5: 683e05dace1036cfa253a894ce1076f2
+      size: 21772
     params:
       params.yaml:
         head:

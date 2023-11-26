@@ -118,6 +118,7 @@ stages:
        /workspace/final/${task.task}/${split.split}/
       - cp -r dvc.lock /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/dvc.lock
       - cp -r params.yaml /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/params.yaml
+      - python scripts/plot_models.py
     deps:
       - out/${task.task}/${split.split}/
       - out/${task.task}/${split.split}/${model.model}-${head.head}/model
