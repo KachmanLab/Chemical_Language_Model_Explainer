@@ -140,15 +140,15 @@ def save_heat(rel, ml, token, prefix=""):
     )
     plt.tight_layout()
     plt.savefig(f'/workspace/results/aqueous-solu/{prefix}_Aqueous_heatmap.png')
-    plt.clf() 
-    
-    ax = sns.heatmap(rel, 
-        cmap = cmap, 
-        cbar=False, 
+    plt.clf()
+ 
+    ax = sns.heatmap(rel,
+        cmap = cmap,
+        cbar=False,
         square=True,
         xticklabels = False,
-        yticklabels = False, 
-        vmin = 0., vmax = 1.) 
+        yticklabels = False,
+        vmin = 0., vmax = 1.)
     plt.savefig(f'/workspace/results/aqueous-solu/{prefix}_Aqueous_heatmap_raw.png',
         bbox_inches='tight', pad_inches=0)
     plt.clf()

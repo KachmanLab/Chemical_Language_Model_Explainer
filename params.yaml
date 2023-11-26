@@ -14,16 +14,14 @@ split:
   data_seed: 42
   color: g
 model:
-  model: ecfp
-  nbits: 512
+  model: mmb-avg
   finetune: false
   n_batch: 48
   seed: 42
-  n_epochs: 30
+  n_epochs: 3
 head:
   head: hier
 xai:
-  model: ecfp
-  xai: ecfp
-  topk: 9
+  model: mmb-avg
+  xai: shap
   mask: false

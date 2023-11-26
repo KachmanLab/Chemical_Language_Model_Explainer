@@ -418,13 +418,15 @@ class ECFPLinear(pl.LightningModule):
 
 ##########################################
 class BaselineAqueousModel(AqueousRegModel):
-    def __init__(self, head):
+    def __init__(self, head, finetune=False):
         """ uses average pooling instead of <REG> token """
-        super().__init__()
+        super().__init__(head=head, finetune=finetune)
+        self.finetune = finetune
         self.init_molbart()
 
         self.make_head(head)
         self.head.cuda()
+        self.mmb.cuda()
         self.cmapper = ColorMapper()
 
         self.criterion = nn.HuberLoss()
@@ -437,6 +439,10 @@ class BaselineAqueousModel(AqueousRegModel):
         self.mmb = molbart_model.model
         self.mmb.enc_dec_model.enc_dec_model.decoder = None
         self.tokenizer = molbart_model.tokenizer
+        if self.finetune:
+            raise NotImplementedError
+        else:
+            self.mmb.freeze()
 
     # def save_salience(self, grad):
     #     self.salience = torch.pow(grad, 2)
@@ -499,7 +505,7 @@ class BaselineAqueousModel(AqueousRegModel):
         #     for i in range(len(inputs))]
 
         return {"preds": preds, "labels": labels,
-            "smiles": inputs, "tokens": tokens, "masks": masks}
+                "smiles": inputs, "tokens": tokens, "masks": masks}
         # "salience_colors": salience_colors
         # }
 

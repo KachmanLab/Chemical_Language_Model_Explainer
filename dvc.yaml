@@ -111,9 +111,9 @@ stages:
 
   all:
     cmd: 
-      - echo "Finished full ${task.task} pipeline with ${model.model}"
+      - echo "Finished full ${task.task} ${split.split} pipeline with ${model.model}-${head.head}"
       - pwd
-      - mkdir -p final/${task.task}/${split.split}/${model.model}-${head.head}/{model,viz}
+      - mkdir -p /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/{model,viz}
       - cp -r out/${task.task}/${split.split}/${model.model}-${head.head}/
        /workspace/final/${task.task}/${split.split}/
       - cp -r dvc.lock /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/dvc.lock
