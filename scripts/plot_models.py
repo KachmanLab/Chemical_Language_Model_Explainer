@@ -79,7 +79,7 @@ def plot_models(task, split):
 
     plt.tight_layout()
     basepath = f"/workspace/final/{task}/{split}"
-    plt.savefig(f"{basepath}/model_comparision_mae.png")
+    plt.savefig(f"{basepath}/viz/model_comparision_mae.png")
 
 
 if __name__ == "__main__":
