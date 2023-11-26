@@ -17,16 +17,15 @@ def load_metrics(task, split, models):
     data = {}
 
     for mdir in models:
-        file_path = f"{basepath}/{mdir}/metrics.json"
         # Load the metrics.json file
         try:
-            with open(file_path, 'r') as file:
-                metrics = json.load(file)
+            with open(f"{basepath}/{mdir}/metrics.json", 'r') as f:
+                metrics = json.load(f)
                 val_mae = [metrics[str(i)]['val_mae'] for i in range(5)]
                 test_mae = metrics['test']['test_mae']
                 data[mdir] = {'val_mae': val_mae, 'test_mae': test_mae}
         except FileNotFoundError:
-            print(f"File not found: {file_path}")
+            print(f"File not found: {basepath}/{mdir}")
             continue
 
     return data
@@ -48,6 +47,14 @@ def plot_models(task, split):
 
     colors_dark = plt.cm.viridis(np.linspace(0, 0.75, len(models)))
     colors_light = plt.cm.viridis(np.linspace(0.05, 0.8, len(models)))
+
+    # colors_light = colors_dark + np.array([0.3, 0.3, 0.3, 0])
+    # colors_light = np.clip(colors_light, 0, 1)  # Ensuring valid color values
+
+    # base_colors = plt.cm.tab10(np.linspace(0, 1, len(models)))
+    # colors_light = base_colors + np.array([0.3, 0.3, 0.3, 0])
+    # colors_light = np.clip(colors_light, 0, 1)  # Ensuring valid color values
+    # colors_dark = base_colors
 
     for i, model in enumerate(models):
         # Placeholder data for CV MAE and Test MAE
@@ -76,6 +83,6 @@ def plot_models(task, split):
 
 
 if __name__ == "__main__":
-    # plot_models(task='aq', split='random')
-    plot_models(task='aq', split='accurate')
+    plot_models(task='aq', split='random')
+    # plot_models(task='aq', split='accurate')
     # plot_models(task='aq', split='scaffold')

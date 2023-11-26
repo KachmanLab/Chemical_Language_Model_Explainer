@@ -64,13 +64,15 @@ def split(cfg: DictConfig) -> None:
         res = pd.DataFrame({
             'SMILES': list(data.smiles),
             propname: data.labels.numpy(),
-            'Subset': subset
+            'Subset': subset,
+            'Split': cfg.split.split,
             })
         results = pd.concat([results, res], axis=0)
 
     # reset index to correspond to visualization UID
-    results = results.reset_index(drop=True)
-    results = results.reset_index().rename(columns={'index': 'uid'})
+    results = results.reset_index(drop=True).rename(columns={'index': 'uid'})
+    # results = results.reset_index(drop=True)
+    # results = results.reset_index().rename(columns={'index': 'uid'})
     results.to_csv(f"{root}/{cfg.split.split}_df.csv")
 
 

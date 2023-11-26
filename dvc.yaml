@@ -70,10 +70,14 @@ stages:
           persist: true
 
   predict_model:
-    cmd: python3 scripts/predict_model.py
+    cmd: 
+      - mkdir -p out/${task.task}/${split.split}/${model.model}-${head.head}/viz
+      - python3 scripts/predict_model.py
+      - python3 scripts/plot_datasplit.py
     deps:
       - src/model.py
       - scripts/predict_model.py
+      - scripts/plot_datasplit.py
       - data/${task.task}/${split.split}/
       - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
     params:
@@ -83,6 +87,8 @@ stages:
       - head
     outs:
       - out/${task.task}/${split.split}/${model.model}-${head.head}/parity_plot.png:
+          persist: true
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/latent_viz.png:
           persist: true
       - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv:
           persist: true
@@ -111,22 +117,25 @@ stages:
 
   all:
     cmd: 
-      - echo "Finished full ${task.task} ${split.split} pipeline with ${model.model}-${head.head}"
       - pwd
       - mkdir -p /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/{model,viz}
       - cp -r out/${task.task}/${split.split}/${model.model}-${head.head}/
        /workspace/final/${task.task}/${split.split}/
       - cp -r dvc.lock /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/dvc.lock
       - cp -r params.yaml /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/params.yaml
-      - python scripts/plot_models.py
+      - python3 scripts/plot_models.py
+      - echo "Finished full ${task.task} ${split.split} pipeline with ${model.model}-${head.head}"
     deps:
+      - scripts/plot_models.py
       - out/${task.task}/${split.split}/
       - out/${task.task}/${split.split}/${model.model}-${head.head}/model
       - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
       - out/${task.task}/${split.split}/${model.model}-${head.head}/parity_plot.png
+      - out/${task.task}/${split.split}/${model.model}-${head.head}/latent_viz.png
       - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv
       - out/${task.task}/${split.split}/${model.model}-${head.head}/attributions.csv
       - out/${task.task}/${split.split}/${model.model}-${head.head}/viz
+    # {basepath}/viz/model_comparision_mae.png"
     # TODO: plot of latent space (data split, default mmb emb)
     # PAPER: compare this plot to finetuned mmb variant?
 

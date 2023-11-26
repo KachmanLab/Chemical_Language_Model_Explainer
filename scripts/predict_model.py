@@ -78,8 +78,10 @@ def predict_model(cfg: DictConfig) -> None:
 
     metrics[f'val_{best_fold}'] = trainer.validate(model, valid_loader)[0]
     metrics[f'test_{best_fold}'] = trainer.validate(model, test_loader)[0]
-    print('val scores', metrics[f'val_{best_fold}'], metrics['valid'])
-    print('test scores', metrics[f'test_{best_fold}'], metrics['test'])
+    print('val scores', 'best fold: ', metrics[f'val_{best_fold}'],
+          'valid', metrics['valid'])
+    print('test scores', 'best fold', metrics[f'test_{best_fold}'],
+          'valid', metrics['test'])
 
     all_valid = trainer.predict(model, valid_loader)
     all_test = trainer.predict(model, test_loader)
