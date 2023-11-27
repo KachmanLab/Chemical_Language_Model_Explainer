@@ -419,17 +419,17 @@ stages:
   split_data:
     cmd:
     - pwd
-    - echo "SPLIT DATA --task cmc --property cmc --loader CMCDataset --filepath /workspace/data/CMCDataset.csv
-      --propname pCMC --smilesname SMILES --plot_title 'Critical micelle concentration'
-      --plot_desc 'p(CMC)' --plot_propname 'positive log(Critical micelle concentration)'
-      --split random --n_splits 3 --split_frac 0.9 --data_seed 42 --color g"
-    - mkdir -p data/cmc/random/
+    - echo "SPLIT DATA --task sft --property sft --loader SFTDataset --filepath /workspace/data/MicellizationDataset.csv
+      --propname AW_ST_CMC --smilesname SMILES --plot_title 'Surface tension at CMC'
+      --plot_desc ST@CMC --plot_propname 'Surface tension at CMC' --split random --n_splits
+      5 --split_frac 0.9 --data_seed 42 --color g"
+    - mkdir -p data/sft/random/
     - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
       hash: md5
-      md5: f909b3b9832d98ba6141373dd5812a1e
-      size: 2972
+      md5: 428a0646e26c8ec0392e7a8bdf9c8fb0
+      size: 2971
     - path: src/dataloader.py
       hash: md5
       md5: 4cbb4d60840231b040dca7e65aa78bc0
@@ -438,37 +438,37 @@ stages:
       params.yaml:
         split:
           split: random
-          n_splits: 3
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: g
         task:
-          task: cmc
-          property: cmc
-          loader: CMCDataset
-          filepath: /workspace/data/CMCDataset.csv
-          propname: pCMC
+          task: sft
+          property: sft
+          loader: SFTDataset
+          filepath: /workspace/data/MicellizationDataset.csv
+          propname: AW_ST_CMC
           smilesname: SMILES
-          plot_title: Critical micelle concentration
-          plot_desc: p(CMC)
-          plot_propname: positive log(Critical micelle concentration)
+          plot_title: Surface tension at CMC
+          plot_desc: ST@CMC
+          plot_propname: Surface tension at CMC
     outs:
-    - path: data/cmc/random/
+    - path: data/sft/random/
       hash: md5
-      md5: e78435af79e8a0597fefc9566fb3c649.dir
-      size: 489056
+      md5: bf70e2dd2e59969a7a5c6353ef45872b.dir
+      size: 267405
       nfiles: 12
   train_model:
     cmd:
-    - mkdir -p out/cmc/random/mmb-ft-hier/{viz,model}
+    - mkdir -p out/sft/random/mmb-ft-hier/{viz,model}
     - echo "TRAIN --model mmb-ft --finetune --xai ours --n_batch 48 --seed 42 --n_epochs
       30 --head hier"
     - python3 scripts/train_model.py
     deps:
-    - path: data/cmc/random/
+    - path: data/sft/random/
       hash: md5
-      md5: e78435af79e8a0597fefc9566fb3c649.dir
-      size: 489056
+      md5: bf70e2dd2e59969a7a5c6353ef45872b.dir
+      size: 267405
       nfiles: 12
     - path: scripts/train_model.py
       hash: md5
@@ -491,51 +491,51 @@ stages:
           n_epochs: 30
         split:
           split: random
-          n_splits: 3
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: g
         task:
-          task: cmc
-          property: cmc
-          loader: CMCDataset
-          filepath: /workspace/data/CMCDataset.csv
-          propname: pCMC
+          task: sft
+          property: sft
+          loader: SFTDataset
+          filepath: /workspace/data/MicellizationDataset.csv
+          propname: AW_ST_CMC
           smilesname: SMILES
-          plot_title: Critical micelle concentration
-          plot_desc: p(CMC)
-          plot_propname: positive log(Critical micelle concentration)
+          plot_title: Surface tension at CMC
+          plot_desc: ST@CMC
+          plot_propname: Surface tension at CMC
     outs:
-    - path: out/cmc/random/mmb-ft-hier/best.pt
+    - path: out/sft/random/mmb-ft-hier/best.pt
       hash: md5
-      md5: 899531eb222da95fdb89b22d07ce91ee
+      md5: e669b5ff0bf37325590646ed1b5f6f04
       size: 154575
-    - path: out/cmc/random/mmb-ft-hier/metrics.json
+    - path: out/sft/random/mmb-ft-hier/metrics.json
       hash: md5
-      md5: 340fe99112469e7fdc2a9e871ff8957e
-      size: 382
-    - path: out/cmc/random/mmb-ft-hier/model/
+      md5: 17e4d1f09c803b026a1a87b3f204371f
+      size: 513
+    - path: out/sft/random/mmb-ft-hier/model/
       hash: md5
-      md5: 814b411ced22e8a42767ccb0f8e8d00d.dir
+      md5: 1d8f51e2af24820e602d18f26d75e470.dir
       size: 476968575
       nfiles: 11
   explain_model:
     cmd:
-    - mkdir -p out/cmc/random/mmb-ft-hier/viz
+    - mkdir -p out/sft/random/mmb-ft-hier/viz
     - python3 scripts/explain_mmb.py
     deps:
-    - path: data/cmc/random/test.pkl
+    - path: data/sft/random/test.pkl
       hash: md5
-      md5: b0003fd4813fa13d44d5a7a0316b3d4b
-      size: 8900
-    - path: out/cmc/random/mmb-ft-hier/best.pt
+      md5: f512c721f6ed421318f367049fdf68c3
+      size: 5162
+    - path: out/sft/random/mmb-ft-hier/best.pt
       hash: md5
-      md5: 899531eb222da95fdb89b22d07ce91ee
+      md5: e669b5ff0bf37325590646ed1b5f6f04
       size: 154575
     - path: scripts/explain_mmb.py
       hash: md5
-      md5: a202c73c2bb4b9c69adcc8b0f1f70054
-      size: 7558
+      md5: e1b4e4342998ff55abcf30ddfcc3ab81
+      size: 7552
     - path: src/explainer.py
       hash: md5
       md5: 0e89abea6618cee1748444d758de451e
@@ -557,48 +557,48 @@ stages:
           n_epochs: 30
         split:
           split: random
-          n_splits: 3
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: g
         task:
-          task: cmc
-          property: cmc
-          loader: CMCDataset
-          filepath: /workspace/data/CMCDataset.csv
-          propname: pCMC
+          task: sft
+          property: sft
+          loader: SFTDataset
+          filepath: /workspace/data/MicellizationDataset.csv
+          propname: AW_ST_CMC
           smilesname: SMILES
-          plot_title: Critical micelle concentration
-          plot_desc: p(CMC)
-          plot_propname: positive log(Critical micelle concentration)
+          plot_title: Surface tension at CMC
+          plot_desc: ST@CMC
+          plot_propname: Surface tension at CMC
         xai:
           model: mmb
           xai: mmb
           mask: false
     outs:
-    - path: out/cmc/random/mmb-ft-hier/attributions.csv
+    - path: out/sft/random/mmb-ft-hier/attributions.csv
       hash: md5
-      md5: 1e7cee9bcced83f132884decef50428d
-      size: 448332
-    - path: out/cmc/random/mmb-ft-hier/viz
+      md5: b3baf6f7c7b69e78e166d034cfe7db0b
+      size: 259104
+    - path: out/sft/random/mmb-ft-hier/viz
       hash: md5
-      md5: 55ebfcc5277477a6fcfd41f11e5b8ab2.dir
-      size: 3384546
-      nfiles: 128
+      md5: 0da0da49f42dc8a907060bf22f7e1281.dir
+      size: 1467467
+      nfiles: 66
   predict_model:
     cmd:
-    - mkdir -p out/cmc/random/mmb-ft-hier/viz
+    - mkdir -p out/sft/random/mmb-ft-hier/viz
     - python3 scripts/predict_model.py
     - python3 scripts/plot_datasplit.py
     deps:
-    - path: data/cmc/random/
+    - path: data/sft/random/
       hash: md5
-      md5: e78435af79e8a0597fefc9566fb3c649.dir
-      size: 489056
+      md5: bf70e2dd2e59969a7a5c6353ef45872b.dir
+      size: 267405
       nfiles: 12
-    - path: out/cmc/random/mmb-ft-hier/best.pt
+    - path: out/sft/random/mmb-ft-hier/best.pt
       hash: md5
-      md5: 899531eb222da95fdb89b22d07ce91ee
+      md5: e669b5ff0bf37325590646ed1b5f6f04
       size: 154575
     - path: scripts/plot_datasplit.py
       hash: md5
@@ -625,79 +625,79 @@ stages:
           n_epochs: 30
         split:
           split: random
-          n_splits: 3
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: g
         task:
-          task: cmc
-          property: cmc
-          loader: CMCDataset
-          filepath: /workspace/data/CMCDataset.csv
-          propname: pCMC
+          task: sft
+          property: sft
+          loader: SFTDataset
+          filepath: /workspace/data/MicellizationDataset.csv
+          propname: AW_ST_CMC
           smilesname: SMILES
-          plot_title: Critical micelle concentration
-          plot_desc: p(CMC)
-          plot_propname: positive log(Critical micelle concentration)
+          plot_title: Surface tension at CMC
+          plot_desc: ST@CMC
+          plot_propname: Surface tension at CMC
     outs:
-    - path: out/cmc/random/mmb-ft-hier/latent_viz.png
+    - path: out/sft/random/mmb-ft-hier/latent_viz.png
       hash: md5
-      md5: 063539f7e7cc8d992f87931668bff204
-      size: 50638
-    - path: out/cmc/random/mmb-ft-hier/parity_plot.png
+      md5: 434d6ad18760436b2b27e4e23d879600
+      size: 44702
+    - path: out/sft/random/mmb-ft-hier/parity_plot.png
       hash: md5
-      md5: 6857d998c6a93af1280c52bcd764a4d6
-      size: 56543
-    - path: out/cmc/random/mmb-ft-hier/predictions.csv
+      md5: e1c2c66ad67d406ad28b99067471cb0f
+      size: 34469
+    - path: out/sft/random/mmb-ft-hier/predictions.csv
       hash: md5
-      md5: 9c2a4c043d71ed32f58bb052445661fd
-      size: 88197
+      md5: b1bb648679e7b88781ca538f619f29b7
+      size: 47548
   all:
     cmd:
     - pwd
-    - mkdir -p /workspace/final/cmc/random/mmb-ft-hier/{model,viz}
-    - cp -r out/cmc/random/mmb-ft-hier/ /workspace/final/cmc/random/
-    - cp -r dvc.lock /workspace/final/cmc/random/mmb-ft-hier/dvc.lock
-    - cp -r params.yaml /workspace/final/cmc/random/mmb-ft-hier/params.yaml
+    - mkdir -p /workspace/final/sft/random/mmb-ft-hier/{model,viz}
+    - cp -r out/sft/random/mmb-ft-hier/ /workspace/final/sft/random/
+    - cp -r dvc.lock /workspace/final/sft/random/mmb-ft-hier/dvc.lock
+    - cp -r params.yaml /workspace/final/sft/random/mmb-ft-hier/params.yaml
     - python3 scripts/plot_models.py
-    - echo "Finished full cmc random pipeline with mmb-ft-hier"
+    - echo "Finished full sft random pipeline with mmb-ft-hier"
     deps:
-    - path: out/cmc/random/
+    - path: out/sft/random/
       hash: md5
-      md5: f79eeccb700187303d4ef4208836e4d5.dir
-      size: 564625490
-      nfiles: 283
-    - path: out/cmc/random/mmb-ft-hier/attributions.csv
+      md5: 1ee0cc23ec5d2f914a3515167b47d1b5.dir
+      size: 558651724
+      nfiles: 87
+    - path: out/sft/random/mmb-ft-hier/attributions.csv
       hash: md5
-      md5: 1e7cee9bcced83f132884decef50428d
-      size: 448332
-    - path: out/cmc/random/mmb-ft-hier/best.pt
+      md5: b3baf6f7c7b69e78e166d034cfe7db0b
+      size: 259104
+    - path: out/sft/random/mmb-ft-hier/best.pt
       hash: md5
-      md5: 899531eb222da95fdb89b22d07ce91ee
+      md5: e669b5ff0bf37325590646ed1b5f6f04
       size: 154575
-    - path: out/cmc/random/mmb-ft-hier/latent_viz.png
+    - path: out/sft/random/mmb-ft-hier/latent_viz.png
       hash: md5
-      md5: 063539f7e7cc8d992f87931668bff204
-      size: 50638
-    - path: out/cmc/random/mmb-ft-hier/model
+      md5: 434d6ad18760436b2b27e4e23d879600
+      size: 44702
+    - path: out/sft/random/mmb-ft-hier/model
       hash: md5
-      md5: 814b411ced22e8a42767ccb0f8e8d00d.dir
+      md5: 1d8f51e2af24820e602d18f26d75e470.dir
       size: 476968575
       nfiles: 11
-    - path: out/cmc/random/mmb-ft-hier/parity_plot.png
+    - path: out/sft/random/mmb-ft-hier/parity_plot.png
       hash: md5
-      md5: a391927e4032bd1a4a7db7d28b3a000d
-      size: 56556
-    - path: out/cmc/random/mmb-ft-hier/predictions.csv
+      md5: 4edce8418343147a03860c2d6b502dc5
+      size: 34229
+    - path: out/sft/random/mmb-ft-hier/predictions.csv
       hash: md5
-      md5: 9c2a4c043d71ed32f58bb052445661fd
-      size: 88197
-    - path: out/cmc/random/mmb-ft-hier/viz
+      md5: b1bb648679e7b88781ca538f619f29b7
+      size: 47548
+    - path: out/sft/random/mmb-ft-hier/viz
       hash: md5
-      md5: 55ebfcc5277477a6fcfd41f11e5b8ab2.dir
-      size: 3384546
-      nfiles: 128
+      md5: 0da0da49f42dc8a907060bf22f7e1281.dir
+      size: 1467467
+      nfiles: 66
     - path: scripts/plot_models.py
       hash: md5
-      md5: eb5ad01ab3ef3a771b3909f3bacd6adb
-      size: 3769
+      md5: 9124f2322264ae367c60f62af8348a2c
+      size: 3772
