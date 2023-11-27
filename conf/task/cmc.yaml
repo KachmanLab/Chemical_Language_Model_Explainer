@@ -1,7 +1,7 @@
 task: cmc
 property: cmc
 loader: CMCDataset
-filepath: "/workspace/data/cmcdata.csv"
+filepath: "/workspace/data/CMCDataset.csv"
 propname: "pCMC"
 smilesname: "SMILES"
 plot_title: "Critical micelle concentration"

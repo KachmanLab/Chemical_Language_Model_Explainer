@@ -36,7 +36,7 @@ def predict_model(cfg: DictConfig) -> None:
 
     # valid_score = metrics.pop('valid')
     # test_score = metrics.pop('test')
-    best_fold = np.argmin([v['val_mae'] for k, v in metrics.items() if k not in ['valid', 'test']])
+    best_fold = np.argmin([v['val_mae'] for k, v in metrics.items() if k not in ['valid', 'test', 'best_fold']])
     print('best', best_fold, 'all', metrics)
 
     with open(f"{root}/valid{best_fold}.pkl", 'rb') as f:

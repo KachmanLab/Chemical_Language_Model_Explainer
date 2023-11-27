@@ -30,7 +30,7 @@ def split(cfg: DictConfig) -> None:
         cfg.task.filepath, cfg.task.smilesname, cfg.task.propname,
         cfg.split.split, cfg.split.split_frac, cfg.split.n_splits,
         cfg.split.data_seed)
-    test_ds = DatasetLoader('test', 
+    test_ds = DatasetLoader('test',
         cfg.task.filepath, cfg.task.smilesname, cfg.task.propname,
         cfg.split.split, cfg.split.split_frac, cfg.split.n_splits,
         cfg.split.data_seed)

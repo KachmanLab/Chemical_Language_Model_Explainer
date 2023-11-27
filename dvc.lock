@@ -419,11 +419,11 @@ stages:
   split_data:
     cmd:
     - pwd
-    - echo "SPLIT DATA --task aq --property aq --loader AqSolDataset --filepath /workspace/data/AqueousSolu.csv
-      --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S) log([mol/L])' --split random --n_splits 5 --split_frac
-      0.9 --data_seed 42 --color g"
-    - mkdir -p data/aq/random/
+    - echo "SPLIT DATA --task cmc --property cmc --loader CMCDataset --filepath /workspace/data/CMCDataset.csv
+      --propname pCMC --smilesname SMILES --plot_title 'Critical micelle concentration'
+      --plot_desc 'p(CMC)' --plot_propname 'positive log(Critical micelle concentration)'
+      --split random --n_splits 3 --split_frac 0.9 --data_seed 42 --color g"
+    - mkdir -p data/cmc/random/
     - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
@@ -432,42 +432,48 @@ stages:
       size: 2972
     - path: src/dataloader.py
       hash: md5
-      md5: 76ff60a67a068ca392b187813a746780
-      size: 20462
+      md5: 4cbb4d60840231b040dca7e65aa78bc0
+      size: 20907
     params:
       params.yaml:
         split:
           split: random
-          n_splits: 5
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           color: g
         task:
-          task: aq
-          property: aq
-          loader: AqSolDataset
-          filepath: /workspace/data/AqueousSolu.csv
-          propname: logS_aq_avg
-          smilesname: smiles solute
-          plot_title: Aqueous solubility
-          plot_propname: log(S) log([mol/L])
+          task: cmc
+          property: cmc
+          loader: CMCDataset
+          filepath: /workspace/data/CMCDataset.csv
+          propname: pCMC
+          smilesname: SMILES
+          plot_title: Critical micelle concentration
+          plot_desc: p(CMC)
+          plot_propname: positive log(Critical micelle concentration)
     outs:
-    - path: data/aq/random/
+    - path: data/cmc/random/
       hash: md5
-      md5: c61e763d3aed447b8bf13a3fb1e91e7e.dir
-      size: 2880865
+      md5: e78435af79e8a0597fefc9566fb3c649.dir
+      size: 489056
       nfiles: 12
   train_model:
     cmd:
-    - mkdir -p out/aq/random/mmb-avg-hier/{viz,model}
-    - echo "TRAIN --model mmb-avg --n_batch 48 --seed 42 --n_epochs 50 --head hier"
+    - mkdir -p out/cmc/random/mmb-ft-hier/{viz,model}
+    - echo "TRAIN --model mmb-ft --finetune --xai ours --n_batch 48 --seed 42 --n_epochs
+      30 --head hier"
     - python3 scripts/train_model.py
     deps:
-    - path: data/aq/random/
+    - path: data/cmc/random/
       hash: md5
-      md5: c61e763d3aed447b8bf13a3fb1e91e7e.dir
-      size: 2880865
+      md5: e78435af79e8a0597fefc9566fb3c649.dir
+      size: 489056
       nfiles: 12
+    - path: scripts/train_model.py
+      hash: md5
+      md5: 14df811475c879150b9b1498ed53bcf4
+      size: 6013
     - path: src/model.py
       hash: md5
       md5: 068d04d825828156b45b18d9e245028e
@@ -477,57 +483,59 @@ stages:
         head:
           head: hier
         model:
-          model: mmb-avg
-          finetune: false
+          model: mmb-ft
+          finetune: true
+          xai: ours
           n_batch: 48
           seed: 42
-          n_epochs: 50
+          n_epochs: 30
         split:
           split: random
-          n_splits: 5
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           color: g
         task:
-          task: aq
-          property: aq
-          loader: AqSolDataset
-          filepath: /workspace/data/AqueousSolu.csv
-          propname: logS_aq_avg
-          smilesname: smiles solute
-          plot_title: Aqueous solubility
-          plot_propname: log(S) log([mol/L])
+          task: cmc
+          property: cmc
+          loader: CMCDataset
+          filepath: /workspace/data/CMCDataset.csv
+          propname: pCMC
+          smilesname: SMILES
+          plot_title: Critical micelle concentration
+          plot_desc: p(CMC)
+          plot_propname: positive log(Critical micelle concentration)
     outs:
-    - path: out/aq/random/mmb-avg-hier/best.pt
+    - path: out/cmc/random/mmb-ft-hier/best.pt
       hash: md5
-      md5: 0b75ddb8c43785c2a1b8b80200449704
+      md5: 899531eb222da95fdb89b22d07ce91ee
       size: 154575
-    - path: out/aq/random/mmb-avg-hier/metrics.json
+    - path: out/cmc/random/mmb-ft-hier/metrics.json
       hash: md5
-      md5: 73961e464c54ec780d4c0c6125e50c34
-      size: 498
-    - path: out/aq/random/mmb-avg-hier/model/
+      md5: 340fe99112469e7fdc2a9e871ff8957e
+      size: 382
+    - path: out/cmc/random/mmb-ft-hier/model/
       hash: md5
-      md5: ca71cdf2f384f6fb440466ad305b2116.dir
-      size: 772875
-      nfiles: 5
+      md5: 814b411ced22e8a42767ccb0f8e8d00d.dir
+      size: 476968575
+      nfiles: 11
   explain_model:
     cmd:
-    - mkdir -p out/aq/random/mmb-avg-hier/viz
-    - python3 scripts/explain_shap.py
+    - mkdir -p out/cmc/random/mmb-ft-hier/viz
+    - python3 scripts/explain_mmb.py
     deps:
-    - path: data/aq/random/test.pkl
+    - path: data/cmc/random/test.pkl
       hash: md5
-      md5: 7557a7d5f6b1927fc621952c2ebda7ed
-      size: 48533
-    - path: out/aq/random/mmb-avg-hier/best.pt
+      md5: b0003fd4813fa13d44d5a7a0316b3d4b
+      size: 8900
+    - path: out/cmc/random/mmb-ft-hier/best.pt
       hash: md5
-      md5: 0b75ddb8c43785c2a1b8b80200449704
+      md5: 899531eb222da95fdb89b22d07ce91ee
       size: 154575
-    - path: scripts/explain_shap.py
+    - path: scripts/explain_mmb.py
       hash: md5
-      md5: 20f31768caef2deac60fcd0d4236a595
-      size: 7055
+      md5: a202c73c2bb4b9c69adcc8b0f1f70054
+      size: 7558
     - path: src/explainer.py
       hash: md5
       md5: 0e89abea6618cee1748444d758de451e
@@ -541,63 +549,65 @@ stages:
         head:
           head: hier
         model:
-          model: mmb-avg
-          finetune: false
+          model: mmb-ft
+          finetune: true
+          xai: ours
           n_batch: 48
           seed: 42
-          n_epochs: 50
+          n_epochs: 30
         split:
           split: random
-          n_splits: 5
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           color: g
         task:
-          task: aq
-          property: aq
-          loader: AqSolDataset
-          filepath: /workspace/data/AqueousSolu.csv
-          propname: logS_aq_avg
-          smilesname: smiles solute
-          plot_title: Aqueous solubility
-          plot_propname: log(S) log([mol/L])
+          task: cmc
+          property: cmc
+          loader: CMCDataset
+          filepath: /workspace/data/CMCDataset.csv
+          propname: pCMC
+          smilesname: SMILES
+          plot_title: Critical micelle concentration
+          plot_desc: p(CMC)
+          plot_propname: positive log(Critical micelle concentration)
         xai:
-          model: mmb-avg
-          xai: shap
+          model: mmb
+          xai: mmb
           mask: false
     outs:
-    - path: out/aq/random/mmb-avg-hier/attributions.csv
+    - path: out/cmc/random/mmb-ft-hier/attributions.csv
       hash: md5
-      md5: 099803404294bc9174217adff80e45e0
-      size: 710762
-    - path: out/aq/random/mmb-avg-hier/viz
+      md5: 1e7cee9bcced83f132884decef50428d
+      size: 448332
+    - path: out/cmc/random/mmb-ft-hier/viz
       hash: md5
-      md5: 7279d08d769a5176d0ddbcab75920157.dir
-      size: 58324477
-      nfiles: 1176
+      md5: 55ebfcc5277477a6fcfd41f11e5b8ab2.dir
+      size: 3384546
+      nfiles: 128
   predict_model:
     cmd:
-    - mkdir -p out/aq/random/mmb-avg-hier/viz
+    - mkdir -p out/cmc/random/mmb-ft-hier/viz
     - python3 scripts/predict_model.py
     - python3 scripts/plot_datasplit.py
     deps:
-    - path: data/aq/random/
+    - path: data/cmc/random/
       hash: md5
-      md5: c61e763d3aed447b8bf13a3fb1e91e7e.dir
-      size: 2880865
+      md5: e78435af79e8a0597fefc9566fb3c649.dir
+      size: 489056
       nfiles: 12
-    - path: out/aq/random/mmb-avg-hier/best.pt
+    - path: out/cmc/random/mmb-ft-hier/best.pt
       hash: md5
-      md5: 0b75ddb8c43785c2a1b8b80200449704
+      md5: 899531eb222da95fdb89b22d07ce91ee
       size: 154575
     - path: scripts/plot_datasplit.py
       hash: md5
-      md5: 8f78d5babeb8d860b0413c061302091d
-      size: 3431
+      md5: 937e8e71caaefa58a60a42ba66839602
+      size: 3586
     - path: scripts/predict_model.py
       hash: md5
-      md5: 1b915be5dde9c39f9591e97a9f021531
-      size: 6113
+      md5: c88c35e76c932e98537a4739f40a002b
+      size: 6126
     - path: src/model.py
       hash: md5
       md5: 068d04d825828156b45b18d9e245028e
@@ -607,85 +617,87 @@ stages:
         head:
           head: hier
         model:
-          model: mmb-avg
-          finetune: false
+          model: mmb-ft
+          finetune: true
+          xai: ours
           n_batch: 48
           seed: 42
-          n_epochs: 50
+          n_epochs: 30
         split:
           split: random
-          n_splits: 5
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           color: g
         task:
-          task: aq
-          property: aq
-          loader: AqSolDataset
-          filepath: /workspace/data/AqueousSolu.csv
-          propname: logS_aq_avg
-          smilesname: smiles solute
-          plot_title: Aqueous solubility
-          plot_propname: log(S) log([mol/L])
+          task: cmc
+          property: cmc
+          loader: CMCDataset
+          filepath: /workspace/data/CMCDataset.csv
+          propname: pCMC
+          smilesname: SMILES
+          plot_title: Critical micelle concentration
+          plot_desc: p(CMC)
+          plot_propname: positive log(Critical micelle concentration)
     outs:
-    - path: out/aq/random/mmb-avg-hier/latent_viz.png
+    - path: out/cmc/random/mmb-ft-hier/latent_viz.png
       hash: md5
-      md5: c20dec5811dadac74c7c425be51218f4
-      size: 116856
-    - path: out/aq/random/mmb-avg-hier/parity_plot.png
+      md5: 063539f7e7cc8d992f87931668bff204
+      size: 50638
+    - path: out/cmc/random/mmb-ft-hier/parity_plot.png
       hash: md5
-      md5: 63e790b1f8ffe420fbac13f9f1f2fe08
-      size: 35639
-    - path: out/aq/random/mmb-avg-hier/predictions.csv
+      md5: 6857d998c6a93af1280c52bcd764a4d6
+      size: 56543
+    - path: out/cmc/random/mmb-ft-hier/predictions.csv
       hash: md5
-      md5: d022dc601968426cd07f6932c7da6374
-      size: 537810
+      md5: 9c2a4c043d71ed32f58bb052445661fd
+      size: 88197
   all:
     cmd:
     - pwd
-    - mkdir -p /workspace/final/aq/random/mmb-avg-hier/{model,viz}
-    - cp -r out/aq/random/mmb-avg-hier/ /workspace/final/aq/random/
-    - cp -r dvc.lock /workspace/final/aq/random/mmb-avg-hier/dvc.lock
-    - cp -r params.yaml /workspace/final/aq/random/mmb-avg-hier/params.yaml
+    - mkdir -p /workspace/final/cmc/random/mmb-ft-hier/{model,viz}
+    - cp -r out/cmc/random/mmb-ft-hier/ /workspace/final/cmc/random/
+    - cp -r dvc.lock /workspace/final/cmc/random/mmb-ft-hier/dvc.lock
+    - cp -r params.yaml /workspace/final/cmc/random/mmb-ft-hier/params.yaml
     - python3 scripts/plot_models.py
-    - echo "Finished full aq random pipeline with mmb-avg-hier"
+    - echo "Finished full cmc random pipeline with mmb-ft-hier"
     deps:
-    - path: out/aq/random/
+    - path: out/cmc/random/
       hash: md5
-      md5: 542b20f5e4d2e0805b6d54431517b99b.dir
-      size: 616953095
-      nfiles: 1207
-    - path: out/aq/random/mmb-avg-hier/attributions.csv
+      md5: f79eeccb700187303d4ef4208836e4d5.dir
+      size: 564625490
+      nfiles: 283
+    - path: out/cmc/random/mmb-ft-hier/attributions.csv
       hash: md5
-      md5: 099803404294bc9174217adff80e45e0
-      size: 710762
-    - path: out/aq/random/mmb-avg-hier/best.pt
+      md5: 1e7cee9bcced83f132884decef50428d
+      size: 448332
+    - path: out/cmc/random/mmb-ft-hier/best.pt
       hash: md5
-      md5: 0b75ddb8c43785c2a1b8b80200449704
+      md5: 899531eb222da95fdb89b22d07ce91ee
       size: 154575
-    - path: out/aq/random/mmb-avg-hier/latent_viz.png
+    - path: out/cmc/random/mmb-ft-hier/latent_viz.png
       hash: md5
-      md5: c20dec5811dadac74c7c425be51218f4
-      size: 116856
-    - path: out/aq/random/mmb-avg-hier/model
+      md5: 063539f7e7cc8d992f87931668bff204
+      size: 50638
+    - path: out/cmc/random/mmb-ft-hier/model
       hash: md5
-      md5: ca71cdf2f384f6fb440466ad305b2116.dir
-      size: 772875
-      nfiles: 5
-    - path: out/aq/random/mmb-avg-hier/parity_plot.png
+      md5: 814b411ced22e8a42767ccb0f8e8d00d.dir
+      size: 476968575
+      nfiles: 11
+    - path: out/cmc/random/mmb-ft-hier/parity_plot.png
       hash: md5
-      md5: 63e790b1f8ffe420fbac13f9f1f2fe08
-      size: 35639
-    - path: out/aq/random/mmb-avg-hier/predictions.csv
+      md5: a391927e4032bd1a4a7db7d28b3a000d
+      size: 56556
+    - path: out/cmc/random/mmb-ft-hier/predictions.csv
       hash: md5
-      md5: d022dc601968426cd07f6932c7da6374
-      size: 537810
-    - path: out/aq/random/mmb-avg-hier/viz
+      md5: 9c2a4c043d71ed32f58bb052445661fd
+      size: 88197
+    - path: out/cmc/random/mmb-ft-hier/viz
       hash: md5
-      md5: 7279d08d769a5176d0ddbcab75920157.dir
-      size: 58324477
-      nfiles: 1176
+      md5: 55ebfcc5277477a6fcfd41f11e5b8ab2.dir
+      size: 3384546
+      nfiles: 128
     - path: scripts/plot_models.py
       hash: md5
-      md5: 0cfeba02ca4844c4f9c0786437581617
-      size: 3124
+      md5: eb5ad01ab3ef3a771b3909f3bacd6adb
+      size: 3769

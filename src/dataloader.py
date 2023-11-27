@@ -30,7 +30,7 @@ class PropertyDataset(Dataset):
         print('n unique', len(np.unique(df[self.smilesname])))
         print('len df', len(df))
         uni, cnt = np.unique(df[self.smilesname], return_counts=True)
-        uncount = list(zip(uni, cnt))
+        # uncount = list(zip(uni, cnt))
         # print(sorted(uncount, key=lambda x: x[1], reverse=True)[:50])
 
         df = self.custom_preprocess(df)
@@ -210,6 +210,15 @@ class MurckoScaffoldSplitter():
         scaffolds = [self.get_murcko_scaffolds(smi) for smi in smiles]
         scaffolds = [s if s in self.topscf else 'rare' for s in scaffolds]
         # print('nunique', np.unique(scaffolds, return_counts=True))
+        # splitter = GroupShuffleSplit(n_splits=self.n_splits,
+        #                              test_size=0.1,
+        #                              random_state=self.seed)
+        # if self.top_k == -1:
+        #     PredefinedSplit(n_splits=1,
+        #                     test_size=0.1,
+        #                     random_state=self.seed)
+        #     scaffolds = [1 if scf == 'rare' else 0 for scf in scaffolds]
+        # else:
         splitter = GroupShuffleSplit(n_splits=self.n_splits,
                                      test_size=0.1,
                                      random_state=self.seed)

@@ -118,7 +118,7 @@ def train(cfg: DictConfig) -> None:
     best_fold = np.argmin([v['val_mae'] for k, v in metrics.items()])
     print(metrics)
     print('best fold was fold', best_fold)
-    metrics['best_fold']: best_fold
+    metrics['best_fold'] = str(best_fold)
 
     # with open(f"{basepath}/{mdir}/best.pt", 'wb') as f:
     #     tmp = torch.load(f"{basepath}/{mdir}/model/model{best_fold}.pt")

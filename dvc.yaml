@@ -34,7 +34,6 @@ stages:
       - split
     deps:
       # - data/AqueousSolu.csv
-      # - cfg/data_config.json
       - src/dataloader.py
       - scripts/split_data.py
     outs:
@@ -51,15 +50,10 @@ stages:
       - split
       - model
       - head
-    # matrix:
-    #   model: ${model}
-    #   head: ${head}
-    #   split: ${data.split}
     deps:
       - data/${task.task}/${split.split}/
       - src/model.py
-      # - scripts/model_config.json
-      # - scripts/train_model.py
+      - scripts/train_model.py
     metrics:
       - out/${task.task}/${split.split}/${model.model}-${head.head}/metrics.json:
           persist: true
@@ -135,11 +129,9 @@ stages:
       - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv
       - out/${task.task}/${split.split}/${model.model}-${head.head}/attributions.csv
       - out/${task.task}/${split.split}/${model.model}-${head.head}/viz
-    # {basepath}/viz/model_comparision_mae.png"
+    # final/${task.task}/${split.split}/${model.model}-${head.head}/model_comparision_mae.png"
     # TODO: plot of latent space (data split, default mmb emb)
     # PAPER: compare this plot to finetuned mmb variant?
 
 # TODO compare explainabilty
 # csv attributions from 3 models (shap, ours, ours)
-
-# TODO merge plots from /final & make joint? parity plot
