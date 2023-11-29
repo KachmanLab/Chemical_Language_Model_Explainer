@@ -1,3 +1,4 @@
 model: mmb
 xai: mmb
-mask: false
+mask: true
+sign: neg

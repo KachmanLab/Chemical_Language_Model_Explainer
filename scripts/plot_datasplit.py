@@ -8,8 +8,9 @@ import pickle
 import hydra
 from omegaconf import OmegaConf, DictConfig
 import numpy as np
-import seaborn as sns
-from sklearn.manifold import TSNE
+# import seaborn as sns
+# from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 from src.model import MMB_R_Featurizer, MMB_AVG_Featurizer
 
 
@@ -70,9 +71,15 @@ def plot_datasplit(cfg: DictConfig) -> None:
     # for i in range(len(valid_emb)):
     #     print(np.array(valid_emb[i]).shape, np.array(test_emb[i]).shape)
 
-    tsne = TSNE(n_components=2, random_state=42)
-    valid_latent = tsne.fit_transform(valid_emb)
-    test_latent = tsne.fit_transform(test_emb)
+    # tsne = TSNE(n_components=2, random_state=42)
+    # tsne = tsne.fit(valid_emb)
+    # valid_latent = tsne.transform(valid_emb)
+    # test_latent = tsne.transform(test_emb)
+
+    pca = PCA(n_components=2, random_state=cfg.data.data_seed)
+    pca = pca.fit(valid_emb)
+    valid_latent = pca.transform(valid_emb)
+    test_latent = pca.transform(test_emb)
 
     # Plotting the latent space
     plt.figure(figsize=(10, 8))

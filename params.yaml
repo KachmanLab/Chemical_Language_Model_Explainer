@@ -1,30 +1,32 @@
 task:
-  task: sft
-  property: sft
-  loader: SFTDataset
-  filepath: /workspace/data/MicellizationDataset.csv
-  propname: AW_ST_CMC
-  smilesname: SMILES
-  plot_title: Surface tension at CMC
-  plot_desc: ST@CMC
-  plot_propname: Surface tension at CMC
+  task: aq
+  property: aq
+  loader: AqSolDataset
+  filepath: /workspace/data/AqueousSolu.csv
+  propname: logS_aq_avg
+  smilesname: smiles solute
+  plot_title: Aqueous solubility
+  plot_propname: log(S) log([mol/L])
 split:
   split: random
   n_splits: 5
   split_frac: 0.9
   data_seed: 42
   color: g
+  scaffold_k: 3
 model:
   model: ecfp
-  nbits: 512
   finetune: false
-  n_batch: 48
+  n_batch: 64
   seed: 42
-  n_epochs: 30
+  n_epochs: 50
+  xai: ours
+  nbits: 512
 head:
-  head: hier
+  head: lin
 xai:
   model: ecfp
   xai: ecfp
-  topk: 9
   mask: false
+  sign: neg
+  topk: 9

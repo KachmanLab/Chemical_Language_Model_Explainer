@@ -13,6 +13,7 @@ import pickle
 from sklearn import linear_model
 
 from src.model import AqueousRegModel, BaselineAqueousModel
+from src.maskedhead import MaskedLinearRegressionHead
 from src.explainer import ColorMapper
 import hydra
 from omegaconf import OmegaConf, DictConfig
@@ -39,11 +40,12 @@ def explain_mmb(cfg: DictConfig) -> None:
     ckpt_path = f"{basepath}/{mdir}/best.pt"
 
     head = cfg.head.head
-    if cfg.xai.mask:
-        if head == 'lin_mask' or head == 'lin':
-            head = 'lin_mask'   # MaskedLinearRegressionHead()
-        elif head == 'hier_mask' or head == 'hier':
-            head = 'hier_mask'  # MaskedRegressionHead()
+    print(head)
+    # if cfg.xai.mask:
+    #     if head == 'lin_mask' or head == 'lin':
+    #         head = 'lin_mask'   # MaskedLinearRegressionHead()
+    #     elif head == 'hier_mask' or head == 'hier':
+    #         head = 'hier_mask'  # MaskedRegressionHead()
     if cfg.model.model == 'mmb':
         model = AqueousRegModel(head=head,
                                 finetune=cfg.model.finetune)
@@ -58,10 +60,8 @@ def explain_mmb(cfg: DictConfig) -> None:
         model.head.load_state_dict(torch.load(ckpt_path))
         xai = 'mmb-ft'
     elif cfg.model.model == 'mmb-avg':
-        model = BaselineAqueousModel(head=head,
-                                     finetune=cfg.model.finetune)
-        model.head.load_state_dict(torch.load(ckpt_path))
-        xai = 'mmb-avg'
+        print('wrong xai config: mmb-avg+explain_mmb should be shap')
+        raise NotImplementedError
 
     model.mmb.unfreeze()
     model.eval()
@@ -84,9 +84,6 @@ def explain_mmb(cfg: DictConfig) -> None:
     if cfg.model.model in ['mmb', 'mmb-ft']:
         rel_weights = [f.get('rel_weights') for f in all]
         rdkit_colors = [f.get('rdkit_colors') for f in all]
-    elif cfg.model.model == 'mmb-avg':
-        raise NotImplementedError
-        salience_colors = [f.get('salience_colors') for f in all]
 
     attributions = pd.DataFrame({
         "smiles": list(chain(*smiles)),
@@ -97,6 +94,33 @@ def explain_mmb(cfg: DictConfig) -> None:
         # "labels": torch.concat([f.get('labels') for f in all]).cpu().numpy(),
         'split': 'test'
     })
+
+    # <pos>,<neg> attribution for mmb-ft+lin
+    sign_weights, sign_colors = {}, {}
+    if cfg.model.model == 'mmb-ft' and 'lin' in cfg.head.head:
+        for sign in ['pos', 'neg']:
+            # change head to masked head variant & load
+            model.head = MaskedLinearRegressionHead(sign=sign)
+            model.head.load_state_dict(torch.load(ckpt_path))
+            model.eval()
+
+            # change viz color to red/blue 
+            # color = 'blue' if sign == 'pos' else 'red'
+            # model.cmapper = ColorMapper(color=color)
+
+            all_sgn = trainer.predict(model, test_loader)
+            sign_weights[sign] = [f.get('rel_weights') for f in all_sgn]
+            sign_colors[sign] = [f.get('rdkit_colors') for f in all_sgn]
+            sign_weights[f'{sign}_preds'] = [f.get('preds') for f in all_sgn]
+
+            # should _not_ be equal if applying sign_mask on fwd()
+            # sign_preds = [f.get('preds') for f in all_sgn]
+            # assert torch.allclose(torch.concat(preds), torch.concat(sign_preds),
+            #                       atol = 1e-2)
+
+            attributions[f"{sign}_weights"] = list(chain(*sign_weights[sign]))
+            attributions[f"{sign}_colors"] = list(chain(*sign_colors[sign]))
+    # </pos>,</neg>
 
     attributions = attributions.reset_index().rename(columns={'index': 'uid'})
     attributions.to_csv(f"{basepath}/{mdir}/attributions.csv", index=False)
@@ -144,14 +168,14 @@ def explain_mmb(cfg: DictConfig) -> None:
     ###################
 
     def plot_weighted_molecule(
-                atom_colors, smiles, token, logS, pred, prefix=""
+                atom_colors, smiles, token, label, pred, prefix=""
             ):
         atom_colors = atom_colors
         bond_colors = {}
         h_rads = {}  # ?
         h_lw_mult = {}  # ?
 
-        label = f'Exp {cfg.task.plot_propname}: {logS:.2f}, predicted: {pred:.2f}\n{smiles}'
+        label = f'Exp {cfg.task.plot_propname}: {label:.2f}, predicted: {pred:.2f}\n{smiles}'
 
         mol = Chem.MolFromSmiles(smiles)
         mol = Draw.PrepareMolForDrawing(mol)
@@ -164,9 +188,10 @@ def explain_mmb(cfg: DictConfig) -> None:
         vocab = model.cmapper.atoms + model.cmapper.nonatoms
 
         mismatch = int(mol.GetNumAtoms()) - len(atom_colors.keys())
-        if mismatch != 0:
+        # if mismatch != 0:
+        if mismatch < 0:
             print(f"Warning: {mismatch}: \
-                 {[t for t in token if t not in vocab]}")
+                 {[t for t in token if t not in vocab]}, {prefix}")
             # print(f"count mismatch for {smiles}:\
                  # {[t for t in token if t not in vocab]}")
             # print(f'{token}')
@@ -184,8 +209,7 @@ def explain_mmb(cfg: DictConfig) -> None:
             f.write(d.GetDrawingText())
 
     ###################
-    fid = model.head.fids
-    # fid = 00
+    # fid = model.head.fids
 
     # plot entire test set:
     for b_nr, _ in enumerate(all):
@@ -199,14 +223,24 @@ def explain_mmb(cfg: DictConfig) -> None:
 
             if cfg.model.model in ['mmb', 'mmb-ft']:
                 atom_color = rdkit_colors[b_nr][b_ix]
-            elif cfg.model.model == 'mmb-avg':
-                atom_color = salience_colors[b_nr][b_ix]
 
-            # print(uid)
-            if uid not in [39, 94, 170, 210, 217, 451, 505, 695, 725, 755]:
+            # if uid not in [39, 94, 170, 210, 217, 451, 505, 695, 725, 755]:
                 # segmentation fault, likely due to weird structure?
+            if uid not in []:
                 plot_weighted_molecule(
-                    atom_color, smi, token, lab, pred, f"{uid}_{xai}_{fid}"
+                    atom_color, smi, token, lab, pred, f"{uid}_{xai}"
+                )
+            if sign_weights:
+                pos_color = sign_colors['pos'][b_nr][b_ix]
+                neg_color = sign_colors['neg'][b_nr][b_ix]
+                pos_pred = sign_weights[f'pos_preds'][b_nr][b_ix]
+                neg_pred = sign_weights[f'neg_preds'][b_nr][b_ix]
+                assert pos_pred + neg_pred - pred <= 5e-2
+                plot_weighted_molecule(
+                    pos_color, smi, token, lab, pos_pred, f"{uid}_pos_{xai}"
+                )
+                plot_weighted_molecule(
+                    neg_color, smi, token, lab, neg_pred, f"{uid}_neg_{xai}"
                 )
 
 

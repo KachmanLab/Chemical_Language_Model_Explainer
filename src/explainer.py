@@ -66,8 +66,8 @@ class MolecularSelfAttentionViz():
 
 
 class ColorMapper():
-    def __init__(self, cmap=None, vmin=None, vmax=None):
-        self.cmap = cmap
+    def __init__(self, color='green', vmin=None, vmax=None):
+        self.color = color
         self.vmin = vmin
         self.vmax = vmax
         self.atoms = ['C', 'c', 'O', 'o', 'N', 'B', 'Br', 'F', 'S', 'Cl', 'P',
@@ -84,7 +84,7 @@ class ColorMapper():
         self.nonatoms = ['-', '=', '#', '@', '[', ']', '(', ')', ':', '/',
             '\\', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '|']
 
-        self.cmap = sns.light_palette("green", reverse=False, as_cmap=True)
+        self.cmap = sns.light_palette(color, reverse=False, as_cmap=True)
         # TODO validate vmin, vmax scaling works (_autoscale gets called)
         self.norm = Normalize(self.vmin, self.vmax)
 

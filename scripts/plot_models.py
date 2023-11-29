@@ -86,11 +86,13 @@ def plot_models():
                color=colors_light[i], label=f'{model} (Valid)')
 
         # Plotting Test MAE (darker color)
-        ax.bar(i + width/2, test_mae, width, color=colors_dark[i], alpha=0.7, label=f'{model} (Test)')
+        ax.bar(i + width/2, test_mae, width, color=colors_dark[i],
+               alpha=0.7, label=f'{model} (Test)')
 
     # Adding labels and title
     ax.set_ylabel('MAE')
-    ax.set_title('Mean Absolute Error (MAE) for Various Models (Random Split)')
+    ax.set_title(f'Model comparison: {cfg.task.plot_title}, {cfg.split.split} \
+                 Split, Mean Absolute Error (MAE))')
     ax.set_xticks(range(len(models)))
     ax.set_xticklabels(models, rotation=45, ha='right')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')

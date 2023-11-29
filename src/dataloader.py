@@ -154,7 +154,7 @@ class DataSplit(Dataset):
 
 
 class ECFPDataSplit(DataSplit):
-    def __init__(self, ds, nbits=2048):
+    def __init__(self, ds, nbits=512):
         self.smiles = ds.smiles
         self.labels = ds.labels
         self.subset = ds.subset

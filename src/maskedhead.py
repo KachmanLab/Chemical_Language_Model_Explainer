@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 import numpy as np
 
+
 class MaskedRegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None):
         super().__init__()
@@ -55,12 +56,14 @@ class MaskedRegressionHead(pl.LightningModule):
 
 
 class MaskedLinearRegressionHead(pl.LightningModule):
-    def __init__(self, dim=512, fids=None):
+    def __init__(self, dim=512, fids=None, sign=None):
         super().__init__()
         # self.norm = nn.LayerNorm(normalized_shape=[512])
         self.dim = dim
         self.fc1 = nn.Linear(dim, 1)
         self.fids = fids
+        self.sign = sign
+        print('masked head, sign: ', self.sign)
 
     def mask_features(self, x, fids=None):
         ''' mask fids in calculation of feature attribution
@@ -88,10 +91,29 @@ class MaskedLinearRegressionHead(pl.LightningModule):
 
         return x * mask
 
+    def mask_sign(self, x):
+        vec = self.fc1.weight[0]  # .cpu().detach().numpy()
+        signs = torch.sign(vec)
+
+        if self.sign == 'pos':
+            mask = torch.where(signs == 1, 1, 0)
+            # altsigns = torch.where(signs == 1)
+        elif self.sign == 'neg':
+            mask = torch.where(signs == -1, 1, 0)
+            # altsigns = torch.where(signs == -1)
+        else: 
+            return x
+
+        # altmask = torch.zeros_like(vec, dtype=torch.int8)
+        # altmask[altsigns] = 1
+        return x * mask
+
     def forward(self, x):
         ''' mask out all features excluding [fids]'''
         # x = self.mask_features(x)
-        x.register_hook(self.mask_features)
+        # x.register_hook(self.mask_features)
+        x.register_hook(self.mask_sign)
+        x = self.mask_sign(x)
 
         x = self.fc1(x)
         return x.squeeze(1)
