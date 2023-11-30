@@ -9,21 +9,21 @@ task:
   plot_propname: Number of carbon atoms
 split:
   split: random
-  n_splits: 2
+  n_splits: 5
   split_frac: 0.9
   data_seed: 42
   color: g
 model:
-  model: mmb-ft
-  finetune: true
-  xai: ours
+  model: ecfp
+  nbits: 2048
+  finetune: false
   n_batch: 64
   seed: 42
-  n_epochs: 50
+  n_epochs: 30
 head:
   head: lin
 xai:
-  model: mmb
-  xai: mmb
-  mask: true
-  sign: neg
+  model: ecfp
+  xai: ecfp
+  topk: 9
+  mask: false

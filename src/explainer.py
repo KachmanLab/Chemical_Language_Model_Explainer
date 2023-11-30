@@ -38,6 +38,11 @@ class MolecularSelfAttentionViz():
                 attn[layer, :, :ml, :ml],
                 grad[layer, :, :ml, :ml]
             ).cpu().detach()
+
+            # normalize
+            # min, max = torch.min(attn_map), torch.max(attn_map)
+            # attn_map = (attn_map - min) / (max - min)
+
             # apply update rule
             a_bar = torch.matmul(attn_map, rel)
             rel = rel + a_bar
