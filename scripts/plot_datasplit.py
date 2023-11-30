@@ -11,6 +11,7 @@ import numpy as np
 # import seaborn as sns
 # from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from src.dataloader import ECFPDataSplit
 from src.model import MMB_R_Featurizer, MMB_AVG_Featurizer
 
 
@@ -57,16 +58,20 @@ def plot_datasplit(cfg: DictConfig) -> None:
     elif cfg.model.model == 'mmb-avg':
         model = MMB_AVG_Featurizer(head=head,
                                    finetune=cfg.model.finetune)
+    elif cfg.model.model == 'ecfp':
+        valid_emb = np.array(ECFPDataSplit(valid).ecfp)
+        test_emb = np.array(ECFPDataSplit(test).ecfp)
 
-    trainer = pl.Trainer(
-        accelerator='gpu',
-        gpus=1,
-        precision=16,
-    )
-    valid_emb = trainer.predict(model, valid_loader)
-    test_emb = trainer.predict(model, test_loader)
-    valid_emb = np.array(torch.concat(valid_emb))
-    test_emb = np.array(torch.concat(test_emb))
+    if 'mmb' in cfg.model.model:
+        trainer = pl.Trainer(
+            accelerator='gpu',
+            gpus=1,
+            precision=16,
+        )
+        valid_emb = trainer.predict(model, valid_loader)
+        test_emb = trainer.predict(model, test_loader)
+        valid_emb = np.array(torch.concat(valid_emb))
+        test_emb = np.array(torch.concat(test_emb))
 
     # for i in range(len(valid_emb)):
     #     print(np.array(valid_emb[i]).shape, np.array(test_emb[i]).shape)
@@ -76,7 +81,7 @@ def plot_datasplit(cfg: DictConfig) -> None:
     # valid_latent = tsne.transform(valid_emb)
     # test_latent = tsne.transform(test_emb)
 
-    pca = PCA(n_components=2, random_state=cfg.data.data_seed)
+    pca = PCA(n_components=2, random_state=cfg.split.data_seed)
     pca = pca.fit(valid_emb)
     valid_latent = pca.transform(valid_emb)
     test_latent = pca.transform(test_emb)
@@ -85,10 +90,11 @@ def plot_datasplit(cfg: DictConfig) -> None:
     plt.figure(figsize=(10, 8))
     plt.scatter(valid_latent[:, 0], valid_latent[:, 1], c='blue', label='Valid')
     plt.scatter(test_latent[:, 0], test_latent[:, 1], c='red', label='Test')
-    plt.xlabel('t-SNE Latent Dimension 1')
-    plt.ylabel('t-SNE Latent Dimension 2')
-    plt.title(f't-SNE Latent Space Visualization, Valid+Test set\n \
-         {cfg.model.model} on {cfg.task.plot_title} {cfg.split.split} split')
+    plt.xlabel('PCA Latent Dimension 1')
+    plt.ylabel('PCA Latent Dimension 2')
+    plt.title(f'PCA Latent Space Visualization, Valid+Test set\n \
+         {cfg.model.model}-{cfg.head.head} on \
+         {cfg.task.plot_title} {cfg.split.split} split')
     plt.legend()
 
     # Save or show the plot

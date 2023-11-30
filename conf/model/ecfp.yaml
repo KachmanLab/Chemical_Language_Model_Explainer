@@ -1,5 +1,5 @@
 model: ecfp
-nbits: 512
+nbits: 2048
 finetune: false
 n_batch: 64
 seed: 42

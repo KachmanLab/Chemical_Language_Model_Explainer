@@ -419,11 +419,12 @@ stages:
   split_data:
     cmd:
     - pwd
-    - echo "SPLIT DATA --task aq --property aq --loader AqSolDataset --filepath /workspace/data/AqueousSolu.csv
-      --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S) log([mol/L])' --split accurate --n_splits 5 --split_frac
-      0.9 --data_seed 42 --color r"
-    - mkdir -p data/aq/accurate/
+    - "echo \"SPLIT DATA --task toy --property toy --loader ToyDataset --filepath\
+      \ /workspace/data/AqueousSolu.csv --propname carboncount --smilesname 'smiles\
+      \ solute' --plot_title 'Toy test: Carbon count prediction' --plot_propname 'Number\
+      \ of carbon atoms' --split random --n_splits 2 --split_frac 0.9 --data_seed\
+      \ 42 --color g\""
+    - mkdir -p data/toy/random/
     - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
@@ -437,46 +438,46 @@ stages:
     params:
       params.yaml:
         split:
-          split: accurate
-          n_splits: 5
+          split: random
+          n_splits: 2
           split_frac: 0.9
           data_seed: 42
-          color: r
+          color: g
         task:
-          task: aq
-          property: aq
-          loader: AqSolDataset
+          task: toy
+          property: toy
+          loader: ToyDataset
           filepath: /workspace/data/AqueousSolu.csv
-          propname: logS_aq_avg
+          propname: carboncount
           smilesname: smiles solute
-          plot_title: Aqueous solubility
-          plot_propname: log(S) log([mol/L])
+          plot_title: 'Toy test: Carbon count prediction'
+          plot_propname: Number of carbon atoms
     outs:
-    - path: data/aq/accurate/
+    - path: data/toy/random/
       hash: md5
-      md5: fa590aa2d83145d14c44569665516e80.dir
-      size: 3008991
-      nfiles: 12
+      md5: 70996ec8c485bd72e991f63ccb184230.dir
+      size: 1548552
+      nfiles: 6
   train_model:
     cmd:
-    - mkdir -p out/aq/accurate/mmb-ft-lin/{viz,model}
-    - echo "TRAIN --model mmb-ft --finetune --xai ours --n_batch 42 --seed 42 --n_epochs
-      30 --head lin"
+    - mkdir -p out/toy/random/mmb-ft-lin/{viz,model}
+    - echo "TRAIN --model mmb-ft --finetune --xai ours --n_batch 64 --seed 42 --n_epochs
+      50 --head lin"
     - python3 scripts/train_model.py
     deps:
-    - path: data/aq/accurate/
+    - path: data/toy/random/
       hash: md5
-      md5: fa590aa2d83145d14c44569665516e80.dir
-      size: 3008991
-      nfiles: 12
+      md5: 70996ec8c485bd72e991f63ccb184230.dir
+      size: 1548552
+      nfiles: 6
     - path: scripts/train_model.py
       hash: md5
       md5: 14df811475c879150b9b1498ed53bcf4
       size: 6013
     - path: src/model.py
       hash: md5
-      md5: 068d04d825828156b45b18d9e245028e
-      size: 22485
+      md5: a7215014550cf1e0b918fcd545c80107
+      size: 22508
     params:
       params.yaml:
         head:
@@ -485,63 +486,63 @@ stages:
           model: mmb-ft
           finetune: true
           xai: ours
-          n_batch: 42
+          n_batch: 64
           seed: 42
-          n_epochs: 30
+          n_epochs: 50
         split:
-          split: accurate
-          n_splits: 5
+          split: random
+          n_splits: 2
           split_frac: 0.9
           data_seed: 42
-          color: r
+          color: g
         task:
-          task: aq
-          property: aq
-          loader: AqSolDataset
+          task: toy
+          property: toy
+          loader: ToyDataset
           filepath: /workspace/data/AqueousSolu.csv
-          propname: logS_aq_avg
+          propname: carboncount
           smilesname: smiles solute
-          plot_title: Aqueous solubility
-          plot_propname: log(S) log([mol/L])
+          plot_title: 'Toy test: Carbon count prediction'
+          plot_propname: Number of carbon atoms
     outs:
-    - path: out/aq/accurate/mmb-ft-lin/best.pt
+    - path: out/toy/random/mmb-ft-lin/best.pt
       hash: md5
-      md5: 6cae8421bd61216958379009d7e7a8fa
-      size: 3047
-    - path: out/aq/accurate/mmb-ft-lin/metrics.json
+      md5: 9e033163e1399ee545501e3403ffcd7c
+      size: 7583
+    - path: out/toy/random/mmb-ft-lin/metrics.json
       hash: md5
-      md5: ac2b2485434379ce79233c3bb2899152
-      size: 520
-    - path: out/aq/accurate/mmb-ft-lin/model/
+      md5: 2ff2edc981923a41794a06b060fc8a33
+      size: 304
+    - path: out/toy/random/mmb-ft-lin/model/
       hash: md5
-      md5: df92b88059efd53e46d0043700af162e.dir
-      size: 476210935
-      nfiles: 11
+      md5: 599e8c5a15566711f9552b3a284b4f54.dir
+      size: 238113592
+      nfiles: 5
   explain_model:
     cmd:
-    - mkdir -p out/aq/accurate/mmb-ft-lin/viz
+    - mkdir -p out/toy/random/mmb-ft-lin/viz
     - python3 scripts/explain_mmb.py
     deps:
-    - path: data/aq/accurate/test.pkl
+    - path: data/toy/random/test.pkl
       hash: md5
-      md5: 229f984339e7ac1529d423d1550d480c
-      size: 20038
-    - path: out/aq/accurate/mmb-ft-lin/best.pt
+      md5: 8fef059bec83968764be0792a3cd7192
+      size: 47848
+    - path: out/toy/random/mmb-ft-lin/best.pt
       hash: md5
-      md5: 6cae8421bd61216958379009d7e7a8fa
-      size: 3047
+      md5: 9e033163e1399ee545501e3403ffcd7c
+      size: 7583
     - path: scripts/explain_mmb.py
       hash: md5
-      md5: e1b4e4342998ff55abcf30ddfcc3ab81
-      size: 7552
+      md5: 218c45dbf562bd10859517417b0d21af
+      size: 9199
     - path: src/explainer.py
       hash: md5
-      md5: 0e89abea6618cee1748444d758de451e
-      size: 7587
+      md5: 412bb371d2cb99b08cae8bd2eadeb39e
+      size: 7591
     - path: src/maskedhead.py
       hash: md5
-      md5: 8ccfa9d7eae7e4898a694005c3b50c08
-      size: 3755
+      md5: f58d1a73b037d7420ef3468675cda731
+      size: 3824
     params:
       params.yaml:
         head:
@@ -550,65 +551,66 @@ stages:
           model: mmb-ft
           finetune: true
           xai: ours
-          n_batch: 42
+          n_batch: 64
           seed: 42
-          n_epochs: 30
+          n_epochs: 50
         split:
-          split: accurate
-          n_splits: 5
+          split: random
+          n_splits: 2
           split_frac: 0.9
           data_seed: 42
-          color: r
+          color: g
         task:
-          task: aq
-          property: aq
-          loader: AqSolDataset
+          task: toy
+          property: toy
+          loader: ToyDataset
           filepath: /workspace/data/AqueousSolu.csv
-          propname: logS_aq_avg
+          propname: carboncount
           smilesname: smiles solute
-          plot_title: Aqueous solubility
-          plot_propname: log(S) log([mol/L])
+          plot_title: 'Toy test: Carbon count prediction'
+          plot_propname: Number of carbon atoms
         xai:
           model: mmb
           xai: mmb
-          mask: false
+          mask: true
+          sign: neg
     outs:
-    - path: out/aq/accurate/mmb-ft-lin/attributions.csv
+    - path: out/toy/random/mmb-ft-lin/attributions.csv
       hash: md5
-      md5: 0a4462faf382bdd5d13fe66374d79d0d
-      size: 842860
-    - path: out/aq/accurate/mmb-ft-lin/viz
+      md5: 1ae363b47518fdede31e6bcfb74a72e3
+      size: 5768417
+    - path: out/toy/random/mmb-ft-lin/viz
       hash: md5
-      md5: 8717d7ac6cfbbd7e73d613b7561f6aad.dir
-      size: 27162108
-      nfiles: 571
+      md5: b304c397f5d1659e7cab8cbfe3bd0a30.dir
+      size: 184459445
+      nfiles: 3543
   predict_model:
     cmd:
-    - mkdir -p out/aq/accurate/mmb-ft-lin/viz
+    - mkdir -p out/toy/random/mmb-ft-lin/viz
     - python3 scripts/predict_model.py
     - python3 scripts/plot_datasplit.py
     deps:
-    - path: data/aq/accurate/
+    - path: data/toy/random/
       hash: md5
-      md5: fa590aa2d83145d14c44569665516e80.dir
-      size: 3008991
-      nfiles: 12
-    - path: out/aq/accurate/mmb-ft-lin/best.pt
+      md5: 70996ec8c485bd72e991f63ccb184230.dir
+      size: 1548552
+      nfiles: 6
+    - path: out/toy/random/mmb-ft-lin/best.pt
       hash: md5
-      md5: 6cae8421bd61216958379009d7e7a8fa
-      size: 3047
+      md5: 9e033163e1399ee545501e3403ffcd7c
+      size: 7583
     - path: scripts/plot_datasplit.py
       hash: md5
-      md5: 937e8e71caaefa58a60a42ba66839602
-      size: 3586
+      md5: 414073b496e4378c41aac204fd0ab4df
+      size: 4116
     - path: scripts/predict_model.py
       hash: md5
-      md5: c88c35e76c932e98537a4739f40a002b
-      size: 6126
+      md5: d072fb7b9634928282437f19cbe0a604
+      size: 6153
     - path: src/model.py
       hash: md5
-      md5: 068d04d825828156b45b18d9e245028e
-      size: 22485
+      md5: a7215014550cf1e0b918fcd545c80107
+      size: 22508
     params:
       params.yaml:
         head:
@@ -617,82 +619,82 @@ stages:
           model: mmb-ft
           finetune: true
           xai: ours
-          n_batch: 42
+          n_batch: 64
           seed: 42
-          n_epochs: 30
+          n_epochs: 50
         split:
-          split: accurate
-          n_splits: 5
+          split: random
+          n_splits: 2
           split_frac: 0.9
           data_seed: 42
-          color: r
+          color: g
         task:
-          task: aq
-          property: aq
-          loader: AqSolDataset
+          task: toy
+          property: toy
+          loader: ToyDataset
           filepath: /workspace/data/AqueousSolu.csv
-          propname: logS_aq_avg
+          propname: carboncount
           smilesname: smiles solute
-          plot_title: Aqueous solubility
-          plot_propname: log(S) log([mol/L])
+          plot_title: 'Toy test: Carbon count prediction'
+          plot_propname: Number of carbon atoms
     outs:
-    - path: out/aq/accurate/mmb-ft-lin/latent_viz.png
+    - path: out/toy/random/mmb-ft-lin/latent_viz.png
       hash: md5
-      md5: 51d255a6f72089833428c6a2023ea754
-      size: 104592
-    - path: out/aq/accurate/mmb-ft-lin/parity_plot.png
+      md5: dafaf2419641411d39c3584ededaac3a
+      size: 61739
+    - path: out/toy/random/mmb-ft-lin/parity_plot.png
       hash: md5
-      md5: bf77f15bd8724ac98881b1247736ea43
-      size: 53853
-    - path: out/aq/accurate/mmb-ft-lin/predictions.csv
+      md5: 33033cd540d5fa3193d6fc994eb52c52
+      size: 47056
+    - path: out/toy/random/mmb-ft-lin/predictions.csv
       hash: md5
-      md5: da382a1ca6637a71b8e5813d3dad5ce9
-      size: 375259
+      md5: 45f8411e66c4897d00f6b610cf7903b3
+      size: 490938
   all:
     cmd:
     - pwd
-    - mkdir -p /workspace/final/aq/accurate/mmb-ft-lin/{model,viz}
-    - cp -r out/aq/accurate/mmb-ft-lin/ /workspace/final/aq/accurate/
-    - cp -r dvc.lock /workspace/final/aq/accurate/mmb-ft-lin/dvc.lock
-    - cp -r params.yaml /workspace/final/aq/accurate/mmb-ft-lin/params.yaml
+    - mkdir -p /workspace/final/toy/random/ecfp-lin/{model,viz}
+    - cp -r out/toy/random/ecfp-lin/ /workspace/final/toy/random/
+    - cp -r dvc.lock /workspace/final/toy/random/ecfp-lin/dvc.lock
+    - cp -r params.yaml /workspace/final/toy/random/ecfp-lin/params.yaml
     - python3 scripts/plot_models.py
-    - echo "Finished full aq accurate pipeline with mmb-ft-lin"
+    - echo "Finished full toy random pipeline with ecfp-lin"
     deps:
-    - path: out/aq/accurate/
+    - path: out/toy/random/
       hash: md5
-      md5: 352284a34788def51f9311df7f9f012d.dir
-      size: 920146951
-      nfiles: 999
-    - path: out/aq/accurate/mmb-ft-lin/attributions.csv
+      md5: 02bdacc3672a0db2e2c4368df688c044.dir
+      size: 615382905
+      nfiles: 4741
+    - path: out/toy/random/ecfp-lin/attributions.csv
       hash: md5
-      md5: 0a4462faf382bdd5d13fe66374d79d0d
-      size: 842860
-    - path: out/aq/accurate/mmb-ft-lin/best.pt
+      md5: a151baf671f02e24eace1d28e6decdd1
+      size: 915521
+    - path: out/toy/random/ecfp-lin/best.pt
       hash: md5
-      md5: 6cae8421bd61216958379009d7e7a8fa
-      size: 3047
-    - path: out/aq/accurate/mmb-ft-lin/latent_viz.png
+      md5: 6e000500afd2ff854d0a5fc16e6764c8
+      size: 26015
+    - path: out/toy/random/ecfp-lin/latent_viz.png
       hash: md5
-      md5: 51d255a6f72089833428c6a2023ea754
-      size: 104592
-    - path: out/aq/accurate/mmb-ft-lin/model
+      md5: 1a55b3eda908cef6c3389139bfb1b58d
+      size: 119326
+    - path: out/toy/random/ecfp-lin/model
       hash: md5
-      md5: df92b88059efd53e46d0043700af162e.dir
-      size: 476210935
-      nfiles: 11
-    - path: out/aq/accurate/mmb-ft-lin/parity_plot.png
+      md5: 8e2b2cdcf3bc6424e274b87529d68b9e.dir
+      size: 26015
+      nfiles: 1
+    - path: out/toy/random/ecfp-lin/parity_plot.png
       hash: md5
-      md5: 38506c0fd56e6b305a8b6f5b66d4f580
-      size: 55633
-    - path: out/aq/accurate/mmb-ft-lin/predictions.csv
+      md5: 2742551cf894b5c45852accd79d714f3
+      size: 50890
+    - path: out/toy/random/ecfp-lin/predictions.csv
       hash: md5
-      md5: da382a1ca6637a71b8e5813d3dad5ce9
-      size: 375259
-    - path: out/aq/accurate/mmb-ft-lin/viz
+      md5: 93b7f412950caefa3d24b27a6aee5a7c
+      size: 134216
+    - path: out/toy/random/ecfp-lin/viz
       hash: md5
-      md5: 8717d7ac6cfbbd7e73d613b7561f6aad.dir
-      size: 27162108
-      nfiles: 571
+      md5: 83339bbc5dfa3794b5f7412a056db0e9.dir
+      size: 216926152
+      nfiles: 4724
     - path: scripts/plot_models.py
       hash: md5
       md5: c841d1dbf370df451e74040508eebe4a

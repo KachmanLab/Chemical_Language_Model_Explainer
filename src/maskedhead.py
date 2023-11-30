@@ -8,7 +8,6 @@ import numpy as np
 class MaskedRegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None):
         super().__init__()
-        # self.norm = nn.LayerNorm(normalized_shape=[512])
         self.dim = dim
         self.norm = nn.LayerNorm(normalized_shape=[dim])
         self.fc1 = nn.Linear(dim, 64)
@@ -58,7 +57,7 @@ class MaskedRegressionHead(pl.LightningModule):
 class MaskedLinearRegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None, sign=None):
         super().__init__()
-        # self.norm = nn.LayerNorm(normalized_shape=[512])
+        self.norm = nn.LayerNorm(normalized_shape=[dim])
         self.dim = dim
         self.fc1 = nn.Linear(dim, 1)
         self.fids = fids
@@ -110,6 +109,7 @@ class MaskedLinearRegressionHead(pl.LightningModule):
 
     def forward(self, x):
         ''' mask out all features excluding [fids]'''
+        x = self.norm(x)
         # x = self.mask_features(x)
         # x.register_hook(self.mask_features)
         x.register_hook(self.mask_sign)

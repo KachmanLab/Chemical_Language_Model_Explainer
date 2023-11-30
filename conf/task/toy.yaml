@@ -5,4 +5,4 @@ filepath: "/workspace/data/AqueousSolu.csv"
 propname: "carboncount"
 smilesname: "smiles solute"
 plot_title: "Toy test: Carbon count prediction"
-plot_desc: "Number of carbon atoms"
+plot_propname: Number of carbon atoms
