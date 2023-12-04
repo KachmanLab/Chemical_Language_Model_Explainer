@@ -169,19 +169,19 @@ def explain_shap(cfg: DictConfig) -> None:
             lab = labels[b_ix]
             pred = preds[b_ix]
             uid = b_nr * cfg.model.n_batch + b_ix
-            shap = shapvals[b_ix]
-            print(uid, 'shapval:', shap)
+            shapval = shapvals[b_ix]
+            print(uid, 'shapval:', shapval)
 
-            atom_color = cmapper(shap, token)
+            atom_color = cmapper(shapval, token)
             atom_color = cmapper.to_rdkit_cmap(atom_color)
 
-            pos_mask = np.where(np.sign(shap) == 1, 1, 0)
-            shap_pos = shap * pos_mask
+            pos_mask = np.where(np.sign(shapval) == 1, 1, 0)
+            shap_pos = shapval * pos_mask
             pos_color = cmapper(shap_pos, token)
             pos_color = pos_cmapper.to_rdkit_cmap(pos_color)
 
-            neg_mask = np.where(np.sign(shap) == -1, 1, 0)
-            shap_neg = shap * neg_mask
+            neg_mask = np.where(np.sign(shapval) == -1, 1, 0)
+            shap_neg = shapval * neg_mask
             neg_color = cmapper(shap_neg, token)
             neg_color = neg_cmapper.to_rdkit_cmap(neg_color)
 

@@ -92,7 +92,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
 
     def draw_morgan_bits(bits_dict, uid):
         p = Draw.DrawMorganBits(bits_dict.values(),
-                                molsPerRow=4,
+                                molsPerRow=3,
                                 legends=get_weights(bits_dict.keys(), weights),
                                 useSVG=False,
                                 )

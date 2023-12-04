@@ -441,7 +441,7 @@ class BaselineAqueousModel(AqueousRegModel):
         self.mmb.enc_dec_model.enc_dec_model.decoder = None
         self.tokenizer = molbart_model.tokenizer
         if self.finetune:
-            raise NotImplementedError
+            self.mmb.unfreeze()
         else:
             self.mmb.freeze()
 
