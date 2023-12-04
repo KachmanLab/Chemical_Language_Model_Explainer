@@ -1,29 +1,30 @@
 task:
-  task: toy
-  property: toy
-  loader: ToyDataset
+  task: aq
+  property: aq
+  loader: AqSolDataset
   filepath: /workspace/data/AqueousSolu.csv
-  propname: carboncount
+  propname: logS_aq_avg
   smilesname: smiles solute
-  plot_title: 'Toy test: Carbon count prediction'
-  plot_propname: Number of carbon atoms
+  plot_title: Aqueous solubility
+  plot_propname: log(S) log([mol/L])
 split:
-  split: random
-  n_splits: 5
+  split: accurate
+  n_splits: 2
   split_frac: 0.9
   data_seed: 42
-  color: g
+  color: r
+  scale: true
 model:
-  model: ecfp
-  nbits: 2048
-  finetune: false
-  n_batch: 64
+  model: mmb-ft
+  finetune: true
+  xai: ours
+  n_batch: 48
   seed: 42
-  n_epochs: 30
+  n_epochs: 25
 head:
   head: lin
 xai:
-  model: ecfp
-  xai: ecfp
-  topk: 9
-  mask: false
+  model: mmb
+  xai: mmb
+  mask: true
+  sign: None

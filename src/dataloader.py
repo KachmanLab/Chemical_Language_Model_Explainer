@@ -7,12 +7,12 @@ import numpy as np
 from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from typing import List
-
+from sklearn.preprocessing import StandardScaler
 
 class PropertyDataset(Dataset):
     def __init__(self, subset, file_path, smilesname, propname,
                  split, split_frac, n_splits=5, data_seed=42,
-                 augment=False):
+                 scale=False, augment=False):
         self.subset = subset
         self.split = split
         self.split_frac = split_frac
@@ -20,6 +20,7 @@ class PropertyDataset(Dataset):
         self.smilesname = smilesname
         self.propname = propname
         self.data_seed = data_seed
+        self.scale = scale
         self.augment = augment
         print(smilesname, propname)
         print(split, n_splits)
@@ -72,6 +73,12 @@ class PropertyDataset(Dataset):
         # set aside test set
         test_df = df.iloc[test_idx].reset_index(drop=True)
         tr_va_df = df.drop(test_idx).reset_index(drop=True)
+        
+        if self.scale:
+            self.scaler = StandardScaler().fit(tr_va_df[self.propname])
+            tr_va_df[self.propname] = self.scaler.transform(tr_va_df[self.propname])
+            test_df[self.propname] = self.scaler.transform(tr_va_df[self.propname])
+
         self.tr_va_df = tr_va_df
 
         # sanity check: assert train/test non-overlapping
@@ -228,7 +235,7 @@ class MurckoScaffoldSplitter():
 class AqSolDataset(PropertyDataset):
     def __init__(self, subset, file_path, smilesname, propname,
                  split, split_frac, n_splits=5, data_seed=42,
-                 augment=False):
+                 scale=False, augment=False):
         super().__init__(subset, file_path, smilesname, propname,
                          split, split_frac, n_splits, data_seed,
                          augment)
@@ -249,7 +256,7 @@ class AqSolDataset(PropertyDataset):
 class CMCDataset(PropertyDataset):
     def __init__(self, subset, file_path, smilesname, propname,
                  split, split_frac, n_splits=5, data_seed=42,
-                 augment=False):
+                 scale=False, augment=False):
         super().__init__(subset, file_path, smilesname, propname,
                          split, split_frac, n_splits, data_seed,
                          augment)
@@ -273,7 +280,7 @@ class CMCDataset(PropertyDataset):
 class SFTDataset(PropertyDataset):
     def __init__(self, subset, file_path, smilesname, propname,
                  split, split_frac, n_splits=5, data_seed=42,
-                 augment=False):
+                 scale=False, augment=False):
         super().__init__(subset, file_path, smilesname, propname,
                          split, split_frac, n_splits, data_seed,
                          augment)
@@ -294,7 +301,7 @@ class SFTDataset(PropertyDataset):
 class ToyDataset(PropertyDataset):
     def __init__(self, file_path, subset, split, split_frac,
                  smilesname, propname, n_splits=5, data_seed=42,
-                 augment=False):
+                 scale=False, augment=False):
         super().__init__(file_path, subset, split, split_frac,
                          smilesname, propname, n_splits, data_seed,
                          augment=False)

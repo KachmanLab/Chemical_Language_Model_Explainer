@@ -25,15 +25,15 @@ def split(cfg: DictConfig) -> None:
     train_ds = DatasetLoader('train',
         cfg.task.filepath, cfg.task.smilesname, cfg.task.propname,
         cfg.split.split, cfg.split.split_frac, cfg.split.n_splits,
-        cfg.split.data_seed, augment=False)
+        cfg.split.data_seed, cfg.split.scale, augment=False)
     valid_ds = DatasetLoader('valid',
         cfg.task.filepath, cfg.task.smilesname, cfg.task.propname,
         cfg.split.split, cfg.split.split_frac, cfg.split.n_splits,
-        cfg.split.data_seed)
+        cfg.split.data_seed, cfg.split.scale)
     test_ds = DatasetLoader('test',
         cfg.task.filepath, cfg.task.smilesname, cfg.task.propname,
         cfg.split.split, cfg.split.split_frac, cfg.split.n_splits,
-        cfg.split.data_seed)
+        cfg.split.data_seed, cfg.split.scale)
 
     test = test_ds[:]
     print(len(test), 'test len')
