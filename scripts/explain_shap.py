@@ -9,11 +9,6 @@ import matplotlib.pyplot as plt
 
 import seaborn as sns
 import numpy as np
-# import os
-# import glob
-# import json
-# from typing import List
-# from src.dataloader import AqSolDataset
 
 from src.model import BaselineAqueousModel
 from src.explainer import ColorMapper, plot_weighted_molecule
@@ -148,6 +143,12 @@ def explain_shap(cfg: DictConfig) -> None:
         'smiles', 'tokens', 'preds', 'labels', 'shap_weights', 'split'
     ])
     cmapper = ColorMapper()
+    pos_cmapper = ColorMapper(color='blue')
+    neg_cmapper = ColorMapper(color='red')
+
+    # weights = model.head.fc1.weight[0].cpu().detach().numpy()
+    # weights = weights[:, None]
+    # bias = model.head.fc1.bias[0].cpu().detach().numpy()
 
     for b_nr, batch in enumerate(test_loader):
         smiles, labels = batch
@@ -165,21 +166,34 @@ def explain_shap(cfg: DictConfig) -> None:
         for b_ix in range(len(smiles)):
             token = tokens[b_ix]
             smi = smiles[b_ix]
-            # shapvalue = explainer(smiles).values
             lab = labels[b_ix]
             pred = preds[b_ix]
-            # uid = len(attributions) + b_ix
             uid = b_nr * cfg.model.n_batch + b_ix
+            shap = shapvals[b_ix]
+            print(uid, 'shapval:', shap)
 
-            atom_color = cmapper(shapvals[b_ix], tokens[b_ix])
-            # atom_color = cmapper(shapvalue, tokens[b_ix])
+            atom_color = cmapper(shap, token)
             atom_color = cmapper.to_rdkit_cmap(atom_color)
 
-            print(uid)
-            if uid not in [17, 39, 94, 210, 217]:
+            pos_mask = np.where(np.sign(shap) == 1, 1, 0)
+            shap_pos = shap * pos_mask
+            pos_color = cmapper(shap_pos, token)
+            pos_color = pos_cmapper.to_rdkit_cmap(pos_color)
+
+            neg_mask = np.where(np.sign(shap) == -1, 1, 0)
+            shap_neg = shap * neg_mask
+            neg_color = cmapper(shap_neg, token)
+            neg_color = neg_cmapper.to_rdkit_cmap(neg_color)
+
+            if uid not in []:  # 17, 39, 94, 210, 217
                 # segmentation fault, likely due to weird structure?
                 plot_weighted_molecule(atom_color, smi, token, lab, pred,
                     f"{uid}_{xai}", f"{basepath}/{mdir}/viz/")
+                plot_weighted_molecule(pos_color, smi, token, lab, pred,
+                    f"{uid}_pos_{xai}", f"{basepath}/{mdir}/viz/")
+                plot_weighted_molecule(neg_color, smi, token, lab, pred,
+                    f"{uid}_neg_{xai}", f"{basepath}/{mdir}/viz/")
+
         ###############################
 
         res = pd.DataFrame({
