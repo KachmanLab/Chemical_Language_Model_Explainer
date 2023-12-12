@@ -91,6 +91,29 @@ class MaskedLinearRegressionHead(pl.LightningModule):
         return x * mask
 
     def mask_sign(self, x):
+        weights = self.fc1.weight[0]
+        bias = self.fc1.bias
+        contribs = x @ weights + bias
+        signs = torch.sign(contribs)
+
+        if self.sign == 'pos':
+            mask = torch.tensor([
+                torch.where(s == 1, 1, 0) for s in signs],
+                                dtype=torch.int32, device=x.device)
+        elif self.sign == 'neg':
+            mask = torch.tensor([
+                torch.where(s == -1, 1, 0) for s in signs],
+                                dtype=torch.int32, device=x.device)
+        else:
+            return x
+
+        print(torch.mean(torch.tensor(
+            [m.sum() for m in mask], dtype=torch.float16), axis=0),
+            f'{self.sign} mean of sums')
+        mask = mask.unsqueeze(-1)
+        return mask * x
+
+    def mask_activation(self, x):
         vec = self.fc1.weight[0]  # .cpu().detach().numpy()
         signs = torch.sign(vec)
 
@@ -100,7 +123,7 @@ class MaskedLinearRegressionHead(pl.LightningModule):
         elif self.sign == 'neg':
             mask = torch.where(signs == -1, 1, 0)
             # altsigns = torch.where(signs == -1)
-        else: 
+        else:
             return x
 
         # altmask = torch.zeros_like(vec, dtype=torch.int8)

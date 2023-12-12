@@ -81,21 +81,62 @@ def plot_datasplit(cfg: DictConfig) -> None:
     # valid_latent = tsne.transform(valid_emb)
     # test_latent = tsne.transform(test_emb)
 
+    ##########################
+
+    weights = model.head.fc1.weight[0].cpu().detach().numpy()
+    bias = model.head.fc1.bias.cpu().detach().numpy()
+    activations = test_emb
+    # activations = valid_emb
+    positive_count = np.array([(act > 0.05).sum() for act in activations]).mean()
+    negative_count = np.array([(act < 0.05).sum() for act in activations]).mean()
+    zero_count = (activations == 0).sum()
+
+    print('pos', positive_count)
+    print('neg', negative_count)
+    print('zero', zero_count)
+
+    print(valid_emb.shape, weights.shape)
+    ds_mean = np.array(valid.labels).mean()
+    print('val mean', ds_mean, 'bias', bias)
+
+    activations = valid_emb @ weights + bias  # - ds_mean
+    positive_count = np.array([(act > 0.05).sum() for act in activations]).mean()
+    negative_count = np.array([(act < 0.05).sum() for act in activations]).mean()
+    zero_count = (activations == 0).sum()
+
+    print('pos', positive_count)
+    print('neg', negative_count)
+    print('zero', zero_count)
+
+    ##########################
+
     pca = PCA(n_components=2, random_state=cfg.split.data_seed)
     pca = pca.fit(valid_emb)
     valid_latent = pca.transform(valid_emb)
     test_latent = pca.transform(test_emb)
 
+    valid_label = np.array(valid.labels)
+    test_label = np.array(test.labels)
+    cmap = plt.cm.viridis
+
     # Plotting the latent space
     plt.figure(figsize=(10, 8))
-    plt.scatter(valid_latent[:, 0], valid_latent[:, 1], c='blue', label='Valid')
-    plt.scatter(test_latent[:, 0], test_latent[:, 1], c='red', label='Test')
+    # plt.scatter(valid_latent[:, 0], valid_latent[:, 1], c='blue', label='Valid')
+    # plt.scatter(test_latent[:, 0], test_latent[:, 1], c='red', label='Test')
+
+    val_sc = plt.scatter(valid_latent[:, 0], valid_latent[:, 1],
+                         c=valid_label, cmap=cmap, marker='o', label='Valid')
+    test_sc = plt.scatter(test_latent[:, 0], test_latent[:, 1],
+                          c=test_label, cmap=cmap, marker='^', label='Test')
     plt.xlabel('PCA Latent Dimension 1')
     plt.ylabel('PCA Latent Dimension 2')
     plt.title(f'PCA Latent Space Visualization, Valid+Test set\n \
          {cfg.model.model}-{cfg.head.head} on \
          {cfg.task.plot_title} {cfg.split.split} split')
     plt.legend()
+
+    cbar = plt.colorbar(val_sc, orientation='vertical')
+    cbar.set_label('Property Scale')
 
     # Save or show the plot
     plt.tight_layout()

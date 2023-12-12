@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from typing import List
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, RobustScaler
 
 class PropertyDataset(Dataset):
     def __init__(self, subset, file_path, smilesname, propname,
@@ -73,11 +73,14 @@ class PropertyDataset(Dataset):
         # set aside test set
         test_df = df.iloc[test_idx].reset_index(drop=True)
         tr_va_df = df.drop(test_idx).reset_index(drop=True)
-        
+
         if self.scale:
-            self.scaler = StandardScaler().fit(tr_va_df[self.propname])
-            tr_va_df[self.propname] = self.scaler.transform(tr_va_df[self.propname])
-            test_df[self.propname] = self.scaler.transform(tr_va_df[self.propname])
+            self.scaler = RobustScaler().fit(
+                np.expand_dims(np.array(tr_va_df[self.propname]), -1))
+            tr_va_df[self.propname] = self.scaler.transform(
+                np.expand_dims(np.array(tr_va_df[self.propname]), -1))
+            test_df[self.propname] = self.scaler.transform(
+                np.expand_dims(np.array(test_df[self.propname]), -1))
 
         self.tr_va_df = tr_va_df
 
@@ -238,7 +241,7 @@ class AqSolDataset(PropertyDataset):
                  scale=False, augment=False):
         super().__init__(subset, file_path, smilesname, propname,
                          split, split_frac, n_splits, data_seed,
-                         augment)
+                         scale, augment)
         # self.smilesname = 'smiles solute'
         # self.propname = 'logS_aq_avg'
 
@@ -259,7 +262,7 @@ class CMCDataset(PropertyDataset):
                  scale=False, augment=False):
         super().__init__(subset, file_path, smilesname, propname,
                          split, split_frac, n_splits, data_seed,
-                         augment)
+                         scale, augment)
 
     def custom_preprocess(self, df):
         # drop empty (NaN) columns + one extreme outlier (pCMC ~ 20)
@@ -283,7 +286,7 @@ class SFTDataset(PropertyDataset):
                  scale=False, augment=False):
         super().__init__(subset, file_path, smilesname, propname,
                          split, split_frac, n_splits, data_seed,
-                         augment)
+                         scale, augment)
 
     def custom_preprocess(self, df):
         # drop empty (NaN) columns + one extreme outlier (pCMC ~ 20)
@@ -304,7 +307,7 @@ class ToyDataset(PropertyDataset):
                  scale=False, augment=False):
         super().__init__(file_path, subset, split, split_frac,
                          smilesname, propname, n_splits, data_seed,
-                         augment=False)
+                         scale, augment)
 
     def count_carbons(self, smi):
         mol = Chem.MolFromSmiles(smi)

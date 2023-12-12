@@ -89,7 +89,7 @@ def train(cfg: DictConfig) -> None:
             'head': cfg.head.head,
             'n_epochs': cfg.model.n_epochs,
         })
-        wandb.watch(model, log_freq=16)
+        wandb.watch(model, log_freq=16, log='all')
 
         trainer = pl.Trainer(
             max_epochs=cfg.model.n_epochs,
