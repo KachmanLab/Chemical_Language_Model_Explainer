@@ -10,14 +10,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
+from omegaconf import OmegaConf
+
+cfg = OmegaConf.load('./params.yaml')
+basepath = f"./out/{cfg.task.task}/{cfg.split.split}"
+mdir = f"{cfg.model.model}-{cfg.head.head}"
 
 
 class MolecularSelfAttentionViz():
     """ apply self-attention update rule only """
 
-    def __init__(self, n_layers=6, save_heatmap=False):
+    def __init__(self, n_layers=6, save_heatmap=True, sign=''):
         self.n_layers = n_layers
         self.save_heatmap = save_heatmap
+        self.sign = sign
+        self.uid = 0
 
     def avg_heads(self, attn, grad):
         """ identical, increased readability """
@@ -27,7 +34,7 @@ class MolecularSelfAttentionViz():
     def agg_relevance(self, attn, grad, ml, token=None):
         # init relevancy matrix as identity
         rel = torch.eye(ml, ml)
-
+        all_rel = []
         # cast to float32 for torch.clamp
         attn, grad = attn.float(), grad.float()
 
@@ -49,9 +56,12 @@ class MolecularSelfAttentionViz():
 
             # optionally save heatmaps
             if self.save_heatmap:
-                save_heat(a_bar, ml, token, prefix='a_bar_l{layer}')
+                prefix = f'{self.uid}_{self.sign}'
+                save_heat(a_bar, ml, token, prefix=f'{prefix}_a_bar_l{layer}')
+                all_rel.append(self.get_weights(rel, ml))
         if self.save_heatmap:
-            save_heat(rel - torch.eye(ml), ml, token, 'full_rel')
+            save_heat(rel - torch.eye(ml), ml, token, f'{prefix}_full_rel')
+            plot_rel_layers(all_rel, ml, token, f'{prefix}')
         return rel
 
     def get_weights(self, rel, ml):
@@ -66,6 +76,8 @@ class MolecularSelfAttentionViz():
         ml = sum(mask)
         # aggregate relevance matrix R
         rel = self.agg_relevance(attn, grad, ml, token)
+        # keep track of uid viz
+        self.uid += 1
         # extract token importance as relevance weights to <REG> token
         return self.get_weights(rel, ml)
 
@@ -121,7 +133,8 @@ def make_legend():
         ticks=list(np.linspace(0, 1, 9)), label='Relative importance (a.u.)')
 
     # Save the colorbar as an image file
-    plt.savefig(f'/workspace/results/aqueous-solu/colorbar_au.png', 
+    plt.tight_layout()
+    plt.savefig(f'{basepath}/{mdir}/viz/colorbar_au.png', 
         dpi=300, bbox_inches='tight', pad_inches=0.02)
     plt.close()
 
@@ -142,7 +155,7 @@ def save_heat(rel, ml, token, prefix=""):
         vmin=0., vmax=1.
     )
     plt.tight_layout()
-    plt.savefig(f'/workspace/results/aqueous-solu/{prefix}_Aqueous_heatmap.png')
+    plt.savefig(f'{basepath}/{mdir}/viz/{prefix}_Aqueous_heatmap.png')
     plt.clf()
 
     ax = sns.heatmap(rel,
@@ -152,8 +165,43 @@ def save_heat(rel, ml, token, prefix=""):
         xticklabels = False,
         yticklabels = False,
         vmin = 0., vmax = 1.)
-    plt.savefig(f'/workspace/results/aqueous-solu/{prefix}_Aqueous_heatmap_raw.png',
-        bbox_inches='tight', pad_inches=0)
+    plt.tight_layout()
+    plt.savefig(f'{basepath}/{mdir}/viz/{prefix}_Aqueous_heatmap_raw.png',
+                bbox_inches='tight', pad_inches=0)
+    plt.clf()
+
+
+def plot_rel_layers(all_rel, ml, token, prefix=''):
+    cmap = sns.cubehelix_palette(
+        start=0.5, rot=-0.75, dark=0.15, light=0.95, reverse=True, as_cmap=True
+    ) or 'viridis'
+
+    all_rel = np.array(all_rel)
+    # token = ['<R>'] + token
+    token = np.array(token)
+    print('plot_rel call', all_rel.shape)
+
+    # v1
+    plt.xticks(np.arange(len(token)), labels=token)
+    plt.yticks(np.arange(6))
+    plt.imshow(all_rel, cmap=cmap)
+
+    plt.tight_layout()
+    plt.savefig(f'{basepath}/{mdir}/viz/{prefix}_6R_plot.png',
+                bbox_inches='tight', pad_inches=0)
+    plt.clf()
+
+    # v2
+    sns.heatmap(
+        all_rel,
+        xticklabels=np.array(token),
+        yticklabels=np.array(range(6)),
+        cmap=cmap,
+        vmin=0., vmax=1.
+    )
+    plt.tight_layout()
+    plt.savefig(f'{basepath}/{mdir}/viz/{prefix}_6R_heatmap.png',
+                bbox_inches='tight', pad_inches=0)
     plt.clf()
 
 def plot_weighted_molecule(atom_colors, smiles, token, label, pred, prefix="", savedir=""):

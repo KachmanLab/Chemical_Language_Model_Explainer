@@ -115,7 +115,7 @@ class AqueousRegModel(pl.LightningModule):
         self.tokenizer = REGRegExTokenizer()
         self.make_head(head)
         print(self.head, head)
-        self.explainer = MolecularSelfAttentionViz(save_heatmap=False)
+        self.explainer = MolecularSelfAttentionViz(sign='agg')
         self.cmapper = ColorMapper()
 
         self.criterion = nn.HuberLoss()

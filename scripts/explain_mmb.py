@@ -14,7 +14,7 @@ from sklearn import linear_model
 
 from src.model import AqueousRegModel, BaselineAqueousModel
 from src.maskedhead import MaskedLinearRegressionHead
-from src.explainer import ColorMapper
+from src.explainer import ColorMapper, MolecularSelfAttentionViz
 import hydra
 from omegaconf import OmegaConf, DictConfig
 
@@ -32,6 +32,13 @@ def explain_mmb(cfg: DictConfig) -> None:
     root = f"./data/{cfg.task.task}/{cfg.split.split}"
     with open(f"{root}/test.pkl", 'rb') as f:
         test = pickle.load(f)
+
+    # test.smiles = test.smiles[[2, 5, 12, 16]]
+    # test.labels = test.labels[[2, 5, 12, 16]]
+    test.smiles = [test.smiles[i] for i in [2, 5, 13, 15]]
+    test.labels = [test.labels[i] for i in [2, 5, 13, 15]]
+    # test.smiles = test.smiles[:16]
+    # test.labels = test.labels[:16]
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
                              shuffle=False, num_workers=8)
 
@@ -103,8 +110,9 @@ def explain_mmb(cfg: DictConfig) -> None:
             model.head = MaskedLinearRegressionHead(sign=sign)
             model.head.load_state_dict(torch.load(ckpt_path))
             model.eval()
+            model.explainer = MolecularSelfAttentionViz(sign=sign)
 
-            # change viz color to red/blue 
+            # change viz color to red/blue
             # color = 'blue' if sign == 'pos' else 'red'
             # model.cmapper = ColorMapper(color=color)
 
@@ -242,7 +250,8 @@ def explain_mmb(cfg: DictConfig) -> None:
                 plot_weighted_molecule(
                     neg_color, smi, token, lab, neg_pred, f"{uid}_neg_{xai}"
                 )
-
+        if b_nr > 2:
+            break
 
 if __name__ == "__main__":
     explain_mmb()
