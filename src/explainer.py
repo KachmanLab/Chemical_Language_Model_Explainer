@@ -20,7 +20,7 @@ mdir = f"{cfg.model.model}-{cfg.head.head}"
 class MolecularSelfAttentionViz():
     """ apply self-attention update rule only """
 
-    def __init__(self, n_layers=6, save_heatmap=True, sign=''):
+    def __init__(self, n_layers=6, save_heatmap=False, sign=''):
         self.n_layers = n_layers
         self.save_heatmap = save_heatmap
         self.sign = sign

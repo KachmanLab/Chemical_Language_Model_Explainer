@@ -35,8 +35,9 @@ def explain_mmb(cfg: DictConfig) -> None:
 
     # test.smiles = test.smiles[[2, 5, 12, 16]]
     # test.labels = test.labels[[2, 5, 12, 16]]
-    test.smiles = [test.smiles[i] for i in [2, 5, 13, 15]]
-    test.labels = [test.labels[i] for i in [2, 5, 13, 15]]
+    if cfg.xai.save_heat:
+        test.smiles = [test.smiles[i] for i in [2, 5, 13, 15]]
+        test.labels = [test.labels[i] for i in [2, 5, 13, 15]]
     # test.smiles = test.smiles[:16]
     # test.labels = test.labels[:16]
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
@@ -65,6 +66,8 @@ def explain_mmb(cfg: DictConfig) -> None:
         mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
         model.mmb.load_state_dict(torch.load(mmb_path))
         model.head.load_state_dict(torch.load(ckpt_path))
+        model.explainer = MolecularSelfAttentionViz(
+            save_heatmap=cfg.xai.save_heat, sign='')
         xai = 'mmb-ft'
     elif cfg.model.model == 'mmb-avg':
         print('wrong xai config: mmb-avg+explain_mmb should be shap')
@@ -110,7 +113,8 @@ def explain_mmb(cfg: DictConfig) -> None:
             model.head = MaskedLinearRegressionHead(sign=sign)
             model.head.load_state_dict(torch.load(ckpt_path))
             model.eval()
-            model.explainer = MolecularSelfAttentionViz(sign=sign)
+            model.explainer = MolecularSelfAttentionViz(
+                save_heatmap=cfg.xai.save_heat, sign='')
 
             # change viz color to red/blue
             # color = 'blue' if sign == 'pos' else 'red'

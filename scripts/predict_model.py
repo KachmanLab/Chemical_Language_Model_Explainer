@@ -12,6 +12,7 @@ import hydra
 import json
 from omegaconf import OmegaConf, DictConfig
 from sklearn.linear_model import LinearRegression
+from src.explainer import ColorMapper, MolecularSelfAttentionViz
 import numpy as np
 import seaborn as sns
 
@@ -57,6 +58,7 @@ def predict_model(cfg: DictConfig) -> None:
         model = AqueousRegModel(head=head,
                                 finetune=cfg.model.finetune)
         model.head.load_state_dict(torch.load(ckpt_path))
+        model.explainer = MolecularSelfAttentionViz(save_heatmap=False)
     if cfg.model.finetune or cfg.model.model == 'mmb-ft':
         model = AqueousRegModel(head=head,
                                 finetune=cfg.model.finetune)
@@ -64,6 +66,7 @@ def predict_model(cfg: DictConfig) -> None:
         mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
         model.mmb.load_state_dict(torch.load(mmb_path))
         model.head.load_state_dict(torch.load(ckpt_path))
+        model.explainer = MolecularSelfAttentionViz(save_heatmap=False)
     elif cfg.model.model == 'mmb-avg':
         model = BaselineAqueousModel(head=head,
                                      finetune=cfg.model.finetune)
