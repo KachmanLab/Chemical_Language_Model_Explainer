@@ -122,6 +122,7 @@ stages:
       - echo "Finished full ${task.task} ${split.split} pipeline with ${model.model}-${head.head}"
     deps:
       - scripts/plot_models.py
+      - scripts/plot_similarity.py
       - out/${task.task}/${split.split}/
       - out/${task.task}/${split.split}/${model.model}-${head.head}/model
       - out/${task.task}/${split.split}/${model.model}-${head.head}/best.pt
