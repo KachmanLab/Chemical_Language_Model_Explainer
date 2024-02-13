@@ -66,8 +66,8 @@ def plot_similarity():
                 xticklabels=attributions.keys(),
                 yticklabels=attributions.keys(),
                 )
-                # cmap="YlGnBu")
-    plt.title("Pairwise Cosine Similarity Heatmap of attributed relevance")
+
+    plt.title("Pairwise cosine similarity of attributed relevance")
     plt.tight_layout()
     plt.savefig(f"{basepath}/attribution_comparison.png")
 

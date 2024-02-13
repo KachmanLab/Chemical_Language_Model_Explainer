@@ -81,22 +81,23 @@ def plot_datasplit(cfg: DictConfig) -> None:
 
     ##########################
 
-    weights = model.head.fc1.weight[0].cpu().detach().numpy()
-    bias = model.head.fc1.bias.cpu().detach().numpy()
-    # activations = test_emb
-    activations = valid_emb
-    positive_count = np.array([(act > 0.05).sum() for act in activations]).mean()
-    negative_count = np.array([(act < 0.05).sum() for act in activations]).mean()
-    zero_count = (activations == 0).sum()
+    if 'mmb' in cfg.model.model:
+        weights = model.head.fc1.weight[0].cpu().detach().numpy()
+        bias = model.head.fc1.bias.cpu().detach().numpy()
+        # activations = test_emb
+        activations = valid_emb
+        positive_count = np.array([(act > 0.05).sum() for act in activations]).mean()
+        negative_count = np.array([(act < 0.05).sum() for act in activations]).mean()
+        zero_count = (activations == 0).sum()
 
-    print('raw emb')
-    print('pos', positive_count)
-    print('neg', negative_count)
-    print('zero', zero_count)
+        print('raw emb')
+        print('pos', positive_count)
+        print('neg', negative_count)
+        print('zero', zero_count)
 
-    print(valid_emb.shape, weights.shape)
-    ds_mean = np.array(valid.labels).mean()
-    print('val mean', ds_mean, 'bias', bias)
+        print(valid_emb.shape, weights.shape)
+        ds_mean = np.array(valid.labels).mean()
+        print('val mean', ds_mean, 'bias', bias)
 
     if cfg.head.head == 'lin':
         activations = valid_emb @ weights + bias  # - ds_mean
