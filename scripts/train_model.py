@@ -65,7 +65,7 @@ def train(cfg: DictConfig) -> None:
             if cfg.model.finetune or 'ft' in cfg.model.model:
                 # unfreeze to train the whole model instead of just the head
                 # cfg['finetune'] = True
-                torch.save(model.mmb.state_dit(),
+                torch.save(model.mmb.state_dict(),
                            f"{basepath}/{mdir}/model/mmb.pt")
         else:
             # only reset head instead of re-initializing full mmb model

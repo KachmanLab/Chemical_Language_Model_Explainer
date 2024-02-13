@@ -140,8 +140,8 @@ def explain_mmb(cfg: DictConfig) -> None:
     # load data and calculate errors
     yhat = torch.concat(preds)
     y = torch.concat(labels)
-    print(y)
-    print(yhat)
+    # print(y)
+    # print(yhat)
 
     mse = nn.MSELoss()(yhat, y)
     mae = nn.L1Loss()(yhat, y)
@@ -247,8 +247,8 @@ def explain_mmb(cfg: DictConfig) -> None:
             if sign_weights:
                 pos_color = sign_colors['pos'][b_nr][b_ix]
                 neg_color = sign_colors['neg'][b_nr][b_ix]
-                pos_pred = sign_weights[f'pos_preds'][b_nr][b_ix]
-                neg_pred = sign_weights[f'neg_preds'][b_nr][b_ix]
+                pos_pred = sign_weights['pos_preds'][b_nr][b_ix]
+                neg_pred = sign_weights['neg_preds'][b_nr][b_ix]
                 assert pos_pred + neg_pred - pred <= 5e-2
                 plot_weighted_molecule(
                     pos_color, smi, token, lab, pos_pred, f"{uid}_pos_{xai}"
@@ -258,6 +258,7 @@ def explain_mmb(cfg: DictConfig) -> None:
                 )
         if b_nr > 2:
             break
+
 
 if __name__ == "__main__":
     explain_mmb()

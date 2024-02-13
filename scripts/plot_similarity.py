@@ -40,18 +40,29 @@ def plot_similarity():
             print(f"File not found: {basepath}/{mdir}")
             continue
 
-    attributions['all-equal'] = np.array(
-        [np.ones_like(attr) / len(attr) for attr in attribs]
-    )
+    attributions['all-equal'] = [np.ones_like(attr) / len(attr) for attr in attribs]
 
+    similarities = []
     # Calculate pairwise cosine similarity
-    data = np.array(list(attributions.values()))
-    similarity_matrix = cosine_similarity(data)
+    attribszip = list(zip(*attributions.values()))
+    # data = attributions.values()
+    # for ix in range(len(attribs)):
+    for ix in attribszip:
+        print(ix)
+        print([len(i) for i in ix])
+        similarities.append(
+            cosine_similarity(np.array(ix))
+        )
+
+    print(similarities)
+    similarity_matrix = np.mean(np.array(similarities), axis=0)
+    mask = np.triu(np.ones_like(similarity_matrix, dtype=bool), k=1)
 
     # Plotting the heatmap
     plt.figure(figsize=(10, 8))
     sns.heatmap(similarity_matrix,
                 annot=True,
+                mask=mask,
                 xticklabels=attributions.keys(),
                 yticklabels=attributions.keys(),
                 )
