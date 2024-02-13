@@ -51,29 +51,28 @@ def train(cfg: DictConfig) -> None:
 
         # configure model
         if fold == 0:
-            if cfg.model.model == 'mmb':
+            if cfg.model.model in ['mmb', 'mmb-ft']:
                 model = AqueousRegModel(head=cfg.head.head,
                                         finetune=cfg.model.finetune)
                 # _sanity_mmb = np.array(model.mmb.state_dict())
-            elif cfg.model.finetune or cfg.model.model == 'mmb-ft':
-                # unfreeze to train the whole model instead of just the head
-                # cfg['finetune'] = True
-                model = AqueousRegModel(head=cfg.head.head,
-                                        finetune=cfg.model.finetune)
-                torch.save(model.mmb.state_dict(),
-                           f"{basepath}/{mdir}/model/mmb.pt")
-            elif cfg.model.model == 'mmb-avg':
+            elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
                 model = BaselineAqueousModel(head=cfg.head.head,
                                              finetune=cfg.model.finetune)
             elif cfg.model.model == 'ecfp':
                 model = ECFPLinear(head=cfg.head.head,
                                    dim=cfg.model.nbits)
+
+            if cfg.model.finetune or 'ft' in cfg.model.model:
+                # unfreeze to train the whole model instead of just the head
+                # cfg['finetune'] = True
+                torch.save(model.mmb.state_dit(),
+                           f"{basepath}/{mdir}/model/mmb.pt")
         else:
             # only reset head instead of re-initializing full mmb model
             model.reset_head()
             if 'mmb' in cfg.model.model:
                 model.mmb.freeze()
-            if cfg.model.finetune or cfg.model.model == 'mmb-ft':
+            if cfg.model.finetune or 'ft' in cfg.model.model:
                 # restore base MMB core
                 model.mmb.load_state_dict(
                     torch.load(f"{basepath}/{mdir}/model/mmb.pt"))

@@ -2,4 +2,4 @@ model: mmb
 xai: mmb
 mask: true
 sign: None
-save_heat: true
+save_heat: false

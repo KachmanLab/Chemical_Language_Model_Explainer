@@ -13,19 +13,16 @@ split:
   split_frac: 0.9
   data_seed: 42
   color: r
-  scale: true
+  scale: false
 model:
-  model: mmb-ft
-  finetune: true
-  xai: ours
+  model: mmb-avg
+  finetune: false
   n_batch: 48
   seed: 42
-  n_epochs: 25
+  n_epochs: 5
 head:
-  head: lin
+  head: hier
 xai:
-  model: mmb
-  xai: mmb
-  mask: true
-  sign: None
-  save_heat: true
+  model: mmb-avg
+  xai: shap
+  mask: false

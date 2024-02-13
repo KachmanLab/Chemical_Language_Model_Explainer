@@ -74,13 +74,16 @@ def explain_shap(cfg: DictConfig) -> None:
     mdir = f"{cfg.model.model}-{cfg.head.head}"
     ckpt_path = f"{basepath}/{mdir}/best.pt"
 
-    if cfg.model.model == 'mmb-avg':
+    if cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
         model = BaselineAqueousModel(head=cfg.head.head,
                                      finetune=cfg.model.finetune)
         model.head.load_state_dict(torch.load(ckpt_path))
-        xai = 'mmb-avg'
     else:
         raise NotImplementedError
+
+    if cfg.model.finetune or 'ft' in cfg.model.model:
+        mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
+        model.mmb.load_state_dict(torch.load(mmb_path))
 
     ###################################
 
@@ -140,18 +143,20 @@ def explain_shap(cfg: DictConfig) -> None:
     )
 
     attributions = pd.DataFrame(columns=[
-        'smiles', 'tokens', 'preds', 'labels', 'shap_weights', 'split'
+        'smiles', 'tokens', 'preds', 'labels', 'atom_weights', 'split'
     ])
     cmapper = ColorMapper()
     pos_cmapper = ColorMapper(color='blue')
     neg_cmapper = ColorMapper(color='red')
 
+    xai = cfg.model.model
     # weights = model.head.fc1.weight[0].cpu().detach().numpy()
     # weights = weights[:, None]
     # bias = model.head.fc1.bias[0].cpu().detach().numpy()
 
     for b_nr, batch in enumerate(test_loader):
         smiles, labels = batch
+        atom_weights = []
 
         shapvals = explainer(smiles).values
         tokens = [tokenizer.text_to_tokens(s) for s in smiles]
@@ -172,8 +177,9 @@ def explain_shap(cfg: DictConfig) -> None:
             shapval = shapvals[b_ix]
             print(uid, 'shapval:', shapval)
 
-            atom_color = cmapper(shapval, token)
-            atom_color = cmapper.to_rdkit_cmap(atom_color)
+            atom_weight = cmapper(shapval, token)
+            atom_weights.append(atom_weight)
+            atom_color = cmapper.to_rdkit_cmap(atom_weight)
 
             pos_mask = np.where(np.sign(shapval) == 1, 1, 0)
             shap_pos = shapval * pos_mask
@@ -196,12 +202,16 @@ def explain_shap(cfg: DictConfig) -> None:
 
         ###############################
 
+        print(len(atom_weights))
+        print(len(shapvals))
+        print(len(preds))
         res = pd.DataFrame({
             'smiles': smiles,
             'tokens': tokens,
             'preds': preds,
             # 'labels': labels,
             'shap_weights': shapvals,
+            'atom_weights': atom_weights,
             'split': 'test'
             })
         attributions = pd.concat([attributions, res], axis=0)

@@ -54,25 +54,21 @@ def explain_mmb(cfg: DictConfig) -> None:
     #         head = 'lin_mask'   # MaskedLinearRegressionHead()
     #     elif head == 'hier_mask' or head == 'hier':
     #         head = 'hier_mask'  # MaskedRegressionHead()
-    if cfg.model.model == 'mmb':
+    if cfg.model.model in ['mmb', 'mmb-ft']:
         model = AqueousRegModel(head=head,
                                 finetune=cfg.model.finetune)
-        model.head.load_state_dict(torch.load(ckpt_path))
-        xai = 'mmb'
-    if cfg.model.finetune or cfg.model.model == 'mmb-ft':
-        model = AqueousRegModel(head=head,
-                                finetune=cfg.model.finetune)
-        # model = model.load_from_checkpoint(ckpt_path, head=head)
-        mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
-        model.mmb.load_state_dict(torch.load(mmb_path))
         model.head.load_state_dict(torch.load(ckpt_path))
         model.explainer = MolecularSelfAttentionViz(
             save_heatmap=cfg.xai.save_heat, sign='')
-        xai = 'mmb-ft'
-    elif cfg.model.model == 'mmb-avg':
+    elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
         print('wrong xai config: mmb-avg+explain_mmb should be shap')
         raise NotImplementedError
 
+    if cfg.model.finetune or 'ft' in cfg.model.model:
+        mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
+        model.mmb.load_state_dict(torch.load(mmb_path))
+
+    xai = cfg.model.model
     model.mmb.unfreeze()
     model.eval()
 
@@ -93,12 +89,14 @@ def explain_mmb(cfg: DictConfig) -> None:
 
     if cfg.model.model in ['mmb', 'mmb-ft']:
         rel_weights = [f.get('rel_weights') for f in all]
+        atom_weights = [f.get('atom_weights') for f in all]
         rdkit_colors = [f.get('rdkit_colors') for f in all]
 
     attributions = pd.DataFrame({
         "smiles": list(chain(*smiles)),
         "tokens": list(chain(*tokens)),
-        "atom_weights": list(chain(*rel_weights)),
+        "rel_weights": list(chain(*rel_weights)),
+        "atom_weights": list(chain(*atom_weights)),
         "rdkit_colors": list(chain(*rdkit_colors)),
         "preds": torch.concat([f.get('preds') for f in all]).cpu().numpy(),
         # "labels": torch.concat([f.get('labels') for f in all]).cpu().numpy(),
@@ -142,15 +140,17 @@ def explain_mmb(cfg: DictConfig) -> None:
     # load data and calculate errors
     yhat = torch.concat(preds)
     y = torch.concat(labels)
+    print(y)
+    print(yhat)
 
     mse = nn.MSELoss()(yhat, y)
     mae = nn.L1Loss()(yhat, y)
     rmse = torch.sqrt(mse)
 
-    data = pd.DataFrame({'y': y, 'yhat': yhat})
-    reg = linear_model.LinearRegression()
-    reg.fit(yhat.reshape(-1, 1), y)
-    slo = f"{reg.coef_[0]:.3f}"
+    # data = pd.DataFrame({'y': y, 'yhat': yhat})
+    # reg = linear_model.LinearRegression()
+    # reg.fit(yhat.reshape(-1, 1), y)
+    # slo = f"{reg.coef_[0]:.3f}"
 
     # text formatting for plot
     split = f"{int(round(1.-cfg.split.split_frac, 2)*100)}% "
@@ -163,17 +163,19 @@ def explain_mmb(cfg: DictConfig) -> None:
     print('lim', lim)
     p = sns.jointplot(x=y, y=yhat, kind='hex', color=color,
                       xlim=lim, ylim=lim)
-    sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
+    sns.regplot(x=lim, y=lim, ax=p.ax_joint,
                 color='grey', ci=None, scatter=False)
-    p.fig.suptitle(f"{cfg.task.plot_title} parity plot \
-        \n{_acc} {split}test set")
+    # sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
+    #             color='grey', ci=None, scatter=False)
+    p.fig.suptitle(f"Parity plot of {cfg.model.model}-{cfg.head.head}\
+        \n{cfg.task.plot_title}, {_acc} {split} test set")
     p.set_axis_labels(f"Experimental {cfg.task.plot_propname}",
                       f"Model {cfg.task.plot_propname}")
 
     p.fig.subplots_adjust(top=0.95)
     p.fig.tight_layout()
-    txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo}"
-    plt.text(lim[1], -lim[0],
+    txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} " #\nSlope = {slo}"
+    plt.text(lim[1], lim[0],
              txt, ha="right", va="bottom", fontsize=14)
     p.savefig(f"{basepath}/{mdir}/parity_plot.png")
 

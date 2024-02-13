@@ -43,7 +43,8 @@ def plot_models():
     models = ['mmb-hier', 'mmb-lin',
               'mmb-ft-hier', 'mmb-ft-lin',
               'mmb-avg-hier', 'mmb-avg-lin',
-              'ecfp-hier', 'ecfp-lin']
+              'ecfp-hier', 'ecfp-lin',
+              'mmb-ft-avg-hier', 'mmb-ft-avg-lin']
 
     metrics = {}
     for mdir in models:

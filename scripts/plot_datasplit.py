@@ -43,24 +43,22 @@ def plot_datasplit(cfg: DictConfig) -> None:
                               shuffle=False, num_workers=8)
 
     head = cfg.head.head
-    if cfg.model.model == 'mmb':
+    if cfg.model.model in ['mmb', 'mmb-ft']:
         # AqueousRegModel(head=head,
         model = MMB_R_Featurizer(head=head,
                                  finetune=cfg.model.finetune)
         model.head.load_state_dict(torch.load(ckpt_path))
-    if cfg.model.finetune or cfg.model.model == 'mmb-ft':
-        model = MMB_R_Featurizer(head=head,
-                                 finetune=cfg.model.finetune)
-        # model = model.load_from_checkpoint(ckpt_path, head=head)
-        mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
-        model.mmb.load_state_dict(torch.load(mmb_path))
-        model.head.load_state_dict(torch.load(ckpt_path))
-    elif cfg.model.model == 'mmb-avg':
+    elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
         model = MMB_AVG_Featurizer(head=head,
                                    finetune=cfg.model.finetune)
     elif cfg.model.model == 'ecfp':
         valid_emb = np.array(ECFPDataSplit(valid).ecfp)
         test_emb = np.array(ECFPDataSplit(test).ecfp)
+
+    if cfg.model.finetune or 'ft' in cfg.model.model:
+        mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
+        model.mmb.load_state_dict(torch.load(mmb_path))
+        model.head.load_state_dict(torch.load(ckpt_path))
 
     if 'mmb' in cfg.model.model:
         trainer = pl.Trainer(
@@ -85,12 +83,13 @@ def plot_datasplit(cfg: DictConfig) -> None:
 
     weights = model.head.fc1.weight[0].cpu().detach().numpy()
     bias = model.head.fc1.bias.cpu().detach().numpy()
-    activations = test_emb
-    # activations = valid_emb
+    # activations = test_emb
+    activations = valid_emb
     positive_count = np.array([(act > 0.05).sum() for act in activations]).mean()
     negative_count = np.array([(act < 0.05).sum() for act in activations]).mean()
     zero_count = (activations == 0).sum()
 
+    print('raw emb')
     print('pos', positive_count)
     print('neg', negative_count)
     print('zero', zero_count)
@@ -99,14 +98,16 @@ def plot_datasplit(cfg: DictConfig) -> None:
     ds_mean = np.array(valid.labels).mean()
     print('val mean', ds_mean, 'bias', bias)
 
-    activations = valid_emb @ weights + bias  # - ds_mean
-    positive_count = np.array([(act > 0.05).sum() for act in activations]).mean()
-    negative_count = np.array([(act < 0.05).sum() for act in activations]).mean()
-    zero_count = (activations == 0).sum()
+    if cfg.head.head == 'lin':
+        activations = valid_emb @ weights + bias  # - ds_mean
+        positive_count = np.array([(act > 0.05).sum() for act in activations]).mean()
+        negative_count = np.array([(act < 0.05).sum() for act in activations]).mean()
+        zero_count = (activations == 0).sum()
 
-    print('pos', positive_count)
-    print('neg', negative_count)
-    print('zero', zero_count)
+        print('activations')
+        print('pos', positive_count)
+        print('neg', negative_count)
+        print('zero', zero_count)
 
     ##########################
 
@@ -130,13 +131,12 @@ def plot_datasplit(cfg: DictConfig) -> None:
                           c=test_label, cmap=cmap, marker='^', label='Test')
     plt.xlabel('PCA Latent Dimension 1')
     plt.ylabel('PCA Latent Dimension 2')
-    plt.title(f'PCA Latent Space Visualization, Valid+Test set\n \
-         {cfg.model.model}-{cfg.head.head} on \
-         {cfg.task.plot_title} {cfg.split.split} split')
+    plt.title(f'PCA Latent Space Visualization of {cfg.model.model}-{cfg.head.head}\
+              \n{cfg.task.plot_title}, {cfg.split.split} split')
     plt.legend()
 
     cbar = plt.colorbar(val_sc, orientation='vertical')
-    cbar.set_label('Property Scale')
+    cbar.set_label(f'{cfg.task.plot_propname}')
 
     # Save or show the plot
     plt.tight_layout()
@@ -146,6 +146,9 @@ def plot_datasplit(cfg: DictConfig) -> None:
 
 
 if __name__ == "__main__":
+    # params = {'axes.labelsize': 16,
+    #           'axes.titlesize': 16}
+    # plt.rcParams.update(params)
     plot_datasplit()
     # plot_datasplit(task='aq', split='random')
     # plot_datasplit(task='aq', split='accurate')

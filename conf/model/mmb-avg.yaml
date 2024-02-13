@@ -1,6 +1,6 @@
 model: mmb-avg
-finetune: true
+finetune: false
 n_batch: 64
 seed: 42
-n_epochs: 30
+n_epochs: 50
 
