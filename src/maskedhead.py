@@ -59,84 +59,110 @@ class MaskedLinearRegressionHead(pl.LightningModule):
         super().__init__()
         self.norm = nn.LayerNorm(normalized_shape=[dim])
         self.dim = dim
-        self.fc1 = nn.Linear(dim, 1)
+        self.fc1 = nn.Linear(dim, 1, bias=False)
         self.fids = fids
         self.sign = sign
         print('masked head, sign: ', self.sign)
 
-    def mask_features(self, x, fids=None):
-        ''' mask fids in calculation of feature attribution
-            fids: feature_ids, list of ints'''
-        if self.fids:
-            fids = self.fids
-        elif not fids:
-            # fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
-            # print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])
-            # [237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
-            vec = self.fc1.weight[0].cpu().detach().numpy()
-            fids = [ix for ix, val in sorted(
-                enumerate(np.abs(vec)),
-                key=lambda a: a[1],
-                reverse=True
-            )]
+    def mask_quadrant(self, x):
+        # activation mask
+        a_sign = torch.sign(x)
+        a_pos = torch.where(a_sign == 1, 1, 0)
+        a_neg = torch.where(a_sign == -1, 1, 0)
+        # weight vector mask
+        w_sign = torch.sign(self.fc1.weight[0])
+        w_pos = torch.where(w_sign == 1, 1, 0)
+        w_neg = torch.where(w_sign == -1, 1, 0)
 
-            print(fids[:10])
-            fids = fids[-2]
-        self.fids = fids
-
-        # print('feature ids to consider:', fids)
-        mask = torch.zeros_like(x, dtype=torch.int64)
-        mask[:, fids] = 1
-
-        return x * mask
-
-    def mask_sign(self, x):
-        weights = self.fc1.weight[0]
-        bias = self.fc1.bias
-        contribs = x @ weights + bias
-        signs = torch.sign(contribs)
-
-        if self.sign == 'pos':
-            mask = torch.tensor([
-                torch.where(s == 1, 1, 0) for s in signs],
-                                dtype=torch.int32, device=x.device)
-        elif self.sign == 'neg':
-            mask = torch.tensor([
-                torch.where(s == -1, 1, 0) for s in signs],
-                                dtype=torch.int32, device=x.device)
+        if self.sign == 'pospos':    # Q1
+            mask = torch.where(a_pos and w_pos, 1, 0)
+        elif self.sign == 'posneg':  # Q2
+            mask = torch.where(a_pos and w_neg, 1, 0)
+        elif self.sign == 'negpos':  # Q3
+            mask = torch.where(a_neg and w_pos, 1, 0)
+        elif self.sign == 'negneg':  # Q4
+            mask = torch.where(a_neg and w_neg, 1, 0)
         else:
             return x
 
-        print(torch.mean(torch.tensor(
-            [m.sum() for m in mask], dtype=torch.float16), axis=0),
-            f'{self.sign} mean of sums')
-        mask = mask.unsqueeze(-1)
-        return mask * x
-
-    def mask_activation(self, x):
-        vec = self.fc1.weight[0]  # .cpu().detach().numpy()
-        signs = torch.sign(vec)
-
-        if self.sign == 'pos':
-            mask = torch.where(signs == 1, 1, 0)
-            # altsigns = torch.where(signs == 1)
-        elif self.sign == 'neg':
-            mask = torch.where(signs == -1, 1, 0)
-            # altsigns = torch.where(signs == -1)
-        else:
-            return x
-
-        # altmask = torch.zeros_like(vec, dtype=torch.int8)
-        # altmask[altsigns] = 1
+        print(f"quadrant {self.sign}, {sum(mask)/512}")
+        print(f"a_pos {sum(a_pos)/512}, a_neg {sum(a_neg)/512},\
+              w_pos {sum(w_pos)/512}, w_neg {sum(w_neg)/512}")
         return x * mask
 
     def forward(self, x):
         ''' mask out all features excluding [fids]'''
         x = self.norm(x)
-        # x = self.mask_features(x)
-        # x.register_hook(self.mask_features)
-        x.register_hook(self.mask_sign)
-        x = self.mask_sign(x)
+
+        x.register_hook(self.mask_quadrant)
+        x = self.mask_quadrant(x)
 
         x = self.fc1(x)
         return x.squeeze(1)
+
+    # def mask_features(self, x, fids=None):
+    #     ''' mask fids in calculation of feature attribution
+    #         fids: feature_ids, list of ints'''
+    #     if self.fids:
+    #         fids = self.fids
+    #     elif not fids:
+    #         # fids = [int(torch.argmax(torch.abs(self.fc1.weight)))]
+    #         # print([o for o in enumerate(torch.abs(self.fc1.weight).cpu().detach().numpy())])
+    #         # [237, 196, 482, 145, 400, 323, 182, 379, 190, 445]
+    #         vec = self.fc1.weight[0].cpu().detach().numpy()
+    #         fids = [ix for ix, val in sorted(
+    #             enumerate(np.abs(vec)),
+    #             key=lambda a: a[1],
+    #             reverse=True
+    #         )]
+    #
+    #         print(fids[:10])
+    #         fids = fids[-2]
+    #     self.fids = fids
+    #
+    #     # print('feature ids to consider:', fids)
+    #     mask = torch.zeros_like(x, dtype=torch.int64)
+    #     mask[:, fids] = 1
+    #
+    #     return x * mask
+    #
+    # def mask_sign(self, x):
+    #     weights = self.fc1.weight[0]
+    #     bias = self.fc1.bias
+    #     contribs = x @ weights + bias
+    #     signs = torch.sign(contribs)
+    #
+    #     if self.sign == 'pos':
+    #         mask = torch.tensor([
+    #             torch.where(s == 1, 1, 0) for s in signs],
+    #                             dtype=torch.int32, device=x.device)
+    #     elif self.sign == 'neg':
+    #         mask = torch.tensor([
+    #             torch.where(s == -1, 1, 0) for s in signs],
+    #                             dtype=torch.int32, device=x.device)
+    #     else:
+    #         return x
+    #
+    #     print(torch.mean(torch.tensor(
+    #         [m.sum() for m in mask], dtype=torch.float16), axis=0),
+    #         f'{self.sign} mean of sums')
+    #     mask = mask.unsqueeze(-1)
+    #     return mask * x
+    #
+    # def mask_activation(self, x):
+    #     vec = self.fc1.weight[0]  # .cpu().detach().numpy()
+    #     signs = torch.sign(vec)
+    #
+    #     if self.sign == 'pos':
+    #         mask = torch.where(signs == 1, 1, 0)
+    #         # altsigns = torch.where(signs == 1)
+    #     elif self.sign == 'neg':
+    #         mask = torch.where(signs == -1, 1, 0)
+    #         # altsigns = torch.where(signs == -1)
+    #     else:
+    #         return x
+    #
+    #     # altmask = torch.zeros_like(vec, dtype=torch.int8)
+    #     # altmask[altsigns] = 1
+    #     return x * mask
+

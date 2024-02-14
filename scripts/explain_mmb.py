@@ -106,13 +106,13 @@ def explain_mmb(cfg: DictConfig) -> None:
     # <pos>,<neg> attribution for mmb-ft+lin
     sign_weights, sign_colors = {}, {}
     if cfg.model.model == 'mmb-ft' and 'lin' in cfg.head.head:
-        for sign in ['pos', 'neg']:
+        for sign in ['pospos', 'posneg', 'negpos', 'negneg']:
             # change head to masked head variant & load
             model.head = MaskedLinearRegressionHead(sign=sign)
             model.head.load_state_dict(torch.load(ckpt_path))
             model.eval()
             model.explainer = MolecularSelfAttentionViz(
-                save_heatmap=cfg.xai.save_heat, sign='')
+                save_heatmap=cfg.xai.save_heat, sign=sign)
 
             # change viz color to red/blue
             # color = 'blue' if sign == 'pos' else 'red'
