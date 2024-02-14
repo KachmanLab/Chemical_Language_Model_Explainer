@@ -35,9 +35,9 @@ def explain_mmb(cfg: DictConfig) -> None:
 
     # test.smiles = test.smiles[[2, 5, 12, 16]]
     # test.labels = test.labels[[2, 5, 12, 16]]
-    if cfg.xai.save_heat:
-        test.smiles = [test.smiles[i] for i in [2, 5, 13, 15]]
-        test.labels = [test.labels[i] for i in [2, 5, 13, 15]]
+    # if cfg.xai.save_heat:
+    #     test.smiles = [test.smiles[i] for i in [2, 5, 13, 15]]
+    #     test.labels = [test.labels[i] for i in [2, 5, 13, 15]]
     # test.smiles = test.smiles[:16]
     # test.labels = test.labels[:16]
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
@@ -174,7 +174,7 @@ def explain_mmb(cfg: DictConfig) -> None:
 
     p.fig.subplots_adjust(top=0.95)
     p.fig.tight_layout()
-    txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} " #\nSlope = {slo}"
+    txt = f"RMSE = {rmse:.3f}\nMAE = {mae:.3f}\nn = {len(y)}"
     plt.text(lim[1], lim[0],
              txt, ha="right", va="bottom", fontsize=14)
     p.savefig(f"{basepath}/{mdir}/parity_plot.png")

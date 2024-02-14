@@ -27,8 +27,9 @@ def plot_similarity():
     models = ['mmb-hier', 'mmb-lin',
               'mmb-ft-hier', 'mmb-ft-lin',
               'mmb-avg-hier', 'mmb-avg-lin',
+              'mmb-ft-avg-hier', 'mmb-ft-avg-lin',
               'ecfp-hier', 'ecfp-lin',
-              'mmb-ft-avg-hier', 'mmb-ft-avg-lin']
+              ]
 
     attributions = {}
     for mdir in models:
@@ -44,12 +45,46 @@ def plot_similarity():
         np.ones_like(attr) / len(attr) for attr in attribs
     ]
 
-    similarities = [
-        cosine_similarity(np.array(ix)) for ix in
-        list(zip(*attributions.values()))
-    ]
+    # sanity checking
+    # for ix in list(zip(*attributions.values())):
+    #     print([len(i) for i in ix])
+    #     print(len([i for i in ix]))
+    #     print(ix)
+    #     print(np.array(ix))
+    #     print(np.array([len(i) for i in ix]))
+    #     print([np.array(i) for i in ix])
+    #     print(np.array([i for i in ix]))
 
-    print(similarities)
+    # similarities = [
+    #     cosine_similarity(np.array(ix)) for ix in
+    #     list(zip(*attributions.values()))
+    # ]
+
+    similarities = []
+    for ix in list(zip(*attributions.values())):
+        try:
+            similarities.append(
+                cosine_similarity(np.array(ix))
+            )
+        except:
+            print([len(i) for i in ix])
+            continue
+    # similarities = []
+    # attribszip = list(zip(*attributions.values()))
+    # for id, ix in enumerate(attribszip):
+    #     # print(ix)
+    #     # print(id)
+    #     tmp = [len(i) for i in ix]
+    #     if not np.all(tmp[0] == tmp):
+    #         print(tmp)
+    #     # print(ix)
+    #     # print(len(cosine_similarity(np.array(ix))))
+    #
+    #     # similarities.append(
+    #     #     cosine_similarity(np.array(ix))
+    #     # )
+    # print(similarities)
+
     similarity_matrix = np.mean(np.array(similarities), axis=0)
     mask = np.triu(np.ones_like(similarity_matrix, dtype=bool), k=1)
 

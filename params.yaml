@@ -9,22 +9,22 @@ task:
   plot_propname: log(S) log([mol/L])
 split:
   split: random
-  n_splits: 1
+  n_splits: 3
   split_frac: 0.9
   data_seed: 42
   color: g
   scale: false
 model:
-  model: mmb-ft
-  finetune: true
+  model: ecfp
+  nbits: 2048
+  finetune: false
   n_batch: 48
   seed: 42
-  n_epochs: 3
+  n_epochs: 30
 head:
   head: lin
 xai:
-  model: mmb
-  xai: mmb
-  mask: true
-  sign: None
-  save_heat: false
+  model: ecfp
+  xai: ecfp
+  topk: 9
+  mask: false

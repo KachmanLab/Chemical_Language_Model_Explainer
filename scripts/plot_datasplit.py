@@ -99,7 +99,7 @@ def plot_datasplit(cfg: DictConfig) -> None:
         ds_mean = np.array(valid.labels).mean()
         print('val mean', ds_mean, 'bias', bias)
 
-    if cfg.head.head == 'lin':
+    if 'mmb' in cfg.model.model and cfg.head.head == 'lin':
         activations = valid_emb @ weights + bias  # - ds_mean
         positive_count = np.array([(act > 0.05).sum() for act in activations]).mean()
         negative_count = np.array([(act < 0.05).sum() for act in activations]).mean()

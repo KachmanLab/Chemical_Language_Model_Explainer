@@ -421,7 +421,7 @@ stages:
     - pwd
     - echo "SPLIT DATA --task aq --property aq --loader AqSolDataset --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S) log([mol/L])' --split random --n_splits 1 --split_frac
+      --plot_propname 'log(S) log([mol/L])' --split random --n_splits 3 --split_frac
       0.9 --data_seed 42 --color g"
     - mkdir -p data/aq/random/
     - python3 scripts/split_data.py
@@ -438,7 +438,7 @@ stages:
       params.yaml:
         split:
           split: random
-          n_splits: 1
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           color: g
@@ -455,21 +455,21 @@ stages:
     outs:
     - path: data/aq/random/
       hash: md5
-      md5: 1687c413015dbe32d999d2fd116ff07e.dir
-      size: 1233489
-      nfiles: 4
+      md5: 69e06a4e34003f75f0a1c175a06c4037.dir
+      size: 2057177
+      nfiles: 8
   train_model:
     cmd:
-    - mkdir -p out/aq/random/mmb-ft-lin/{viz,model}
-    - echo "TRAIN --model mmb-ft --finetune --n_batch 48 --seed 42 --n_epochs 3 --head
+    - mkdir -p out/aq/random/ecfp-lin/{viz,model}
+    - echo "TRAIN --model ecfp --nbits 2048 --n_batch 48 --seed 42 --n_epochs 30 --head
       lin"
     - python3 scripts/train_model.py
     deps:
     - path: data/aq/random/
       hash: md5
-      md5: 1687c413015dbe32d999d2fd116ff07e.dir
-      size: 1233489
-      nfiles: 4
+      md5: 69e06a4e34003f75f0a1c175a06c4037.dir
+      size: 2057177
+      nfiles: 8
     - path: scripts/train_model.py
       hash: md5
       md5: b3255fe0e64ed50fae9c16c46e117902
@@ -483,14 +483,15 @@ stages:
         head:
           head: lin
         model:
-          model: mmb-ft
-          finetune: true
+          model: ecfp
+          nbits: 2048
+          finetune: false
           n_batch: 48
           seed: 42
-          n_epochs: 3
+          n_epochs: 30
         split:
           split: random
-          n_splits: 1
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           color: g
@@ -505,36 +506,36 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: out/aq/random/mmb-ft-lin/best.pt
+    - path: out/aq/random/ecfp-lin/best.pt
       hash: md5
-      md5: 885af7e1e6a6fc1f94c853c9ad5fe1d0
-      size: 7583
-    - path: out/aq/random/mmb-ft-lin/metrics.json
+      md5: 2c80730febc54c5e82f88cd364af7588
+      size: 26015
+    - path: out/aq/random/ecfp-lin/metrics.json
       hash: md5
-      md5: 6b462d5002933aedee8dba38b2e4d4e4
-      size: 237
-    - path: out/aq/random/mmb-ft-lin/model/
+      md5: 4be51a685cbb08477c9dbdea23ec1247
+      size: 499
+    - path: out/aq/random/ecfp-lin/model/
       hash: md5
-      md5: a751a68da1db97abbdc6827c66e29116.dir
-      size: 158740251
+      md5: ddccd133b848f7af34c6e2793e3365e6.dir
+      size: 78045
       nfiles: 3
   explain_model:
     cmd:
-    - mkdir -p out/aq/random/mmb-ft-lin/viz
-    - python3 scripts/explain_mmb.py
+    - mkdir -p out/aq/random/ecfp-lin/viz
+    - python3 scripts/explain_ecfp.py
     deps:
     - path: data/aq/random/test.pkl
       hash: md5
-      md5: 1bbe12ac72eee0506dba7d56933d1777
+      md5: 78a6a8803ac3bfa744c8e974aaa463ec
       size: 48533
-    - path: out/aq/random/mmb-ft-lin/best.pt
+    - path: out/aq/random/ecfp-lin/best.pt
       hash: md5
-      md5: 885af7e1e6a6fc1f94c853c9ad5fe1d0
-      size: 7583
-    - path: scripts/explain_mmb.py
+      md5: 2c80730febc54c5e82f88cd364af7588
+      size: 26015
+    - path: scripts/explain_ecfp.py
       hash: md5
-      md5: f285c3b1564893593b17a1260021f1f1
-      size: 9879
+      md5: 0beaf5d7657da5b2da00381c22a281de
+      size: 11910
     - path: src/explainer.py
       hash: md5
       md5: f460f6935878aa80f0c568ba8fa385f3
@@ -548,14 +549,15 @@ stages:
         head:
           head: lin
         model:
-          model: mmb-ft
-          finetune: true
+          model: ecfp
+          nbits: 2048
+          finetune: false
           n_batch: 48
           seed: 42
-          n_epochs: 3
+          n_epochs: 30
         split:
           split: random
-          n_splits: 1
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           color: g
@@ -570,44 +572,43 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
         xai:
-          model: mmb
-          xai: mmb
-          mask: true
-          sign: None
-          save_heat: false
+          model: ecfp
+          xai: ecfp
+          topk: 9
+          mask: false
     outs:
-    - path: out/aq/random/mmb-ft-lin/attributions.csv
+    - path: out/aq/random/ecfp-lin/attributions.csv
       hash: md5
-      md5: e1207aa6b9983766d1cf1c0899171e60
-      size: 5431890
-    - path: out/aq/random/mmb-ft-lin/viz
+      md5: 6e9fb5c5a6d77781514329097d8c47cf
+      size: 968540
+    - path: out/aq/random/ecfp-lin/viz
       hash: md5
-      md5: 45868e24675b992441202c11347311a1.dir
-      size: 27930494
-      nfiles: 576
+      md5: 049e96f165c37c4366666479712c74a0.dir
+      size: 222892546
+      nfiles: 4724
   predict_model:
     cmd:
-    - mkdir -p out/aq/random/mmb-ft-lin/viz
+    - mkdir -p out/aq/random/ecfp-lin/viz
     - python3 scripts/predict_model.py
     - python3 scripts/plot_datasplit.py
     deps:
     - path: data/aq/random/
       hash: md5
-      md5: 1687c413015dbe32d999d2fd116ff07e.dir
-      size: 1233489
-      nfiles: 4
-    - path: out/aq/random/mmb-ft-lin/best.pt
+      md5: 69e06a4e34003f75f0a1c175a06c4037.dir
+      size: 2057177
+      nfiles: 8
+    - path: out/aq/random/ecfp-lin/best.pt
       hash: md5
-      md5: 885af7e1e6a6fc1f94c853c9ad5fe1d0
-      size: 7583
+      md5: 2c80730febc54c5e82f88cd364af7588
+      size: 26015
     - path: scripts/plot_datasplit.py
       hash: md5
-      md5: 4391deab5b3674ffe21541b331d32456
-      size: 5790
+      md5: 4b605789dce6a8b16490730246122e86
+      size: 5819
     - path: scripts/predict_model.py
       hash: md5
-      md5: 5db42288be23e3fbee3ce413aa0aec10
-      size: 6278
+      md5: b452d78aa145674b3a231b2938c3a1a8
+      size: 6255
     - path: src/model.py
       hash: md5
       md5: fe25abe8de05ab86ab10747128502573
@@ -617,14 +618,15 @@ stages:
         head:
           head: lin
         model:
-          model: mmb-ft
-          finetune: true
+          model: ecfp
+          nbits: 2048
+          finetune: false
           n_batch: 48
           seed: 42
-          n_epochs: 3
+          n_epochs: 30
         split:
           split: random
-          n_splits: 1
+          n_splits: 3
           split_frac: 0.9
           data_seed: 42
           color: g
@@ -639,69 +641,69 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S) log([mol/L])
     outs:
-    - path: out/aq/random/mmb-ft-lin/latent_viz.png
+    - path: out/aq/random/ecfp-lin/latent_viz.png
       hash: md5
-      md5: 224732787fec724ffd31badf8b410dca
-      size: 316686
-    - path: out/aq/random/mmb-ft-lin/parity_plot.png
+      md5: 1dba261780671d63d337ac2b08eafac1
+      size: 279175
+    - path: out/aq/random/ecfp-lin/parity_plot.png
       hash: md5
-      md5: 89a71e3cbbcf577537ab7241e3f08f87
-      size: 61564
-    - path: out/aq/random/mmb-ft-lin/predictions.csv
+      md5: ce198b7ee893e82a9f25553d3373284a
+      size: 61024
+    - path: out/aq/random/ecfp-lin/predictions.csv
       hash: md5
-      md5: 3e3498b10f4c310b96e83afc11f8a2aa
-      size: 520002
+      md5: 066948707e63be6ba626661cbf729092
+      size: 165661
   all:
     cmd:
     - pwd
-    - mkdir -p /workspace/final/aq/random/mmb-ft-lin/{model,viz}
-    - cp -r out/aq/random/mmb-ft-lin/ /workspace/final/aq/random/
-    - cp -r dvc.lock /workspace/final/aq/random/mmb-ft-lin/dvc.lock
-    - cp -r params.yaml /workspace/final/aq/random/mmb-ft-lin/params.yaml
+    - mkdir -p /workspace/final/aq/random/ecfp-lin/{model,viz}
+    - cp -r out/aq/random/ecfp-lin/ /workspace/final/aq/random/
+    - cp -r dvc.lock /workspace/final/aq/random/ecfp-lin/dvc.lock
+    - cp -r params.yaml /workspace/final/aq/random/ecfp-lin/params.yaml
     - python3 scripts/plot_models.py
     - python3 scripts/plot_similarity.py
-    - echo "Finished full aq random pipeline with mmb-ft-lin"
+    - echo "Finished full aq random pipeline with ecfp-lin"
     deps:
     - path: out/aq/random/
       hash: md5
-      md5: 402c042c1197d2f1cf4e07deac70bc63.dir
-      size: 272374465
-      nfiles: 586
-    - path: out/aq/random/mmb-ft-lin/attributions.csv
+      md5: c88b0dfe45dc500300f5b5db0a09fbbc.dir
+      size: 303898956
+      nfiles: 4738
+    - path: out/aq/random/ecfp-lin/attributions.csv
       hash: md5
-      md5: e1207aa6b9983766d1cf1c0899171e60
-      size: 5431890
-    - path: out/aq/random/mmb-ft-lin/best.pt
+      md5: 6e9fb5c5a6d77781514329097d8c47cf
+      size: 968540
+    - path: out/aq/random/ecfp-lin/best.pt
       hash: md5
-      md5: 885af7e1e6a6fc1f94c853c9ad5fe1d0
-      size: 7583
-    - path: out/aq/random/mmb-ft-lin/latent_viz.png
+      md5: 2c80730febc54c5e82f88cd364af7588
+      size: 26015
+    - path: out/aq/random/ecfp-lin/latent_viz.png
       hash: md5
-      md5: 224732787fec724ffd31badf8b410dca
-      size: 316686
-    - path: out/aq/random/mmb-ft-lin/model
+      md5: 1dba261780671d63d337ac2b08eafac1
+      size: 279175
+    - path: out/aq/random/ecfp-lin/model
       hash: md5
-      md5: a751a68da1db97abbdc6827c66e29116.dir
-      size: 158740251
+      md5: ddccd133b848f7af34c6e2793e3365e6.dir
+      size: 78045
       nfiles: 3
-    - path: out/aq/random/mmb-ft-lin/parity_plot.png
+    - path: out/aq/random/ecfp-lin/parity_plot.png
       hash: md5
-      md5: 89a71e3cbbcf577537ab7241e3f08f87
-      size: 61564
-    - path: out/aq/random/mmb-ft-lin/predictions.csv
+      md5: ce198b7ee893e82a9f25553d3373284a
+      size: 61024
+    - path: out/aq/random/ecfp-lin/predictions.csv
       hash: md5
-      md5: 3e3498b10f4c310b96e83afc11f8a2aa
-      size: 520002
-    - path: out/aq/random/mmb-ft-lin/viz
+      md5: 066948707e63be6ba626661cbf729092
+      size: 165661
+    - path: out/aq/random/ecfp-lin/viz
       hash: md5
-      md5: 45868e24675b992441202c11347311a1.dir
-      size: 27930494
-      nfiles: 576
+      md5: 049e96f165c37c4366666479712c74a0.dir
+      size: 222892546
+      nfiles: 4724
     - path: scripts/plot_models.py
       hash: md5
-      md5: 990ea5c40769f22fe2d4701235aaf7d8
-      size: 3914
+      md5: 0904047c67cadaa7e064cfd040e29475
+      size: 3221
     - path: scripts/plot_similarity.py
       hash: md5
-      md5: ceeb1cd7ef756d059430f60958b7a86e
-      size: 4365
+      md5: 61c309bf29e0c1ac26cf081ab87bcab5
+      size: 3209

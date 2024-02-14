@@ -125,11 +125,11 @@ def predict_model(cfg: DictConfig) -> None:
     mae = nn.L1Loss()(yhat, y)
     rmse = torch.sqrt(mse)
 
-    data = pd.DataFrame({'y': y, 'yhat': yhat})
-    reg = LinearRegression()
-    reg.fit(yhat.reshape(-1, 1), y)
-    slo = f"{reg.coef_[0]:.3f}"
-
+    # data = pd.DataFrame({'y': y, 'yhat': yhat})
+    # reg = LinearRegression()
+    # reg.fit(yhat.reshape(-1, 1), y)
+    # slo = f"{reg.coef_[0]:.3f}"
+#
     # text formatting for plot
     split = f"{int(round(1.-cfg.split.split_frac, 2)*100)}% "
     color = cfg.split.color
@@ -141,7 +141,7 @@ def predict_model(cfg: DictConfig) -> None:
     print('lim', lim)
     p = sns.jointplot(x=y, y=yhat, kind='hex', color=color,
                       xlim=lim, ylim=lim)
-    sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
+    sns.regplot(x=lim, y=lim, ax=p.ax_joint,
                 color='grey', ci=None, scatter=False)
     p.fig.suptitle(f"{cfg.task.plot_title} parity plot \
         \n{_acc} {split}test set")
@@ -150,7 +150,7 @@ def predict_model(cfg: DictConfig) -> None:
 
     p.fig.subplots_adjust(top=0.95)
     p.fig.tight_layout()
-    txt = f"RMSE = {rmse:.3f} \nMAE = {mae:.3f} \nn = {len(y)} \nSlope = {slo}"
+    txt = f"RMSE = {rmse:.3f}\nMAE = {mae:.3f}\nn = {len(y)}"
     plt.text(lim[1], lim[0], txt, fontsize=14, ha="right", va="bottom")
     # plt.text(1, 0, txt, ha="right", va="bottom", fontsize=14)
     p.savefig(f"{basepath}/{mdir}/parity_plot.png")

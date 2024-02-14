@@ -11,29 +11,6 @@ import os
 import json
 
 
-# def load_metrics(task, split, models):
-#     " Load MAE from metrics.json files for each models for given task/split. "
-#     basepath = f'/workspace/final/{task}/{split}'
-#     data = {}
-#
-#     for mdir in models:
-#         # Load the metrics.json file
-#         try:
-#             with open(f"{basepath}/{mdir}/metrics.json", 'r') as f:
-#                 metrics = json.load(f)
-#                 val_mae = [metrics[str(i)]['val_mae'] for i in range(cfg.split.n_splits)]
-#                 test_mae = metrics['test']['test_mae']
-#                 data[mdir] = {'val_mae': val_mae, 'test_mae': test_mae}
-#         except FileNotFoundError:
-#             print(f"File not found: {basepath}/{mdir}")
-#             continue
-#
-#     return data
-
-
-# @hydra.main(
-#     version_base="1.3", config_path="../conf", config_name="config")
-# def plot_models(cfg: DictConfig) -> None:
 def plot_models():
     cfg = OmegaConf.load('./params.yaml')
     print('PLOT MODELS CONFIG from params.yaml')
@@ -43,15 +20,20 @@ def plot_models():
     models = ['mmb-hier', 'mmb-lin',
               'mmb-ft-hier', 'mmb-ft-lin',
               'mmb-avg-hier', 'mmb-avg-lin',
+              'mmb-ft-avg-hier', 'mmb-ft-avg-lin',
               'ecfp-hier', 'ecfp-lin',
-              'mmb-ft-avg-hier', 'mmb-ft-avg-lin']
+              ]
 
     metrics = {}
     for mdir in models:
         try:
             with open(f"{basepath}/{mdir}/metrics.json", 'r') as f:
                 metric = json.load(f)
-                val_mae = [metric[str(i)]['val_mae'] for i in range(cfg.split.n_splits)]
+                print(mdir, metric.keys())
+                print('asserting', str(cfg.split.n_splits-1) in list(metrics.keys()))
+                val_mae = [
+                    metric[str(i)]['val_mae'] for i in range(cfg.split.n_splits)
+                ]
                 test_mae = metric['test']['test_mae']
                 metrics[mdir] = {'val_mae': val_mae, 'test_mae': test_mae}
         except FileNotFoundError:
@@ -99,7 +81,7 @@ def plot_models():
     # ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 
     plt.tight_layout()
-    plt.savefig(f"{basepath}/model_comparision_mae.png")
+    plt.savefig(f"{basepath}/model_comparison_mae.png")
 
 
 if __name__ == "__main__":
