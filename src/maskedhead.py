@@ -75,19 +75,23 @@ class MaskedLinearRegressionHead(pl.LightningModule):
         w_neg = torch.where(w_sign == -1, 1, 0)
 
         if self.sign == 'pospos':    # Q1
-            mask = torch.where(a_pos and w_pos, 1, 0)
+            # mask = torch.where(a_pos and w_pos, 1, 0)
+            mask = a_pos * w_pos
         elif self.sign == 'posneg':  # Q2
-            mask = torch.where(a_pos and w_neg, 1, 0)
+            # mask = torch.where(a_pos and w_neg, 1, 0)
+            mask = a_pos * w_neg
         elif self.sign == 'negpos':  # Q3
-            mask = torch.where(a_neg and w_pos, 1, 0)
+            # mask = torch.where(a_neg and w_pos, 1, 0)
+            mask = a_neg * w_pos
         elif self.sign == 'negneg':  # Q4
-            mask = torch.where(a_neg and w_neg, 1, 0)
+            # mask = torch.where(a_neg and w_neg, 1, 0)
+            mask = a_neg * w_neg
         else:
             return x
 
-        print(f"quadrant {self.sign}, {sum(mask)/512}")
-        print(f"a_pos {sum(a_pos)/512}, a_neg {sum(a_neg)/512},\
-              w_pos {sum(w_pos)/512}, w_neg {sum(w_neg)/512}")
+        print(f"quadrant {self.sign}, {torch.sum(mask)/512}")
+        print(f"a_pos {torch.sum(a_pos)/512}, a_neg {torch.sum(a_neg)/512},\
+              w_pos {torch.sum(w_pos)/512}, w_neg {torch.sum(w_neg)/512}")
         return x * mask
 
     def forward(self, x):

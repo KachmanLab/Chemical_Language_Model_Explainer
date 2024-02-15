@@ -97,7 +97,7 @@ class LinearRegressionHead(pl.LightningModule):
         super().__init__()
         self.dim = dim
         self.norm = nn.LayerNorm(normalized_shape=[dim])
-        self.fc1 = nn.Linear(dim, 1)
+        self.fc1 = nn.Linear(dim, 1, bias=False)
         self.fids = None
 
     def forward(self, x):

@@ -83,7 +83,8 @@ def plot_datasplit(cfg: DictConfig) -> None:
 
     if 'mmb' in cfg.model.model:
         weights = model.head.fc1.weight[0].cpu().detach().numpy()
-        bias = model.head.fc1.bias.cpu().detach().numpy()
+        # bias = model.head.fc1.bias.cpu().detach().numpy()
+        bias = 0
         # activations = test_emb
         activations = valid_emb
         positive_count = np.array([(act > 0.05).sum() for act in activations]).mean()

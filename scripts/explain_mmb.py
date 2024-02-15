@@ -35,9 +35,9 @@ def explain_mmb(cfg: DictConfig) -> None:
 
     # test.smiles = test.smiles[[2, 5, 12, 16]]
     # test.labels = test.labels[[2, 5, 12, 16]]
-    # if cfg.xai.save_heat:
-    #     test.smiles = [test.smiles[i] for i in [2, 5, 13, 15]]
-    #     test.labels = [test.labels[i] for i in [2, 5, 13, 15]]
+    if cfg.xai.save_heat:
+        test.smiles = [test.smiles[i] for i in [2, 5, 13, 15, 32, 64]]
+        test.labels = [test.labels[i] for i in [2, 5, 13, 15, 32, 64]]
     # test.smiles = test.smiles[:16]
     # test.labels = test.labels[:16]
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
@@ -104,7 +104,7 @@ def explain_mmb(cfg: DictConfig) -> None:
     })
 
     # <pos>,<neg> attribution for mmb-ft+lin
-    sign_weights, sign_colors = {}, {}
+    sign_weights, sign_colors, sign_preds = {}, {}, {}
     if cfg.model.model == 'mmb-ft' and 'lin' in cfg.head.head:
         for sign in ['pospos', 'posneg', 'negpos', 'negneg']:
             # change head to masked head variant & load
@@ -121,7 +121,7 @@ def explain_mmb(cfg: DictConfig) -> None:
             all_sgn = trainer.predict(model, test_loader)
             sign_weights[sign] = [f.get('rel_weights') for f in all_sgn]
             sign_colors[sign] = [f.get('rdkit_colors') for f in all_sgn]
-            sign_weights[f'{sign}_preds'] = [f.get('preds') for f in all_sgn]
+            sign_preds[sign] = [f.get('preds') for f in all_sgn]
 
             # should _not_ be equal if applying sign_mask on fwd()
             # sign_preds = [f.get('preds') for f in all_sgn]
@@ -130,6 +130,7 @@ def explain_mmb(cfg: DictConfig) -> None:
 
             attributions[f"{sign}_weights"] = list(chain(*sign_weights[sign]))
             attributions[f"{sign}_colors"] = list(chain(*sign_colors[sign]))
+            attributions[f"{sign}_preds"] = list(chain(*sign_preds[sign]))
     # </pos>,</neg>
 
     attributions = attributions.reset_index().rename(columns={'index': 'uid'})
@@ -244,19 +245,30 @@ def explain_mmb(cfg: DictConfig) -> None:
                 plot_weighted_molecule(
                     atom_color, smi, token, lab, pred, f"{uid}_{xai}"
                 )
-            if sign_weights:
-                pos_color = sign_colors['pos'][b_nr][b_ix]
-                neg_color = sign_colors['neg'][b_nr][b_ix]
-                pos_pred = sign_weights['pos_preds'][b_nr][b_ix]
-                neg_pred = sign_weights['neg_preds'][b_nr][b_ix]
-                assert pos_pred + neg_pred - pred <= 5e-2
+            for sign in sign_weights.keys():
+                # s_weight = sign_weights[sign][b_nr][b_ix]
+                s_color = sign_colors[sign][b_nr][b_ix]
+                s_pred = sign_preds[sign][b_nr][b_ix]
                 plot_weighted_molecule(
-                    pos_color, smi, token, lab, pos_pred, f"{uid}_pos_{xai}"
+                    s_color, smi, token, lab, s_pred, f"{uid}_{sign}_{xai}"
                 )
-                plot_weighted_molecule(
-                    neg_color, smi, token, lab, neg_pred, f"{uid}_neg_{xai}"
-                )
-        if b_nr > 2:
+
+            # if sign_weights:
+                # pos_color = sign_colors['pos'][b_nr][b_ix]
+                # neg_color = sign_colors['neg'][b_nr][b_ix]
+                # pos_pred = sign_weights['pos_preds'][b_nr][b_ix]
+                # neg_pred = sign_weights['neg_preds'][b_nr][b_ix]
+                # assert pos_pred + neg_pred - pred <= 5e-2
+                # plot_weighted_molecule(
+                #     pos_color, smi, token, lab, pos_pred, f"{uid}_pos_{xai}"
+                # )
+                # plot_weighted_molecule(
+                #     neg_color, smi, token, lab, neg_pred, f"{uid}_neg_{xai}"
+                # )
+
+        if cfg.xai.save_heat and b_nr > 0:
+            break
+        elif b_nr > 4:
             break
 
 
