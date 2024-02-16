@@ -9,7 +9,7 @@ task:
   plot_propname: log(S) log([mol/L])
 split:
   split: accurate
-  n_splits: 3
+  n_splits: 1
   split_frac: 0.9
   data_seed: 42
   color: r

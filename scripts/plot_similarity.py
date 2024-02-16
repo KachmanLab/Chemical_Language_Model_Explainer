@@ -29,6 +29,7 @@ def plot_similarity():
               'mmb-avg-hier', 'mmb-avg-lin',
               'mmb-ft-avg-hier', 'mmb-ft-avg-lin',
               'ecfp-hier', 'ecfp-lin',
+              # 'mmb-ft-lin-scaled', 'mmb-ft-lin-scaled-clamp',
               ]
 
     attributions = {}

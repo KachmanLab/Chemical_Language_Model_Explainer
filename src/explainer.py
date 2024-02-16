@@ -29,7 +29,9 @@ class MolecularSelfAttentionViz():
     def avg_heads(self, attn, grad):
         """ identical, increased readability """
         attn = grad.permute(0, 2, 1) * attn.permute(0, 2, 1)
-        return attn.clamp(min=0).mean(dim=0)
+        attn = attn.clamp(min=0)
+        return attn.mean(dim=0)
+        # return attn.clamp(min=0).mean(dim=0)
 
     def agg_relevance(self, attn, grad, ml, token=None):
         # init relevancy matrix as identity
@@ -65,10 +67,10 @@ class MolecularSelfAttentionViz():
         return rel
 
     def get_weights(self, rel, ml):
-        """ extract weights from <REG> token importance """
+        """ extract weights from <R> token importance """
         # apply mask and remove I diagonal
         rel = rel[:ml, :ml] - torch.eye(ml, ml)
-        # extract column, drop <REG> token itself
+        # extract column, drop <R> token itself
         return np.array(rel[1:, 0])
 
     def __call__(self, attn, grad, mask, token=None):
@@ -78,7 +80,7 @@ class MolecularSelfAttentionViz():
         rel = self.agg_relevance(attn, grad, ml, token)
         # keep track of uid viz
         self.uid += 1
-        # extract token importance as relevance weights to <REG> token
+        # extract token importance as relevance weights to <R> token
         return self.get_weights(rel, ml)
 
 
@@ -134,14 +136,14 @@ def make_legend():
 
     # Save the colorbar as an image file
     plt.tight_layout()
-    plt.savefig(f'{basepath}/{mdir}/viz/colorbar_au.png', 
+    plt.savefig(f'{basepath}/{mdir}/viz/colorbar_au.png',
         dpi=300, bbox_inches='tight', pad_inches=0.02)
     plt.close()
 
 
 def save_heat(rel, ml, token, prefix=""):
     rel = torch.flipud(rel[:ml, :ml])
-    token = ['<REG>'] + token
+    token = ['<R>'] + token
     cmap = sns.cubehelix_palette(
         start=0.5, rot=-0.75, dark=0.15, light=0.95, reverse=True, as_cmap=True
     )
@@ -152,21 +154,23 @@ def save_heat(rel, ml, token, prefix=""):
         xticklabels=np.array(token),
         yticklabels=np.array(list(reversed(token))),
         cmap=cmap,
-        vmin=0., vmax=1.
+        # vmin=0., vmax=1.
     )
     plt.tight_layout()
-    plt.savefig(f'{basepath}/{mdir}/viz/{prefix}_Aqueous_heatmap.png')
+    plt.savefig(f'{basepath}/{mdir}/viz/{prefix}_heatmap.png')
     plt.clf()
 
-    ax = sns.heatmap(rel,
-        cmap = cmap,
+    ax = sns.heatmap(
+        rel,
+        cmap=cmap,
         cbar=False,
         square=True,
-        xticklabels = False,
-        yticklabels = False,
-        vmin = 0., vmax = 1.)
+        xticklabels=False,
+        yticklabels=False,
+        # vmin = 0., vmax = 1.,
+    )
     plt.tight_layout()
-    plt.savefig(f'{basepath}/{mdir}/viz/{prefix}_Aqueous_heatmap_raw.png',
+    plt.savefig(f'{basepath}/{mdir}/viz/{prefix}_heatmap_raw.png',
                 bbox_inches='tight', pad_inches=0)
     plt.clf()
 
@@ -197,7 +201,7 @@ def plot_rel_layers(all_rel, ml, token, prefix=''):
         xticklabels=np.array(token),
         yticklabels=np.array(range(6)),
         cmap=cmap,
-        vmin=0., vmax=1.
+        # vmin=0., vmax=1.
     )
     plt.tight_layout()
     plt.savefig(f'{basepath}/{mdir}/viz/{prefix}_6R_heatmap.png',

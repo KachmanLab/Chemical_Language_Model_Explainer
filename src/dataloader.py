@@ -7,7 +7,9 @@ import numpy as np
 from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from typing import List
-from sklearn.preprocessing import StandardScaler, RobustScaler, QuantileTransformer
+from sklearn.preprocessing import (
+    StandardScaler, RobustScaler, QuantileTransformer, MinMaxScaler
+)
 
 class PropertyDataset(Dataset):
     def __init__(self, subset, file_path, smilesname, propname,
@@ -75,7 +77,10 @@ class PropertyDataset(Dataset):
         tr_va_df = df.drop(test_idx).reset_index(drop=True)
 
         if self.scale:
-            self.scaler = RobustScaler(quantile_range=[10, 90]).fit(
+            # self.scaler = RobustScaler(quantile_range=[10, 90]).fit(
+            #     np.expand_dims(np.array(tr_va_df[self.propname]), -1))
+
+            self.scaler = MinMaxScaler().fit(
                 np.expand_dims(np.array(tr_va_df[self.propname]), -1))
 
             # self.scaler = QuantileTransformer(
