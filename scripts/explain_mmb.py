@@ -136,6 +136,20 @@ def explain_mmb(cfg: DictConfig) -> None:
     attributions = attributions.reset_index().rename(columns={'index': 'uid'})
     attributions.to_csv(f"{basepath}/{mdir}/attributions.csv", index=False)
 
+
+    # calculate average quadrant contribution fraction towards prediction
+    agg_preds = np.array(list(chain(*preds)))
+    sanity_preds = np.zeros_like(agg_preds)
+    for sign in sign_preds.keys():
+        sg_preds = np.array(list(chain(*sign_preds[sign])))
+
+        sanity_preds += sg_preds
+        frac = sg_preds / agg_preds
+        print(f"{sign}: {frac}")
+
+    print(f"{'*' * 42}")
+    assert np.allclose(agg_preds, sanity_preds, 1e-2)
+
     ###################################
 
     # load data and calculate errors
