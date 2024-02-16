@@ -145,7 +145,7 @@ def explain_mmb(cfg: DictConfig) -> None:
 
         sanity_preds += sg_preds
         frac = sg_preds / agg_preds
-        print(f"{sign}: {frac}")
+        print(f"{sign}: mean {np.mean(frac)}, {frac[:8]}")
 
     print(f"{'*' * 42}")
     assert np.allclose(agg_preds, sanity_preds, 1e-2)
