@@ -65,10 +65,10 @@ class MolecularSelfAttentionViz():
                 save_heat(rel - torch.eye(ml), ml, token,
                           prefix=f'{prefix}_rel{layer}')
                 for h in range(8):  # n_heads
-                    save_heat(attn[layer, h, :ml, :ml], ml, token,
-                              prefix=f'{prefix}_attn{layer}_h{h}')
-                    save_heat(grad[layer, h, :ml, :ml], ml, token,
-                              prefix=f'{prefix}_grad{layer}_h{h}')
+                    save_heat(attn[layer, h, :ml, :ml].cpu().detach(),
+                              ml, token, prefix=f'{prefix}_attn{layer}_h{h}')
+                    save_heat(grad[layer, h, :ml, :ml].cpu().detach(),
+                              ml, token, prefix=f'{prefix}_grad{layer}_h{h}')
         if self.save_heatmap:
             save_heat(rel - torch.eye(ml), ml, token, f'{prefix}_full_rel')
             plot_rel_layers(all_rel, ml, token, f'{prefix}')

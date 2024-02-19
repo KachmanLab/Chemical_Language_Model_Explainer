@@ -36,8 +36,10 @@ def explain_mmb(cfg: DictConfig) -> None:
     # test.smiles = test.smiles[[2, 5, 12, 16]]
     # test.labels = test.labels[[2, 5, 12, 16]]
     if cfg.xai.save_heat:
-        test.smiles = [test.smiles[i] for i in [2, 5, 13, 15, 32, 64]]
-        test.labels = [test.labels[i] for i in [2, 5, 13, 15, 32, 64]]
+        test.smiles = [test.smiles[i] for i in [2, 5]]
+        test.labels = [test.labels[i] for i in [2, 5]]
+        # test.smiles = [test.smiles[i] for i in [2, 5, 13, 15, 32, 64]]
+        # test.labels = [test.labels[i] for i in [2, 5, 13, 15, 32, 64]]
     # test.smiles = test.smiles[:16]
     # test.labels = test.labels[:16]
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
@@ -111,6 +113,10 @@ def explain_mmb(cfg: DictConfig) -> None:
             model.head = MaskedLinearRegressionHead(sign=sign)
             model.head.load_state_dict(torch.load(ckpt_path))
             model.eval()
+            # if sign in ['posneg', 'negpos']:
+            #     print('pre', torch.sum(torch.sign(model.head.fc1.weight[0])))
+            #     model.head.fc1.weight.data[0] = -model.head.fc1.weight.data[0]
+            #     print('post', torch.sum(torch.sign(model.head.fc1.weight[0])))
             model.explainer = MolecularSelfAttentionViz(
                 save_heatmap=cfg.xai.save_heat, sign=sign)
 
@@ -123,6 +129,10 @@ def explain_mmb(cfg: DictConfig) -> None:
             sign_colors[sign] = [f.get('rdkit_colors') for f in all_sgn]
             sign_preds[sign] = [f.get('preds') for f in all_sgn]
 
+            # if sign in ['posneg', 'negpos']:
+            #     sign_preds[sign] = -sign_preds[sign]
+                # sign_weights[sign] = -sign_weights[sign]
+                # sign_colors[sign] = -sign_colors[sign]
             # should _not_ be equal if applying sign_mask on fwd()
             # sign_preds = [f.get('preds') for f in all_sgn]
             # assert torch.allclose(torch.concat(preds), torch.concat(sign_preds),
@@ -142,12 +152,17 @@ def explain_mmb(cfg: DictConfig) -> None:
     sanity_preds = np.zeros_like(agg_preds)
     for sign in sign_preds.keys():
         sg_preds = np.array(list(chain(*sign_preds[sign])))
-
-        sanity_preds += sg_preds
+        if sign in ['posneg', 'negpos']:
+            sanity_preds -= sg_preds
+            print('flipped, neg', sg_preds)
+        else:
+            sanity_preds += sg_preds
+            print('pos', sg_preds)
         frac = sg_preds / agg_preds
         print(f"{sign}: mean {np.mean(frac)}, {frac[:8]}")
 
     print(f"{'*' * 42}")
+    print(agg_preds, sanity_preds)
     assert np.allclose(agg_preds, sanity_preds, 1e-2)
 
     ###################################

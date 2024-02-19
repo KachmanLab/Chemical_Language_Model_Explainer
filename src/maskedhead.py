@@ -57,7 +57,7 @@ class MaskedRegressionHead(pl.LightningModule):
 class MaskedLinearRegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None, sign=None):
         super().__init__()
-        self.norm = nn.LayerNorm(normalized_shape=[dim])
+        # self.norm = nn.LayerNorm(normalized_shape=[dim])
         self.dim = dim
         self.fc1 = nn.Linear(dim, 1, bias=False)
         self.fids = fids
@@ -73,6 +73,9 @@ class MaskedLinearRegressionHead(pl.LightningModule):
         w_sign = torch.sign(self.fc1.weight[0])
         w_pos = torch.where(w_sign == 1, 1, 0)
         w_neg = torch.where(w_sign == -1, 1, 0)
+        print('act', torch.sum(a_sign, dim=-1), torch.sum(torch.abs(a_sign), dim=-1))
+        print('wgt', torch.sum(w_sign), torch.sum(torch.abs(w_sign)))
+        print('sanity weights', self.fc1.weight[0].shape, self.fc1.weight.shape)
 
         if self.sign == 'pospos':    # Q1
             # mask = torch.where(a_pos and w_pos, 1, 0)
@@ -90,18 +93,27 @@ class MaskedLinearRegressionHead(pl.LightningModule):
             return x
 
         print(f"quadrant {self.sign}, {torch.sum(mask)/512}")
-        print(f"a_pos {torch.sum(a_pos)/512}, a_neg {torch.sum(a_neg)/512},\
+        print(f"a_pos {torch.sum(a_pos, dim=-1)}, \
+                a_neg {torch.sum(a_neg, dim=-1)}, \
+              w_pos {torch.sum(w_pos)}, w_neg {torch.sum(w_neg)}")
+        print(f"frac: a_pos {torch.sum(a_pos, dim=-1)/512}, \
+                      a_neg {torch.sum(a_neg, dim=-1)/512}, \
               w_pos {torch.sum(w_pos)/512}, w_neg {torch.sum(w_neg)/512}")
         return x * mask
 
     def forward(self, x):
         ''' mask out all features excluding [fids]'''
-        x = self.norm(x)
+        # x = self.norm(x)
 
         x.register_hook(self.mask_quadrant)
         x = self.mask_quadrant(x)
 
-        x = self.fc1(x)
+        if self.sign in ['posneg', 'negpos']:
+            # flip sign to enable flow of gradient despite neg sign
+            # to enable attribution viz (otherwise gradient all 0)
+            x = self.fc1(x) * -1.
+        else:
+            x = self.fc1(x)
         return x.squeeze(1)
 
     # def mask_features(self, x, fids=None):
