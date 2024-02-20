@@ -1,4 +1,5 @@
 
+
 """ adapted from ref: https://arxiv.org/abs/2103.15679 """
 
 import torch
@@ -28,7 +29,12 @@ class MolecularSelfAttentionViz():
 
     def avg_heads(self, attn, grad):
         """ identical, increased readability """
-        attn = grad.permute(0, 2, 1) * attn.permute(0, 2, 1)
+        # attn = grad.permute(0, 2, 1) * attn.permute(0, 2, 1)
+
+        print(grad.shape, attn.shape)
+        b, ml, _ml = attn.shape
+        attn = grad.reshape(-1, ml, ml) * attn.reshape(-1, ml, ml)
+        print(grad.shape, attn.shape)
         attn = attn.clamp(min=0)
         return attn.mean(dim=0)
         # return attn.clamp(min=0).mean(dim=0)
@@ -69,9 +75,17 @@ class MolecularSelfAttentionViz():
                               ml, token, prefix=f'{prefix}_attn{layer}_h{h}')
                     save_heat(grad[layer, h, :ml, :ml].cpu().detach(),
                               ml, token, prefix=f'{prefix}_grad{layer}_h{h}')
+                    gradh = grad[layer, h, :ml, :ml].cpu().detach()
+                    attnh = attn[layer, h, :ml, :ml].cpu().detach()
+                    attngrad = gradh * attnh
+                    save_heat(attngrad.clamp(min=0).cpu().detach(),
+                              ml, token,
+                              prefix=f'{prefix}_attnxgrad{layer}_h{h}')
+
         if self.save_heatmap:
             save_heat(rel - torch.eye(ml), ml, token, f'{prefix}_full_rel')
             plot_rel_layers(all_rel, ml, token, f'{prefix}')
+            save_heat(torch.eye(ml), ml, token, f'{prefix}_identity')
         return rel
 
     def get_weights(self, rel, ml):
