@@ -36,10 +36,10 @@ def explain_mmb(cfg: DictConfig) -> None:
     # test.smiles = test.smiles[[2, 5, 12, 16]]
     # test.labels = test.labels[[2, 5, 12, 16]]
     if cfg.xai.save_heat:
-        test.smiles = [test.smiles[i] for i in [2, 5]]
-        test.labels = [test.labels[i] for i in [2, 5]]
-        # test.smiles = [test.smiles[i] for i in [2, 5, 13, 15, 32, 64]]
-        # test.labels = [test.labels[i] for i in [2, 5, 13, 15, 32, 64]]
+        # test.smiles = [test.smiles[i] for i in [2, 5]]
+        # test.labels = [test.labels[i] for i in [2, 5]]
+        test.smiles = [test.smiles[i] for i in [2, 5, 13, 15, 16, 64]]
+        test.labels = [test.labels[i] for i in [2, 5, 13, 15, 16, 64]]
     # test.smiles = test.smiles[:16]
     # test.labels = test.labels[:16]
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,

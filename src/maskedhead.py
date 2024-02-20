@@ -114,6 +114,7 @@ class MaskedLinearRegressionHead(pl.LightningModule):
             x = self.fc1(x) * -1.
         else:
             x = self.fc1(x)
+
         return x.squeeze(1)
 
     # def mask_features(self, x, fids=None):
