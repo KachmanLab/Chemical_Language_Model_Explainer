@@ -89,7 +89,7 @@ stages:
 
   explain_model:
     cmd:
-      - rm out/${task.task}/${split.split}/${model.model}-${head.head}/viz/*
+      # - rm out/${task.task}/${split.split}/${model.model}-${head.head}/viz/*
       - mkdir -p out/${task.task}/${split.split}/${model.model}-${head.head}/viz
       - python3 scripts/explain_${xai.xai}.py #${task} ${split} ${model} ${head} 
     deps:

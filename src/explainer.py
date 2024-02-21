@@ -29,15 +29,15 @@ class MolecularSelfAttentionViz():
 
     def avg_heads(self, attn, grad):
         """ identical, increased readability """
-        # attn = grad.permute(0, 2, 1) * attn.permute(0, 2, 1)
+        attn_grad = grad * attn
+        attn_grad = attn_grad.clamp(min=0)
+        return attn_grad.mean(dim=0)
 
-        print(grad.shape, attn.shape)
-        b, ml, _ml = attn.shape
-        attn = grad.reshape(-1, ml, ml) * attn.reshape(-1, ml, ml)
-        print(grad.shape, attn.shape)
-        attn = attn.clamp(min=0)
-        return attn.mean(dim=0)
+        # attn = grad.permute(0, 2, 1) * attn.permute(0, 2, 1)
         # return attn.clamp(min=0).mean(dim=0)
+        # b, ml, _ml = attn.shape
+        # sanity = grad.reshape(-1, ml, ml) * attn.reshape(-1, ml, ml)
+        # assert torch.allclose(attn, sanity, 1e-4)
 
     def agg_relevance(self, attn, grad, ml, token=None):
         # init relevancy matrix as identity

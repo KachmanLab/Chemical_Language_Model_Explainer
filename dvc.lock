@@ -421,7 +421,7 @@ stages:
     - pwd
     - echo "SPLIT DATA --task aq --property aq --loader AqSolDataset --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S) log([mol/L])' --split accurate --n_splits 1 --split_frac
+      --plot_propname 'log(S) log([mol/L])' --split accurate --n_splits 5 --split_frac
       0.9 --data_seed 42 --color r"
     - mkdir -p data/aq/accurate/
     - python3 scripts/split_data.py
@@ -438,7 +438,7 @@ stages:
       params.yaml:
         split:
           split: accurate
-          n_splits: 1
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -455,9 +455,9 @@ stages:
     outs:
     - path: data/aq/accurate/
       hash: md5
-      md5: c4c8533a664d5989b833b255b6519b3f.dir
-      size: 2130707
-      nfiles: 8
+      md5: 14d6d1461f42cc165f0f113926c57b12.dir
+      size: 3008991
+      nfiles: 12
   train_model:
     cmd:
     - mkdir -p out/aq/accurate/mmb-ft-lin/{viz,model}
@@ -467,9 +467,9 @@ stages:
     deps:
     - path: data/aq/accurate/
       hash: md5
-      md5: c4c8533a664d5989b833b255b6519b3f.dir
-      size: 2130707
-      nfiles: 8
+      md5: 14d6d1461f42cc165f0f113926c57b12.dir
+      size: 3008991
+      nfiles: 12
     - path: scripts/train_model.py
       hash: md5
       md5: b3255fe0e64ed50fae9c16c46e117902
@@ -490,7 +490,7 @@ stages:
           n_epochs: 30
         split:
           split: accurate
-          n_splits: 1
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -507,43 +507,42 @@ stages:
     outs:
     - path: out/aq/accurate/mmb-ft-lin/best.pt
       hash: md5
-      md5: 107676eb80641888d024f9d6d1a843f7
+      md5: 2f97b427250edd2e7e21706bc2bf4fbc
       size: 2859
     - path: out/aq/accurate/mmb-ft-lin/metrics.json
       hash: md5
-      md5: 0d321fcb316a138506daba01407615f5
-      size: 238
+      md5: 1fe8bceda3839180090103a66cb960d8
+      size: 516
     - path: out/aq/accurate/mmb-ft-lin/model/
       hash: md5
-      md5: c7ee9a743aaee1050081110c07b42f7b.dir
-      size: 158735527
-      nfiles: 3
+      md5: dab626efaae657c35e7a29c42d9bb271.dir
+      size: 476209995
+      nfiles: 11
   explain_model:
     cmd:
-    - rm out/aq/accurate/mmb-ft-lin/viz/*
     - mkdir -p out/aq/accurate/mmb-ft-lin/viz
     - python3 scripts/explain_mmb.py
     deps:
     - path: data/aq/accurate/test.pkl
       hash: md5
-      md5: 1fd389d3f494e38f5ac81cb25642e840
+      md5: 12843fb87132779f596de72cefa21e45
       size: 20038
     - path: out/aq/accurate/mmb-ft-lin/best.pt
       hash: md5
-      md5: 107676eb80641888d024f9d6d1a843f7
+      md5: 2f97b427250edd2e7e21706bc2bf4fbc
       size: 2859
     - path: scripts/explain_mmb.py
       hash: md5
-      md5: 29a7796f6746820dee9ff1997c995188
-      size: 11718
+      md5: 66da874da1143bf49d589d0d7234e310
+      size: 12384
     - path: src/explainer.py
       hash: md5
-      md5: 097c9b2b2e3334bef29841e014b5cabb
-      size: 9691
+      md5: 47adab12b4435c8439e064ecfe27f76d
+      size: 10332
     - path: src/maskedhead.py
       hash: md5
-      md5: c95b772b323da38dc41ec53a83be4b34
-      size: 6575
+      md5: a990cbbde27e9edb43c8a4d42ec9c287
+      size: 6824
     params:
       params.yaml:
         head:
@@ -556,7 +555,7 @@ stages:
           n_epochs: 30
         split:
           split: accurate
-          n_splits: 1
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -579,13 +578,13 @@ stages:
     outs:
     - path: out/aq/accurate/mmb-ft-lin/attributions.csv
       hash: md5
-      md5: 1b76443169e0059c6dccd5e525068ef4
-      size: 38889
+      md5: c48517c5b1dd0af32d46e1a1426d5179
+      size: 8676
     - path: out/aq/accurate/mmb-ft-lin/viz
       hash: md5
-      md5: e83c316ba04b1f75088f79693e68b189.dir
-      size: 78201295
-      nfiles: 6630
+      md5: 20d144ddf1b936e86e3015416a5cd775.dir
+      size: 66654803
+      nfiles: 3726
   predict_model:
     cmd:
     - mkdir -p out/aq/accurate/mmb-ft-lin/viz
@@ -594,12 +593,12 @@ stages:
     deps:
     - path: data/aq/accurate/
       hash: md5
-      md5: c4c8533a664d5989b833b255b6519b3f.dir
-      size: 2130707
-      nfiles: 8
+      md5: 14d6d1461f42cc165f0f113926c57b12.dir
+      size: 3008991
+      nfiles: 12
     - path: out/aq/accurate/mmb-ft-lin/best.pt
       hash: md5
-      md5: 107676eb80641888d024f9d6d1a843f7
+      md5: 2f97b427250edd2e7e21706bc2bf4fbc
       size: 2859
     - path: scripts/plot_datasplit.py
       hash: md5
@@ -625,7 +624,7 @@ stages:
           n_epochs: 30
         split:
           split: accurate
-          n_splits: 1
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -642,16 +641,16 @@ stages:
     outs:
     - path: out/aq/accurate/mmb-ft-lin/latent_viz.png
       hash: md5
-      md5: d9578d7cdfc7911ea55920a05c45cd82
-      size: 277181
+      md5: d43f90f4b48328e54e50351104eb62d5
+      size: 278540
     - path: out/aq/accurate/mmb-ft-lin/parity_plot.png
       hash: md5
-      md5: 96e948c9559da123f2d6696e314b6555
-      size: 53469
+      md5: 3bc1b16b92bb1c60a493cd80a01e8ade
+      size: 53862
     - path: out/aq/accurate/mmb-ft-lin/predictions.csv
       hash: md5
-      md5: d01dafe4a876a42df6ccd5de78e47b49
-      size: 374808
+      md5: 9280b5beb615fdaa27c5cb5320f99cd0
+      size: 375127
   all:
     cmd:
     - pwd

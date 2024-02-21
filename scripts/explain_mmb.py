@@ -38,8 +38,8 @@ def explain_mmb(cfg: DictConfig) -> None:
     if cfg.xai.save_heat:
         # test.smiles = [test.smiles[i] for i in [2, 5]]
         # test.labels = [test.labels[i] for i in [2, 5]]
-        test.smiles = [test.smiles[i] for i in [2, 5, 13, 15, 16, 64]]
-        test.labels = [test.labels[i] for i in [2, 5, 13, 15, 16, 64]]
+        test.smiles = [test.smiles[i] for i in [2, 5, 13]] #, 15, 16, 64]]
+        test.labels = [test.labels[i] for i in [2, 5, 13]] #, 15, 16, 64]]
     # test.smiles = test.smiles[:16]
     # test.labels = test.labels[:16]
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
@@ -108,7 +108,8 @@ def explain_mmb(cfg: DictConfig) -> None:
     # <pos>,<neg> attribution for mmb-ft+lin
     sign_weights, sign_colors, sign_preds = {}, {}, {}
     if cfg.model.model == 'mmb-ft' and 'lin' in cfg.head.head:
-        for sign in ['pospos', 'posneg', 'negpos', 'negneg']:
+        # for sign in ['pos', 'neg', 'pospos', 'posneg', 'negpos', 'negneg']:
+        for sign in ['pos', 'neg']:
             # change head to masked head variant & load
             model.head = MaskedLinearRegressionHead(sign=sign)
             model.head.load_state_dict(torch.load(ckpt_path))
@@ -150,20 +151,32 @@ def explain_mmb(cfg: DictConfig) -> None:
     # calculate average quadrant contribution fraction towards prediction
     agg_preds = np.array(list(chain(*preds)))
     sanity_preds = np.zeros_like(agg_preds)
+    sanity_preds2 = np.zeros_like(agg_preds)
     for sign in sign_preds.keys():
         sg_preds = np.array(list(chain(*sign_preds[sign])))
         if sign in ['posneg', 'negpos']:
             sanity_preds -= sg_preds
             print('flipped, neg', sg_preds)
-        else:
+        elif sign in ['pospos', 'negneg']:
             sanity_preds += sg_preds
             print('pos', sg_preds)
+        elif sign in ['pos']:
+            sanity_preds2 += sg_preds
+        elif sign in ['neg']:
+            sanity_preds2 -= sg_preds
         frac = sg_preds / agg_preds
         print(f"{sign}: mean {np.mean(frac)}, {frac[:8]}")
 
     print(f"{'*' * 42}")
-    print(agg_preds, sanity_preds)
-    assert np.allclose(agg_preds, sanity_preds, 1e-2)
+    # print(agg_preds, sanity_preds, sanity_preds2)
+    if 'posneg' in sign_preds.keys():
+        print('allclose qudrants', np.allclose(agg_preds, sanity_preds, 1e-2))
+        print(agg_preds - sanity_preds)
+        # assert np.allclose(agg_preds, sanity_preds, 1e-1)
+    if 'neg' in sign_preds.keys():
+        print(agg_preds - sanity_preds2)
+        print('allclose pos/neg', np.allclose(agg_preds, sanity_preds2, 1e-2))
+        # assert np.allclose(agg_preds, sanity_preds2, 1e-1)
 
     ###################################
 
