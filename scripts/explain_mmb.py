@@ -151,31 +151,35 @@ def explain_mmb(cfg: DictConfig) -> None:
     # calculate average quadrant contribution fraction towards prediction
     agg_preds = np.array(list(chain(*preds)))
     sanity_preds = np.zeros_like(agg_preds)
-    sanity_preds2 = np.zeros_like(agg_preds)
+    # sanity_preds2 = np.zeros_like(agg_preds)
     for sign in sign_preds.keys():
         sg_preds = np.array(list(chain(*sign_preds[sign])))
-        if sign in ['posneg', 'negpos']:
-            sanity_preds -= sg_preds
-            print('flipped, neg', sg_preds)
-        elif sign in ['pospos', 'negneg']:
-            sanity_preds += sg_preds
-            print('pos', sg_preds)
-        elif sign in ['pos']:
-            sanity_preds2 += sg_preds
-        elif sign in ['neg']:
-            sanity_preds2 -= sg_preds
+        sanity_preds += sg_preds
+
+        # if sign in ['posneg', 'negpos']:
+        #     sanity_preds -= sg_preds
+        #     print('flipped, neg', sg_preds)
+        # elif sign in ['pospos', 'negneg']:
+        #     sanity_preds += sg_preds
+        #     print('pos', sg_preds)
+        # elif sign in ['pos']:
+        #     sanity_preds2 += sg_preds
+        # elif sign in ['neg']:
+        #     sanity_preds2 -= sg_preds
+
         frac = sg_preds / agg_preds
         print(f"{sign}: mean {np.mean(frac)}, {frac[:8]}")
 
     print(f"{'*' * 42}")
     # print(agg_preds, sanity_preds, sanity_preds2)
-    if 'posneg' in sign_preds.keys():
-        print('allclose qudrants', np.allclose(agg_preds, sanity_preds, 1e-2))
-        print(agg_preds - sanity_preds)
+    # if 'posneg' in sign_preds.keys():
+    #     print('allclose qudrants', np.allclose(agg_preds, sanity_preds, 1e-2))
+    #     print(agg_preds - sanity_preds)
         # assert np.allclose(agg_preds, sanity_preds, 1e-1)
     if 'neg' in sign_preds.keys():
-        print(agg_preds - sanity_preds2)
-        print('allclose pos/neg', np.allclose(agg_preds, sanity_preds2, 1e-2))
+        print(np.sort(agg_preds - sanity_preds))
+        print('allclose pos/neg', np.allclose(agg_preds, sanity_preds, 1e-2))
+        # print('max diff', np.max(agg_preds, sanity_preds))
         # assert np.allclose(agg_preds, sanity_preds2, 1e-1)
 
     ###################################

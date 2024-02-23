@@ -90,7 +90,7 @@ class MaskedLinearRegressionHead(pl.LightningModule):
             # mask = torch.where(a_neg and w_neg, 1, 0)
             mask = a_neg * w_neg
         elif self.sign == 'pos':
-            mask = a_pos * w_pos + a_pos * w_pos  # mutually exclusive
+            mask = a_pos * w_pos + a_neg * w_neg  # mutually exclusive
         elif self.sign == 'neg':
             mask = a_pos * w_neg + a_neg * w_pos  # mutually exclusive
         else:
@@ -112,14 +112,14 @@ class MaskedLinearRegressionHead(pl.LightningModule):
         x.register_hook(self.mask_quadrant)
         x = self.mask_quadrant(x)
 
-        if self.sign in ['posneg', 'negpos', 'neg']:
-            # flip sign to enable flow of gradient despite neg sign
-            # to enable attribution viz (otherwise gradient all 0)
-            x = self.fc1(x) * -1.
-        else:
-            x = self.fc1(x)
+        # if self.sign in ['posneg', 'negpos', 'neg']:
+        #     # flip sign to enable flow of gradient despite neg sign
+        #     # to enable attribution viz (otherwise gradient all 0)
+        #     x = self.fc1(x) * -1.
+        # else:
+        #     x = self.fc1(x)
 
-        # x = self.fc1(x)
+        x = self.fc1(x)
         return x.squeeze(1)
 
     # def mask_features(self, x, fids=None):

@@ -92,8 +92,11 @@ class MolecularSelfAttentionViz():
         """ extract weights from <R> token importance """
         # apply mask and remove I diagonal
         rel = rel[:ml, :ml] - torch.eye(ml, ml)
-        # extract column, drop <R> token itself
-        return np.array(rel[1:, 0])
+        # extract row, drop <R> token itself
+        return np.array(rel[0, 1:])
+
+        # alternatively extract column
+        # return np.array(rel[1:, 0])
 
     def __call__(self, attn, grad, mask, token=None):
         # get mask length
