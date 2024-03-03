@@ -122,23 +122,29 @@ def plot_datasplit(cfg: DictConfig) -> None:
     test_label = np.array(test.labels)
     cmap = plt.cm.viridis
 
+    expl_var = pca.explained_variance_ratio_
+    print(expl_var)
+
     # Plotting the latent space
-    plt.figure(figsize=(10, 8))
     # plt.scatter(valid_latent[:, 0], valid_latent[:, 1], c='blue', label='Valid')
     # plt.scatter(test_latent[:, 0], test_latent[:, 1], c='red', label='Test')
 
+    plt.figure(figsize=(10, 8))  # was (10,8)
     val_sc = plt.scatter(valid_latent[:, 0], valid_latent[:, 1],
                          c=valid_label, cmap=cmap, marker='o', label='Valid')
     test_sc = plt.scatter(test_latent[:, 0], test_latent[:, 1],
                           c=test_label, cmap=cmap, marker='^', label='Test')
-    plt.xlabel('PCA Latent Dimension 1')
-    plt.ylabel('PCA Latent Dimension 2')
-    plt.title(f'PCA Latent Space Visualization of {cfg.model.model}-{cfg.head.head}\
-              \n{cfg.task.plot_title}, {cfg.split.split} split')
-    plt.legend()
+    plt.xlabel(f'PCA Latent Dimension 1 ({expl_var[0]:.2f}% explained variance)',
+               fontsize=18)
+    plt.ylabel(f'PCA Latent Dimension 2 ({expl_var[1]:.2f}% explained variance)',
+               fontsize=18)
+    # plt.title(f'PCA Latent Space Visualization of {cfg.model.model}-{cfg.head.head}\
+    #           \n{cfg.task.plot_title}, {cfg.split.split} split')
+    plt.legend(fontsize=16)
 
     cbar = plt.colorbar(val_sc, orientation='vertical')
-    cbar.set_label(f'{cfg.task.plot_propname}')
+    cbar.set_label(f'{cfg.task.plot_propname}',
+                   fontsize=16)
 
     # Save or show the plot
     plt.tight_layout()

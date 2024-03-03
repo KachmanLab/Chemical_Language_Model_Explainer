@@ -43,7 +43,7 @@ def plot_models():
     models = metrics.keys()
 
     # Updated plotting with the revised color scheme
-    fig, ax = plt.subplots(figsize=(14, 4))
+    fig, ax = plt.subplots(figsize=(14, 6))
     width = 0.35  # Width of the bars
 
     colors_dark = plt.cm.viridis(np.linspace(0, 0.75, len(models)))
@@ -73,10 +73,12 @@ def plot_models():
                alpha=0.7, label=f'{model} (Test)')
 
     # Adding labels and title
-    ax.set_ylabel('Mean Absolute Error (MAE)')
-    ax.set_title(f'Model comparison: {cfg.task.plot_title}, {cfg.split.split} split')
+    ax.set_ylabel('Mean Absolute Error (MAE)', fontsize=15)
+    plt.gca().tick_params(axis='y', labelsize='large')
+    # ax.set_title(f'Model comparison: {cfg.task.plot_title}, {cfg.split.split} split')
     ax.set_xticks(range(len(models)))
-    ax.set_xticklabels(models, ha='center')
+    ax.set_xticklabels(models, ha='center', rotation=30, fontsize=14)
+    # ax.set_xticklabels(models, ha='center', fontsize=13)
     # ax.set_xticklabels(models, rotation=45, ha='right')
     # ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 

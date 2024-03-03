@@ -212,17 +212,19 @@ def explain_mmb(cfg: DictConfig) -> None:
                 color='grey', ci=None, scatter=False)
     # sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
     #             color='grey', ci=None, scatter=False)
-    p.fig.suptitle(f"Parity plot of {cfg.model.model}-{cfg.head.head}\
-        \n{cfg.task.plot_title}, {_acc} test set")
+
+    # p.fig.suptitle(f"Parity plot of {cfg.model.model}-{cfg.head.head}\
+    #     \n{cfg.task.plot_title}, {_acc} test set")
     p.set_axis_labels(f"Experimental {cfg.task.plot_propname}",
-                      f"Model {cfg.task.plot_propname}")
+                      f"Model {cfg.task.plot_propname}",
+                      fontsize=15)
 
     p.fig.subplots_adjust(top=0.95)
     p.fig.tight_layout()
     txt = f"RMSE = {rmse:.3f}\nMAE = {mae:.3f}\nn = {len(y)}"
     plt.text(lim[1], lim[0],
-             txt, ha="right", va="bottom", fontsize=14)
-    p.savefig(f"{basepath}/{mdir}/parity_plot.png")
+             txt, ha="right", va="bottom", fontsize=15)
+    p.savefig(f"{basepath}/{mdir}/parity_plot_{mdir}_{_acc}.png")
 
     ###################
 

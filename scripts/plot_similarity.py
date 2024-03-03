@@ -98,7 +98,10 @@ def plot_similarity():
     print(np.array(similarities).shape)
     mask = np.triu(np.ones_like(similarity_matrix, dtype=bool), k=1)
 
-    plt.figure(figsize=(10, 8))
+    sns.set(font_scale=1.1)
+    plt.figure(figsize=(10, 8))  # was (10,8)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
     sns.heatmap(similarity_matrix,
                 annot=True,
                 mask=mask,
@@ -107,11 +110,11 @@ def plot_similarity():
                 cbar_kws={'label': 'Average cosine similarity'},
                 )
 
-    plt.title(f"Pairwise cosine similarity of attributed relevance\n\
-              averaged over {cfg.split.split} test set")
+    # plt.title(f"Pairwise cosine similarity of attributed relevance\n\
+    #           averaged over {cfg.split.split} test set")
 
     plt.tight_layout()
-    plt.savefig(f"{basepath}/attribution_comparison.png")
+    plt.savefig(f"{basepath}/attribution_comparison_{cfg.split.split}.png")
 
 
 if __name__ == "__main__":

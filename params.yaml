@@ -6,16 +6,16 @@ task:
   propname: logS_aq_avg
   smilesname: smiles solute
   plot_title: Aqueous solubility
-  plot_propname: log(S) log([mol/L])
+  plot_propname: log(S)
 split:
-  split: random
+  split: accurate
   n_splits: 5
   split_frac: 0.9
   data_seed: 42
-  color: g
+  color: r
   scale: false
 model:
-  model: mmb-ft-avg
+  model: mmb-ft
   finetune: true
   n_batch: 48
   seed: 42
@@ -23,6 +23,8 @@ model:
 head:
   head: lin
 xai:
-  model: mmb-avg
-  xai: shap
-  mask: false
+  model: mmb
+  xai: mmb
+  mask: true
+  sign: None
+  save_heat: false
