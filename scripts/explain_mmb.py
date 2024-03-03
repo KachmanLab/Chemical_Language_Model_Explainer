@@ -36,8 +36,6 @@ def explain_mmb(cfg: DictConfig) -> None:
     # test.smiles = test.smiles[[2, 5, 12, 16]]
     # test.labels = test.labels[[2, 5, 12, 16]]
     if cfg.xai.save_heat:
-        # test.smiles = [test.smiles[i] for i in [2, 5]]
-        # test.labels = [test.labels[i] for i in [2, 5]]
         test.smiles = [test.smiles[i] for i in [2, 5, 13]] #, 15, 16, 64]]
         test.labels = [test.labels[i] for i in [2, 5, 13]] #, 15, 16, 64]]
     # test.smiles = test.smiles[:16]
@@ -215,7 +213,7 @@ def explain_mmb(cfg: DictConfig) -> None:
     # sns.regplot(x="yhat", y="y", data=data, ax=p.ax_joint,
     #             color='grey', ci=None, scatter=False)
     p.fig.suptitle(f"Parity plot of {cfg.model.model}-{cfg.head.head}\
-        \n{cfg.task.plot_title}, {_acc} {split} test set")
+        \n{cfg.task.plot_title}, {_acc} test set")
     p.set_axis_labels(f"Experimental {cfg.task.plot_propname}",
                       f"Model {cfg.task.plot_propname}")
 

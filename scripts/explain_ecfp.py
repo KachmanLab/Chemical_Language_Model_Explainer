@@ -51,8 +51,8 @@ def explain_ecfp(cfg: DictConfig) -> None:
     print('using trained model weights', ckpt_path)
     print(weights.shape)
     assert weights.shape[0] == cfg.model.nbits
-    bias = model.head.fc1.bias[0].cpu().detach().numpy()
-    print('bias', bias)
+    # bias = model.head.fc1.bias[0].cpu().detach().numpy()
+    # print('bias', bias)
     # vec = torch.abs(self.fc1.weight[0]).cpu().detach().numpy()
     # fids = [ix for ix, val in sorted(
     #     enumerate(vec),
@@ -177,7 +177,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
     smiles = test_dataset.smiles
     labels = test_dataset.labels
     ecfps = test_dataset.ecfp
-    vmin, vmax = 0., 0.
+    # vmin, vmax = 0., 0.
     morgan_preds, morgan_weights = [], []
     morgan_positive, morgan_negative = [], []
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
@@ -186,11 +186,11 @@ def explain_ecfp(cfg: DictConfig) -> None:
         # pred = model.predict(test_dataset[:64]).detach().numpy().item()
 
         bits_dict = make_morgan_dict(smi, nbits=cfg.model.nbits)
-        bits_dict = sort_dict_by_weight(bits_dict, weights, topk=cfg.xai.topk)
-        _ = draw_morgan_bits(bits_dict, uid=uid)
-
         morgan_weight, morgan_pos, morgan_neg = attribute_morgan(
             smi, bits_dict, weights)
+
+        topk_bits_dict = sort_dict_by_weight(bits_dict, weights, topk=cfg.xai.topk)
+        _ = draw_morgan_bits(topk_bits_dict, uid=uid)
 
         morgan_preds.append(pred)
         morgan_weights.append(morgan_weight)

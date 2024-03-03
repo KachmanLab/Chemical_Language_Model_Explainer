@@ -28,7 +28,8 @@ def plot_similarity():
               'mmb-ft-hier', 'mmb-ft-lin',
               'mmb-avg-hier', 'mmb-avg-lin',
               'mmb-ft-avg-hier', 'mmb-ft-avg-lin',
-              'ecfp-hier', 'ecfp-lin',
+              #'ecfp-hier',
+              'ecfp-lin',
               # 'mmb-ft-lin-scaled', 'mmb-ft-lin-scaled-clamp',
               ]
 
@@ -62,6 +63,7 @@ def plot_similarity():
     # ]
 
     similarities = []
+    mismatch = 0
     for ix in list(zip(*attributions.values())):
         try:
             similarities.append(
@@ -69,7 +71,10 @@ def plot_similarity():
             )
         except:
             print([len(i) for i in ix])
-            continue
+            mismatch += 1
+            # continue
+    print('total', len(attributions['all-equal']))
+    print('mismatched:', mismatch)
     # similarities = []
     # attribszip = list(zip(*attributions.values()))
     # for id, ix in enumerate(attribszip):
@@ -87,6 +92,10 @@ def plot_similarity():
     # print(similarities)
 
     similarity_matrix = np.mean(np.array(similarities), axis=0)
+
+    print(len(similarities))
+    print(np.array(similarities))
+    print(np.array(similarities).shape)
     mask = np.triu(np.ones_like(similarity_matrix, dtype=bool), k=1)
 
     plt.figure(figsize=(10, 8))

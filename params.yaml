@@ -8,14 +8,14 @@ task:
   plot_title: Aqueous solubility
   plot_propname: log(S) log([mol/L])
 split:
-  split: accurate
+  split: random
   n_splits: 5
   split_frac: 0.9
   data_seed: 42
-  color: r
+  color: g
   scale: false
 model:
-  model: mmb-ft
+  model: mmb-ft-avg
   finetune: true
   n_batch: 48
   seed: 42
@@ -23,8 +23,6 @@ model:
 head:
   head: lin
 xai:
-  model: mmb
-  xai: mmb
-  mask: true
-  sign: None
-  save_heat: true
+  model: mmb-avg
+  xai: shap
+  mask: false
