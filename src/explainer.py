@@ -153,11 +153,15 @@ def make_legend():
     sm.set_array([])  # create a scalar mappable without any data
 
     # Create an empty figure and add the colorbar to it
-    fig, ax = plt.subplots(figsize=(1, 9))
+    fig, ax = plt.subplots(figsize=(1.5, 8))
     fig.subplots_adjust(bottom=0.2)
 
     cbar = fig.colorbar(sm, cax=ax, orientation='vertical',
-        ticks=list(np.linspace(0, 1, 9)), label='Relative importance (a.u.)')
+                        ticks=list(np.linspace(0, 1, 11)))
+                        # label='Relative importance (a.u.)',
+
+    cbar.set_label('Relative importance (a.u.)',
+                   fontsize=18)
 
     # Save the colorbar as an image file
     plt.tight_layout()
