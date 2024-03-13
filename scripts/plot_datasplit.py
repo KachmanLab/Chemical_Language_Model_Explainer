@@ -122,9 +122,9 @@ def plot_datasplit(cfg: DictConfig) -> None:
     test_label = np.array(test.labels)
     cmap = plt.cm.viridis
 
-    expl_var = pca.explained_variance_ratio_
-    ev0 = f"{int(round(expl_var[0], 4)*100)}% "
-    ev1 = f"{int(round(expl_var[1], 4)*100)}% "
+    expl_var = pca.explained_variance_ratio_ * 100
+    # ev0 = f"{int(round(expl_var[0], 4)*100)}% "
+    # ev1 = f"{int(round(expl_var[1], 4)*100)}% "
 
     # Plotting the latent space
     # plt.scatter(valid_latent[:, 0], valid_latent[:, 1], c='blue', label='Valid')
@@ -135,9 +135,9 @@ def plot_datasplit(cfg: DictConfig) -> None:
                          c=valid_label, cmap=cmap, marker='o', label='Valid')
     test_sc = plt.scatter(test_latent[:, 0], test_latent[:, 1],
                           c=test_label, cmap=cmap, marker='^', label='Test')
-    plt.xlabel(f'PCA Dimension 1 ({ev0}% explained variance)',
+    plt.xlabel(f'PCA Dimension 1 ({expl_var[0]:.2f}% explained variance)',
                fontsize=18)
-    plt.ylabel(f'PCA Dimension 2 ({ev1}% explained variance)',
+    plt.ylabel(f'PCA Dimension 2 ({expl_var[1]:.2f}% explained variance)',
                fontsize=18)
     # plt.title(f'PCA Latent Space Visualization of {cfg.model.model}-{cfg.head.head}\
     #           \n{cfg.task.plot_title}, {cfg.split.split} split')

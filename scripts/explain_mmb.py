@@ -15,6 +15,7 @@ from sklearn import linear_model
 from src.model import AqueousRegModel, BaselineAqueousModel
 from src.maskedhead import MaskedLinearRegressionHead
 from src.explainer import ColorMapper, MolecularSelfAttentionViz
+from src.explainer import make_legend
 import hydra
 from omegaconf import OmegaConf, DictConfig
 
@@ -40,6 +41,7 @@ def explain_mmb(cfg: DictConfig) -> None:
         test.labels = [test.labels[i] for i in [2, 5, 13]] #, 15, 16, 64]]
     # test.smiles = test.smiles[:16]
     # test.labels = test.labels[:16]
+
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
                              shuffle=False, num_workers=8)
 
@@ -317,6 +319,8 @@ def explain_mmb(cfg: DictConfig) -> None:
         elif b_nr > 4:
             break
 
+
+make_legend()
 
 if __name__ == "__main__":
     explain_mmb()

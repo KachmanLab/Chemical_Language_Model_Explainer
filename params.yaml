@@ -15,7 +15,7 @@ split:
   color: r
   scale: false
 model:
-  model: mmb-ft
+  model: mmb-ft-avg
   finetune: true
   n_batch: 48
   seed: 42
@@ -23,8 +23,6 @@ model:
 head:
   head: lin
 xai:
-  model: mmb
-  xai: mmb
-  mask: true
-  sign: None
-  save_heat: false
+  model: mmb-avg
+  xai: shap
+  mask: false

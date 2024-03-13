@@ -10,7 +10,7 @@ import json
 import numpy as np
 import hydra
 from omegaconf import OmegaConf, DictConfig
-
+from sklearn.linear_model import Lasso
 
 @hydra.main(
     version_base="1.3", config_path="../conf", config_name="config")
@@ -96,10 +96,21 @@ def train(cfg: DictConfig) -> None:
             gpus=1,
             precision=16,
             logger=wandb_logger,
-            auto_lr_find=True,
+            auto_lr_find=False,
         )
 
-        trainer.fit(model, train_loader, valid_loader)
+        if 'mmb' in cfg.model.model:
+            trainer.fit(model, train_loader, valid_loader)
+
+        elif 'ecfp' in cfg.model.model and 'lin' in cfg.head.head:
+            lasso = Lasso(alpha=0.2, fit_intercept=False)
+            feat, lab = train[:]
+            lasso.fit(feat, lab)
+
+            model.head.fc1.weight.requires_grad = False
+            model.head.fc1.weight[0] = torch.FloatTensor(lasso.coef_)
+
+        # trainer.fit(model, train_loader, valid_loader)
         print('validating fold', fold)
         metrics[fold] = trainer.validate(model, valid_loader)[0]
         # wandb.finish()

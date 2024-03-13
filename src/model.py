@@ -121,7 +121,6 @@ class AqueousRegModel(pl.LightningModule):
         self.criterion = nn.HuberLoss()
         self.criterion_mse = nn.MSELoss()
         self.criterion_mae = nn.L1Loss()
-        # self.criterion_rmse = nn.MSELoss(reduction='none')
         self.learning_rate = 1e-5
 
     def make_head(self, head):
@@ -420,7 +419,7 @@ class ECFPLinear(pl.LightningModule):
 ##########################################
 class BaselineAqueousModel(AqueousRegModel):
     def __init__(self, head, finetune=False):
-        """ uses average pooling instead of <REG> token """
+        """ uses average pooling instead of <R> token """
         super().__init__(head=head, finetune=finetune)
         self.finetune = finetune
         self.init_molbart()
@@ -434,6 +433,12 @@ class BaselineAqueousModel(AqueousRegModel):
         self.criterion_mse = nn.MSELoss()
         self.criterion_mae = nn.L1Loss()
         self.learning_rate = 1e-5
+
+    def configure_optimizers(self):
+        return optim.AdamW(self.parameters(),
+                           lr=self.learning_rate,
+                           betas=(0.9, 0.999))
+                           # weight_decay=0.05)
 
     def init_molbart(self):
         molbart_model = NeMoMegaMolBARTWrapper()
