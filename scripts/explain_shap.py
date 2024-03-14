@@ -11,7 +11,7 @@ import seaborn as sns
 import numpy as np
 
 from src.model import BaselineAqueousModel
-from src.explainer import ColorMapper, plot_weighted_molecule
+from src.explainer import ColorMapper, plot_weighted_molecule, make_div_legend
 from sklearn import linear_model
 from nemo_src.regex_tokenizer import RegExTokenizer
 import shap
@@ -145,10 +145,13 @@ def explain_shap(cfg: DictConfig) -> None:
     attributions = pd.DataFrame(columns=[
         'smiles', 'tokens', 'preds', 'labels', 'atom_weights', 'split'
     ])
-    cmapper = ColorMapper()
+
+    coolwarm = sns.color_palette("coolwarm", as_cmap=True)
+    cmapper = ColorMapper(vmin=-1, vmax=1, cmap=coolwarm)
     pos_cmapper = ColorMapper(color='blue')
     neg_cmapper = ColorMapper(color='red')
 
+    make_div_legend()
     xai = cfg.model.model
     # weights = model.head.fc1.weight[0].cpu().detach().numpy()
     # weights = weights[:, None]
@@ -195,10 +198,10 @@ def explain_shap(cfg: DictConfig) -> None:
                 # segmentation fault, likely due to weird structure?
                 plot_weighted_molecule(atom_color, smi, token, lab, pred,
                     f"{uid}_{xai}", f"{basepath}/{mdir}/viz/")
-                plot_weighted_molecule(pos_color, smi, token, lab, pred,
-                    f"{uid}_pos_{xai}", f"{basepath}/{mdir}/viz/")
-                plot_weighted_molecule(neg_color, smi, token, lab, pred,
-                    f"{uid}_neg_{xai}", f"{basepath}/{mdir}/viz/")
+                # plot_weighted_molecule(pos_color, smi, token, lab, pred,
+                #     f"{uid}_pos_{xai}", f"{basepath}/{mdir}/viz/")
+                # plot_weighted_molecule(neg_color, smi, token, lab, pred,
+                #     f"{uid}_neg_{xai}", f"{basepath}/{mdir}/viz/")
 
         ###############################
 

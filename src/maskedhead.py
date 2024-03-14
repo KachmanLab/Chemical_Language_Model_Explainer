@@ -57,7 +57,7 @@ class MaskedRegressionHead(pl.LightningModule):
 class MaskedLinearRegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None, sign=None):
         super().__init__()
-        # self.norm = nn.LayerNorm(normalized_shape=[dim])
+        self.norm = nn.LayerNorm(normalized_shape=[dim])
         self.dim = dim
         self.fc1 = nn.Linear(dim, 1, bias=False)
         self.fids = fids
@@ -107,7 +107,7 @@ class MaskedLinearRegressionHead(pl.LightningModule):
 
     def forward(self, x):
         ''' mask out all features excluding [fids]'''
-        # x = self.norm(x)
+        x = self.norm(x)
 
         x.register_hook(self.mask_quadrant)
         x = self.mask_quadrant(x)

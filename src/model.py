@@ -96,12 +96,12 @@ class LinearRegressionHead(pl.LightningModule):
     def __init__(self, dim=512, fids=None):
         super().__init__()
         self.dim = dim
-        # self.norm = nn.LayerNorm(normalized_shape=[dim])
+        self.norm = nn.LayerNorm(normalized_shape=[dim])
         self.fc1 = nn.Linear(dim, 1, bias=False)
         self.fids = None
 
     def forward(self, x):
-        # x = self.norm(x)
+        x = self.norm(x)
         x = self.fc1(x)
         return x.squeeze(1)  # .bfloat16()
 
@@ -438,7 +438,6 @@ class BaselineAqueousModel(AqueousRegModel):
         return optim.AdamW(self.parameters(),
                            lr=self.learning_rate,
                            betas=(0.9, 0.999))
-                           # weight_decay=0.05)
 
     def init_molbart(self):
         molbart_model = NeMoMegaMolBARTWrapper()

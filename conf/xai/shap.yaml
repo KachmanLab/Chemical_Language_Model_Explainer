@@ -1,3 +1,4 @@
 model: mmb-avg
 xai: shap
 mask: false
+cmap: div

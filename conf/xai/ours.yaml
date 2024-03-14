@@ -3,3 +3,4 @@ xai: mmb
 mask: true
 sign: None
 save_heat: false
+cmap: red

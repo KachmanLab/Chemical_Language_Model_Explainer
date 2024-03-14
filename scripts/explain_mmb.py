@@ -15,7 +15,7 @@ from sklearn import linear_model
 from src.model import AqueousRegModel, BaselineAqueousModel
 from src.maskedhead import MaskedLinearRegressionHead
 from src.explainer import ColorMapper, MolecularSelfAttentionViz
-from src.explainer import make_legend
+from src.explainer import make_legend, make_div_legend
 import hydra
 from omegaconf import OmegaConf, DictConfig
 
@@ -62,9 +62,27 @@ def explain_mmb(cfg: DictConfig) -> None:
         model.head.load_state_dict(torch.load(ckpt_path))
         model.explainer = MolecularSelfAttentionViz(
             save_heatmap=cfg.xai.save_heat, sign='')
+
     elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
         print('wrong xai config: mmb-avg+explain_mmb should be shap')
         raise NotImplementedError
+
+    # colormap settings
+    if cfg.xai.cmap == 'div':
+        map = sns.color_palette("coolwarm", as_cmap=True)
+    elif cfg.xai.cmap == 'Reds':
+        map = sns.color_palette("Reds", as_cmap=True)
+    elif cfg.xai.cmap == 'red':
+        map = sns.light_palette("red", as_cmap=True)
+    else:
+        map = None  # default
+    model.cmapper = ColorMapper(cmap=map)
+
+    if cfg.xai.cmap == 'div':
+        make_div_legend()
+    else:
+        make_legend(colormap=map)
+
 
     if cfg.model.finetune or 'ft' in cfg.model.model:
         mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
@@ -294,12 +312,11 @@ def explain_mmb(cfg: DictConfig) -> None:
                     atom_color, smi, token, lab, pred, f"{uid}_{xai}"
                 )
             for sign in sign_weights.keys():
-                # s_weight = sign_weights[sign][b_nr][b_ix]
                 s_color = sign_colors[sign][b_nr][b_ix]
                 s_pred = sign_preds[sign][b_nr][b_ix]
-                plot_weighted_molecule(
-                    s_color, smi, token, lab, s_pred, f"{uid}_{sign}_{xai}"
-                )
+                # plot_weighted_molecule(
+                #     s_color, smi, token, lab, s_pred, f"{uid}_{sign}_{xai}"
+                # )
 
             # if sign_weights:
                 # pos_color = sign_colors['pos'][b_nr][b_ix]
@@ -316,11 +333,10 @@ def explain_mmb(cfg: DictConfig) -> None:
 
         if cfg.xai.save_heat and b_nr > 0:
             break
-        elif b_nr > 4:
-            break
+        # elif b_nr > 4:
+        #     break
 
 
-make_legend()
 
 if __name__ == "__main__":
     explain_mmb()
