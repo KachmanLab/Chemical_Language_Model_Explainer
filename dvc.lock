@@ -533,8 +533,8 @@ stages:
       size: 7395
     - path: scripts/explain_mmb.py
       hash: md5
-      md5: 327f757facf450d5076975c716bf57da
-      size: 12951
+      md5: 29ed1fd00156c680c20d86db23b47d45
+      size: 12924
     - path: src/explainer.py
       hash: md5
       md5: 1fea675ff19aaa2894896d518b55d1f1
@@ -575,16 +575,16 @@ stages:
           mask: true
           sign: None
           save_heat: false
-          cmap: red
+          cmap: None
     outs:
     - path: out/aq/accurate/mmb-ft-lin/attributions.csv
       hash: md5
-      md5: 68d709a81414c9d3b498a300025fe87a
-      size: 2340452
+      md5: 290db62c55b073e6d006d97060e173eb
+      size: 2367774
     - path: out/aq/accurate/mmb-ft-lin/viz
       hash: md5
-      md5: 2c3e3e984ff42b1aff810893d1262aef.dir
-      size: 26013537
+      md5: 1ed360859be53f9123255296282ce5a8.dir
+      size: 27083586
       nfiles: 579
   predict_model:
     cmd:
@@ -665,13 +665,13 @@ stages:
     deps:
     - path: out/aq/accurate/
       hash: md5
-      md5: 815c56dd98bacdfdea7b8d0aa2f23c89.dir
-      size: 4133557034
-      nfiles: 60913
+      md5: e7b28227ec2ee1e031ecf2dcb7637f1e.dir
+      size: 4134959360
+      nfiles: 60914
     - path: out/aq/accurate/mmb-ft-lin/attributions.csv
       hash: md5
-      md5: 68d709a81414c9d3b498a300025fe87a
-      size: 2340452
+      md5: 290db62c55b073e6d006d97060e173eb
+      size: 2367774
     - path: out/aq/accurate/mmb-ft-lin/best.pt
       hash: md5
       md5: 608b6806a1671f5453971a0cc590a82c
@@ -695,8 +695,8 @@ stages:
       size: 375269
     - path: out/aq/accurate/mmb-ft-lin/viz
       hash: md5
-      md5: 6f4caad1735ed4b3f99071220942a804.dir
-      size: 26013850
+      md5: 1ed360859be53f9123255296282ce5a8.dir
+      size: 27083586
       nfiles: 579
     - path: scripts/plot_models.py
       hash: md5
