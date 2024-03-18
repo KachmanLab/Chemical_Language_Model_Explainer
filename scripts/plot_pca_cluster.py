@@ -12,6 +12,7 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 # from src.dataloader import ECFPDataSplit
 from src.model import MMB_R_Featurizer, MMB_AVG_Featurizer
+from src.dataloader import ECFPDataSplit
 import os 
 from mpl_toolkits.axes_grid1 import ImageGrid
 from PIL import Image
@@ -26,14 +27,14 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
 
     pl.seed_everything(cfg.model.seed)
-    basepath = f'./out/{cfg.task.task}/{cfg.split.split}'
+    basepath = f'./final/{cfg.task.task}/{cfg.split.split}'
     mdir = f"{cfg.model.model}-{cfg.head.head}"
     ckpt_path = f"{basepath}/{mdir}/best.pt"
 
-    # with open(f"{basepath}/{mdir}/metrics.json", 'r') as f:
-    #     metrics = json.load(f)
-    #     best_fold = metrics['best_fold']
-    best_fold = '1'
+    with open(f"{basepath}/{mdir}/metrics.json", 'r') as f:
+        metrics = json.load(f)
+        best_fold = metrics['best_fold']
+    # best_fold = '1'
 
     root = f"./data/{cfg.task.task}/{cfg.split.split}"
     with open(f"{root}/valid{best_fold}.pkl", 'rb') as f:
@@ -51,14 +52,14 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
         model = MMB_R_Featurizer(head=head,
                                  finetune=cfg.model.finetune)
         model.head.load_state_dict(torch.load(ckpt_path))
-    else:
-        raise NotImplementedError
-    # elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
-    #     model = MMB_AVG_Featurizer(head=head,
-    #                                finetune=cfg.model.finetune)
-    # elif cfg.model.model == 'ecfp':
-    #     valid_emb = np.array(ECFPDataSplit(valid).ecfp)
-    #     test_emb = np.array(ECFPDataSplit(test).ecfp)
+    elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
+        model = MMB_AVG_Featurizer(head=head,
+                                   finetune=cfg.model.finetune)
+    elif cfg.model.model == 'ecfp':
+        valid_emb = np.array(ECFPDataSplit(valid).ecfp)
+        test_emb = np.array(ECFPDataSplit(test).ecfp)
+    # else:
+    #     raise NotImplementedError
 
     if cfg.model.finetune or 'ft' in cfg.model.model:
         mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
@@ -86,15 +87,18 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
     test_label = np.array(test.labels)
 
     # all_latent = np.concatenate([valid_latent, test_latent])
-    n_neighbors = 10
-    n_clusters = 4
-    # n_xai = 3
+    n_neighbors = 6
+    n_clusters = 16
+
+    # kmeans = KMeans(n_clusters, random_state=cfg.split.data_seed)
+    # kmeans = kmeans.fit(valid_latent)
+    # kmeans = kmeans.fit(test_latent)
+    # print(kmeans.predict(test_latent))
+    # kdist = kmeans.transform(test_latent)
 
     kmeans = KMeans(n_clusters, random_state=cfg.split.data_seed)
-    kmeans = kmeans.fit(valid_latent)
-
-    print(kmeans.predict(test_latent))
-    kdist = kmeans.transform(test_latent)
+    kmeans = kmeans.fit(test_emb)
+    kdist = kmeans.transform(test_emb)
 
     print('kd shape', kdist.shape)
     print(kdist)
@@ -105,6 +109,7 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
 
     cmap = plt.cm.viridis
     expl_var = pca.explained_variance_ratio_ * 100
+    print('expl.var', sum(expl_var), expl_var)
     plt.figure(figsize=(10, 8))
 
     centroids = kmeans.cluster_centers_
@@ -118,16 +123,17 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
         zorder=10,
         label='Centroids'
     )
-    plt.scatter(
-        test_latent[neighbors, 0],
-        test_latent[neighbors, 1],
-        marker="x",
-        s=69,
-        linewidths=3,
-        color="black",
-        zorder=10,
-        label='Neighbours'
-    )
+    if n_clusters < 5:
+        plt.scatter(
+            test_latent[neighbors, 0],
+            test_latent[neighbors, 1],
+            marker="x",
+            s=69,
+            linewidths=3,
+            color="black",
+            zorder=10,
+            label='Neighbours'
+        )
 
     val_sc = plt.scatter(valid_latent[:, 0], valid_latent[:, 1],
                          c=valid_label, cmap=cmap, marker='o', label='Valid')
@@ -151,17 +157,48 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
 
 
 
-    fig, axs = plt.subplots(n_neighbors, n_clusters,
-                            figsize=(n_clusters*9, n_neighbors*8))
-    for i, cluster in enumerate(neighbor_ix[:n_clusters]):
-        for j, uid in enumerate(cluster[:n_neighbors]):
-            fig = Image.open(f"{basepath}/{mdir}/viz/{uid}_{mdir}_MolViz.png")
-            # axs[i, j].imshow(molfig[i*n_cols+j])
-            print(i, j, '\t', cluster, uid)
-            axs[j, i].imshow(fig)
-            axs[j, i].axis('off')
 
-    plt.tight_layout()
-    plt.savefig(f"{basepath}/{mdir}/cluster_grid_viz.png")
+    # PLOT 1 grid of mol's 
+    # fig, axs = plt.subplots(n_neighbors, n_clusters,
+    #                         figsize=(n_clusters*9, n_neighbors*8))
+    # for i, cluster in enumerate(neighbor_ix[:n_clusters]):
+    #     for j, uid in enumerate(cluster[:n_neighbors]):
+    #         fig = Image.open(f"{basepath}/{mdir}/viz/{uid}_{mdir}_MolViz.png")
+    #         # axs[i, j].imshow(molfig[i*n_cols+j])
+    #         print(i, j, '\t', cluster, uid)
+    #         axs[j, i].imshow(fig)
+    #         axs[j, i].axis('off')
+    #
+    # plt.tight_layout()
+    # plt.savefig(f"{basepath}/{mdir}/cluster_grid_viz.png")
+
+
+
+    # models = ['mmb-ft-lin', 'mmb-hier', 'mmb-ft-avg-hier', 'mmb-avg-hier', 'ecfp-lin']
+    # models = ['mmb-ft-lin', 'mmb-ft-avg-hier', 'ecfp-lin']
+    models = ['mmb-ft-lin', 'mmb-ft-avg-lin', 'ecfp-lin-scaled']
+    n_models = len(models)
+    # loop over clusters, one fig per cluster
+    for p, cluster in enumerate(neighbor_ix[:n_clusters]):
+        fig, axs = plt.subplots(n_neighbors, n_models,
+                                figsize=(n_models*9, n_neighbors*8))
+        for i, mdir in enumerate(models):
+            if 'ecfp' in mdir:
+                fname = 'MorganAttrib'
+            else:
+                mname = mdir.replace('-lin', '').replace('-hier', '')
+                fname = f"{mname}_MolViz"
+
+            for j, uid in enumerate(cluster[:n_neighbors]):
+                fig = Image.open(f"{basepath}/{mdir}/viz/{uid}_{fname}.png")
+                # axs[i, j].imshow(molfig[i*n_cols+j])
+                print(i, j, '\t', cluster, uid)
+                axs[j, i].imshow(fig)
+                axs[j, i].axis('off')
+
+        # plt.title("Cluster {p}, KMeans, {models}")
+        plt.tight_layout()
+        plt.savefig(f"{basepath}/cluster/cluster{p}_grid_viz.png")
+
 if __name__ == "__main__":
     plot_pca_cluster()

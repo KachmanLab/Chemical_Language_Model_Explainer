@@ -99,18 +99,19 @@ def train(cfg: DictConfig) -> None:
             auto_lr_find=False,
         )
 
-        if 'mmb' in cfg.model.model:
-            trainer.fit(model, train_loader, valid_loader)
+        # if 'mmb' in cfg.model.model:
+        #     trainer.fit(model, train_loader, valid_loader)
+        #
+        # elif 'ecfp' in cfg.model.model and 'lin' in cfg.head.head:
+        #     lasso = Lasso(alpha=0.2, fit_intercept=False)
+        #     feat, lab = train[:]
+        #     lasso.fit(feat, lab)
+        #
+        #     model.head.fc1.weight.requires_grad = False
+        #     model.head.fc1.weight[0] = torch.FloatTensor(lasso.coef_)
 
-        elif 'ecfp' in cfg.model.model and 'lin' in cfg.head.head:
-            lasso = Lasso(alpha=0.2, fit_intercept=False)
-            feat, lab = train[:]
-            lasso.fit(feat, lab)
-
-            model.head.fc1.weight.requires_grad = False
-            model.head.fc1.weight[0] = torch.FloatTensor(lasso.coef_)
-
-        # trainer.fit(model, train_loader, valid_loader)
+        trainer.fit(model, train_loader, valid_loader)
+        
         print('validating fold', fold)
         metrics[fold] = trainer.validate(model, valid_loader)[0]
         # wandb.finish()

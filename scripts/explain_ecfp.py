@@ -142,9 +142,10 @@ def explain_ecfp(cfg: DictConfig) -> None:
             atomsToUse.add(mol.GetBondWithIdx(b).GetEndAtomIdx())
         return atomsToUse
 
-    def to_rdkit_cmap(atom_weight):
+    def to_rdkit_cmap(atom_weight, cmap = None):
         '''helper to map to shape required by RDkit to visualize '''
-        cmap = sns.light_palette("green", reverse=False, as_cmap=True)
+        if not cmap:
+            cmap = sns.light_palette("green", reverse=False, as_cmap=True)
         # atom_weight = Normalize()(atom_weight)
         atom_weight = norm(atom_weight)
         return {i: [tuple(cmap(w))] for i, w in enumerate(atom_weight)}
@@ -173,6 +174,14 @@ def explain_ecfp(cfg: DictConfig) -> None:
             f.write(d.GetDrawingText())
         return d
 
+    # coolwarm = sns.color_palette("coolwarm", as_cmap=True)
+    # cmapper = ColorMapper(vmin=-1, vmax=1, cmap=coolwarm)
+    # pos_cmapper = ColorMapper(color='blue')
+    # neg_cmapper = ColorMapper(color='red')
+    pos_cmap = sns.light_palette('red', reverse=False, as_cmap=True)
+    neg_cmap = sns.light_palette('blue', reverse=False, as_cmap=True)
+    div_cmap = sns.color_palette("coolwarm", as_cmap=True)
+    
     # plot entire test set:
     smiles = test_dataset.smiles
     labels = test_dataset.labels
@@ -201,11 +210,11 @@ def explain_ecfp(cfg: DictConfig) -> None:
 
         # norm = Normalize(vmin=-7.29, vmax=2.04)
         norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_weight), smi, logs, pred, uid)
+        _ = plot_weighted_mol(to_rdkit_cmap(morgan_weight, div_cmap), smi, logs, pred, uid)
         norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos), smi, logs, pred, uid, '_pos')
+        _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos, pos_cmap), smi, logs, pred, uid, '_pos')
         norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg), smi, logs, pred, uid, '_neg')
+        _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg, neg_cmap), smi, logs, pred, uid, '_neg')
 
     attributions = pd.DataFrame({
         "smiles": smiles,
