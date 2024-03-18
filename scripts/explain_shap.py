@@ -147,7 +147,7 @@ def explain_shap(cfg: DictConfig) -> None:
     ])
 
     coolwarm = sns.color_palette("coolwarm", as_cmap=True)
-    cmapper = ColorMapper(vmin=-1, vmax=1, cmap=coolwarm)
+    cmapper = ColorMapper(diverging=True, cmap=coolwarm)
     pos_cmapper = ColorMapper(color='blue')
     neg_cmapper = ColorMapper(color='red')
 

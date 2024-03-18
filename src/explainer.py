@@ -110,10 +110,9 @@ class MolecularSelfAttentionViz():
 
 
 class ColorMapper():
-    def __init__(self, color='green', vmin=None, vmax=None, cmap=None):
+    def __init__(self, color='green', diverging=False, cmap=None):
         self.color = color
-        self.vmin = vmin
-        self.vmax = vmax
+        self.diverging = diverging
         self.atoms = ['C', 'c', 'O', 'o', 'N', 'B', 'Br', 'F', 'S', 'Cl', 'P',
             '[P]', 'I', 'n', '[n]', 's', '[s]', '[S]',  '[P+]', '[B]', '[N+]',
             '[O-]', '[#6]', '[#7]', '[C@H]', '[C@]', '[C@@]', '[C@@H]', '[nH]',
@@ -130,20 +129,39 @@ class ColorMapper():
 
         if cmap:
             self.cmap = cmap
+        elif diverging:
+            self.cmap = sns.color_palette("coolwarm", as_cmap=True)
         else:
             self.cmap = sns.light_palette(color, reverse=False, as_cmap=True)
-        # TODO validate vmin, vmax scaling works (_autoscale gets called)
-        self.norm = Normalize(self.vmin, self.vmax)
 
     def filter_atoms(self, weight, token):
         ''' filter out non-atom tokens '''
         return [weight[i] for i, t in enumerate(token) if t in self.atoms]
 
+    def div_norm(self, weight, token):
+        # normalize into [-1, 1] range, then shift to [0,1]
+        # keeps absolute sign correct at 0.5 cutoff for diverging cmap
+        weights = self.filter_atoms(weight, token)
+        cnt_neg = np.sum(np.where(weights<0., 1, 0))
+
+        amax = np.abs(weights).max()
+        weights = weights * 1/amax
+        weights = (weights * 0.5) + 0.5
+
+        # assert positive/negative fraction identical
+        assert weights.max() < 1. and weights.min() > 0.
+        assert cnt_neg == np.sum(np.where(w<0.5, 1, 0))
+        return weights
+
     def __call__(self, weight, token):
         ''' filter relevance weights for atom-only tokens
             and scale by its own min/max'''
-        self.norm = Normalize(self.vmin, self.vmax)
-        return self.norm(self.filter_atoms(weight, token))
+        if self.diverging:
+            return self.div_norm(self.filter_atoms(weight, token))
+        else:
+            return Normalize()(self.filter_atoms(weight, token))
+            # self.norm = Normalize(self.vmin, self.vmax)
+            # return self.norm(self.filter_atoms(weight, token))
 
     def to_rdkit_cmap(self, weight):
         '''helper to map to shape required by RDkit to visualize '''

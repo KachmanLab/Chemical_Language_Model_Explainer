@@ -12,6 +12,7 @@ from matplotlib.colors import Normalize
 import torch
 from src.dataloader import ECFPDataSplit
 from src.model import ECFPLinear
+from src.explainer import ColorMapper
 import hydra
 import pickle
 from omegaconf import OmegaConf, DictConfig
@@ -178,9 +179,10 @@ def explain_ecfp(cfg: DictConfig) -> None:
     # cmapper = ColorMapper(vmin=-1, vmax=1, cmap=coolwarm)
     # pos_cmapper = ColorMapper(color='blue')
     # neg_cmapper = ColorMapper(color='red')
+    div_cmap = sns.color_palette("coolwarm", as_cmap=True)
+    mapper = ColorMapper(divergent=True, cmap=div_cmap)
     pos_cmap = sns.light_palette('red', reverse=False, as_cmap=True)
     neg_cmap = sns.light_palette('blue', reverse=False, as_cmap=True)
-    div_cmap = sns.color_palette("coolwarm", as_cmap=True)
     
     # plot entire test set:
     smiles = test_dataset.smiles
@@ -209,12 +211,15 @@ def explain_ecfp(cfg: DictConfig) -> None:
         # vmin, vmax = np.min(min, vmin), np.max(max, vmax)
 
         # norm = Normalize(vmin=-7.29, vmax=2.04)
-        norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_weight, div_cmap), smi, logs, pred, uid)
-        norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos, pos_cmap), smi, logs, pred, uid, '_pos')
-        norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg, neg_cmap), smi, logs, pred, uid, '_neg')
+        morgan_weight = mapper.to_rdkit_cmap(mapper.div_norm(morgan_weight))
+        _ = plot_weighted_mol(morgan_weight, smi, logs, pred, uid)
+
+        # norm = Normalize()
+        # _ = plot_weighted_mol(to_rdkit_cmap(morgan_weight, div_cmap), smi, logs, pred, uid)
+        # norm = Normalize()
+        # _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos, pos_cmap), smi, logs, pred, uid, '_pos')
+        # norm = Normalize()
+        # _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg, neg_cmap), smi, logs, pred, uid, '_neg')
 
     attributions = pd.DataFrame({
         "smiles": smiles,
