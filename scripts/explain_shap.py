@@ -148,8 +148,8 @@ def explain_shap(cfg: DictConfig) -> None:
 
     coolwarm = sns.color_palette("coolwarm", as_cmap=True)
     cmapper = ColorMapper(diverging=True, cmap=coolwarm)
-    pos_cmapper = ColorMapper(color='blue')
-    neg_cmapper = ColorMapper(color='red')
+    # pos_cmapper = ColorMapper(color='blue')
+    # neg_cmapper = ColorMapper(color='red')
 
     make_div_legend()
     xai = cfg.model.model
@@ -183,16 +183,16 @@ def explain_shap(cfg: DictConfig) -> None:
             atom_weight = cmapper(shapval, token)
             atom_weights.append(atom_weight)
             atom_color = cmapper.to_rdkit_cmap(atom_weight)
-
-            pos_mask = np.where(np.sign(shapval) == 1, 1, 0)
-            shap_pos = shapval * pos_mask
-            pos_color = cmapper(shap_pos, token)
-            pos_color = pos_cmapper.to_rdkit_cmap(pos_color)
-
-            neg_mask = np.where(np.sign(shapval) == -1, 1, 0)
-            shap_neg = shapval * neg_mask
-            neg_color = cmapper(shap_neg, token)
-            neg_color = neg_cmapper.to_rdkit_cmap(neg_color)
+            #
+            # pos_mask = np.where(np.sign(shapval) == 1, 1, 0)
+            # shap_pos = shapval * pos_mask
+            # pos_color = cmapper(shap_pos, token)
+            # pos_color = pos_cmapper.to_rdkit_cmap(pos_color)
+            #
+            # neg_mask = np.where(np.sign(shapval) == -1, 1, 0)
+            # shap_neg = shapval * neg_mask
+            # neg_color = cmapper(shap_neg, token)
+            # neg_color = neg_cmapper.to_rdkit_cmap(neg_color)
 
             if uid not in []:  # 17, 39, 94, 210, 217
                 # segmentation fault, likely due to weird structure?

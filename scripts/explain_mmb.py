@@ -256,7 +256,8 @@ def explain_mmb(cfg: DictConfig) -> None:
         h_rads = {}  # ?
         h_lw_mult = {}  # ?
 
-        label = f'Exp {cfg.task.plot_propname}: {label:.2f}, predicted: {pred:.2f}\n{smiles}'
+        # label = f'Exp {cfg.task.plot_propname}: {label:.2f}, predicted: {pred:.2f}\n{smiles}'
+        label = ''
 
         mol = Chem.MolFromSmiles(smiles)
         mol = Draw.PrepareMolForDrawing(mol)

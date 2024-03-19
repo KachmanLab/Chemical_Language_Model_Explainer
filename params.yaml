@@ -15,15 +15,17 @@ split:
   color: r
   scale: false
 model:
-  model: mmb-ft-avg
-  finetune: true
+  model: mmb-ft
+  finetune: false
   n_batch: 48
   seed: 42
   n_epochs: 30
 head:
   head: lin
 xai:
-  model: mmb-avg
-  xai: shap
-  mask: false
-  cmap: div
+  model: mmb-ft
+  xai: mmb
+  mask: true
+  sign: None
+  save_heat: false
+  cmap: None

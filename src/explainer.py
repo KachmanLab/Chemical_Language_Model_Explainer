@@ -138,19 +138,23 @@ class ColorMapper():
         ''' filter out non-atom tokens '''
         return [weight[i] for i, t in enumerate(token) if t in self.atoms]
 
-    def div_norm(self, weight, token):
+    def div_norm(self, weights):
         # normalize into [-1, 1] range, then shift to [0,1]
         # keeps absolute sign correct at 0.5 cutoff for diverging cmap
-        weights = self.filter_atoms(weight, token)
-        cnt_neg = np.sum(np.where(weights<0., 1, 0))
+        weights = np.array(weights)
+        cnt_pre = np.sum(np.where(weights < 0., 1, 0))
 
-        amax = np.abs(weights).max()
-        weights = weights * 1/amax
+        amax = np.max(np.abs(weights))
+        # if amax == 0.:
+        #     amax = 1.
+        weights = (weights + 1e-16) * (1/amax)
         weights = (weights * 0.5) + 0.5
 
         # assert positive/negative fraction identical
-        assert weights.max() < 1. and weights.min() > 0.
-        assert cnt_neg == np.sum(np.where(w<0.5, 1, 0))
+        cnt_post = np.sum(np.where(weights < 0.5, 1, 0))
+        if cnt_pre != cnt_post:
+            print(cnt_pre == cnt_post, f'{weights}, {cnt_pre}, {cnt_post}')
+        assert weights.max() <= 1.01 and weights.min() >= -0.01
         return weights
 
     def __call__(self, weight, token):
@@ -195,9 +199,10 @@ def make_legend(colormap=None):
 
 def make_div_legend():
     coolwarm = sns.color_palette("coolwarm", as_cmap=True)
-    mapper = ColorMapper(vmin=-1, vmax=1, cmap=coolwarm)
-    norm = Normalize(vmin=-1, vmax=1)
-    sm = ScalarMappable(cmap=mapper.cmap, norm=norm)
+    mapper = ColorMapper(diverging=True, cmap=coolwarm)
+    # norm = Normalize(vmin=-1, vmax=1)
+    # norm = ColorMapper.div_norm
+    sm = ScalarMappable(cmap=mapper.cmap, norm=None)
     sm.set_array([])  # create a scalar mappable without any data
 
     # Create an empty figure and add the colorbar to it
@@ -292,7 +297,8 @@ def plot_weighted_molecule(atom_colors, smiles, token, label, pred, prefix="", s
     h_rads = {}  # ?
     h_lw_mult = {}  # ?
 
-    label = f'Experimental: {label:.2f}, predicted: {pred:.2f}\n{smiles}'
+    # label = f'Experimental: {label:.2f}, predicted: {pred:.2f}\n{smiles}'
+    label = ''
 
     mol = Chem.MolFromSmiles(smiles)
     mol = Draw.PrepareMolForDrawing(mol)

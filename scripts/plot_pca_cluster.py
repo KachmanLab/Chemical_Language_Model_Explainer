@@ -184,7 +184,7 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
                                 figsize=(n_models*9, n_neighbors*8))
         for i, mdir in enumerate(models):
             if 'ecfp' in mdir:
-                fname = 'MorganAttrib'
+                fname = 'MorganAttrib_reg'
             else:
                 mname = mdir.replace('-lin', '').replace('-hier', '')
                 fname = f"{mname}_MolViz"

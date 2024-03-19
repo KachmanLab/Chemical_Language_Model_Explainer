@@ -157,7 +157,8 @@ def explain_ecfp(cfg: DictConfig) -> None:
         h_rads = {}
         h_lw_mult = {}
 
-        label = f'Exp logS: {logS:.2f}, predicted: {pred:.2f}\n{smiles}'
+        # label = f'Exp logS: {logS:.2f}, predicted: {pred:.2f}\n{smiles}'
+        label = ''
 
         mol = Chem.MolFromSmiles(smiles)
         mol = Draw.PrepareMolForDrawing(mol)
@@ -180,7 +181,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
     # pos_cmapper = ColorMapper(color='blue')
     # neg_cmapper = ColorMapper(color='red')
     div_cmap = sns.color_palette("coolwarm", as_cmap=True)
-    mapper = ColorMapper(divergent=True, cmap=div_cmap)
+    mapper = ColorMapper(diverging=True, cmap=div_cmap)
     pos_cmap = sns.light_palette('red', reverse=False, as_cmap=True)
     neg_cmap = sns.light_palette('blue', reverse=False, as_cmap=True)
     
@@ -211,15 +212,15 @@ def explain_ecfp(cfg: DictConfig) -> None:
         # vmin, vmax = np.min(min, vmin), np.max(max, vmax)
 
         # norm = Normalize(vmin=-7.29, vmax=2.04)
-        morgan_weight = mapper.to_rdkit_cmap(mapper.div_norm(morgan_weight))
-        _ = plot_weighted_mol(morgan_weight, smi, logs, pred, uid)
+        morgan_div = mapper.to_rdkit_cmap(mapper.div_norm(morgan_weight))
+        _ = plot_weighted_mol(morgan_div, smi, logs, pred, uid, '_div')
 
-        # norm = Normalize()
-        # _ = plot_weighted_mol(to_rdkit_cmap(morgan_weight, div_cmap), smi, logs, pred, uid)
-        # norm = Normalize()
-        # _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos, pos_cmap), smi, logs, pred, uid, '_pos')
-        # norm = Normalize()
-        # _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg, neg_cmap), smi, logs, pred, uid, '_neg')
+        norm = Normalize()
+        _ = plot_weighted_mol(to_rdkit_cmap(morgan_weight, div_cmap), smi, logs, pred, uid, '_reg')
+        norm = Normalize()
+        _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos, pos_cmap), smi, logs, pred, uid, '_pos')
+        norm = Normalize()
+        _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg, neg_cmap), smi, logs, pred, uid, '_neg')
 
     attributions = pd.DataFrame({
         "smiles": smiles,
