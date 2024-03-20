@@ -80,6 +80,8 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
 
     pca = PCA(n_components=2, random_state=cfg.split.data_seed)
     pca = pca.fit(valid_emb)
+    expl_var = pca.explained_variance_ratio_ * 100
+    print('expl.var', sum(expl_var), expl_var)
     valid_latent = pca.transform(valid_emb)
     test_latent = pca.transform(test_emb)
 
@@ -87,18 +89,18 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
     test_label = np.array(test.labels)
 
     # all_latent = np.concatenate([valid_latent, test_latent])
-    n_neighbors = 6
-    n_clusters = 16
-
-    # kmeans = KMeans(n_clusters, random_state=cfg.split.data_seed)
-    # kmeans = kmeans.fit(valid_latent)
-    # kmeans = kmeans.fit(test_latent)
-    # print(kmeans.predict(test_latent))
-    # kdist = kmeans.transform(test_latent)
+    n_neighbors = 12
+    n_clusters = 4
 
     kmeans = KMeans(n_clusters, random_state=cfg.split.data_seed)
-    kmeans = kmeans.fit(test_emb)
-    kdist = kmeans.transform(test_emb)
+    # kmeans = kmeans.fit(valid_latent)
+    kmeans = kmeans.fit(test_latent)
+    print(kmeans.predict(test_latent))
+    kdist = kmeans.transform(test_latent)
+
+    # kmeans = KMeans(n_clusters, random_state=cfg.split.data_seed)
+    # kmeans = kmeans.fit(test_emb)
+    # kdist = kmeans.transform(test_emb)
 
     print('kd shape', kdist.shape)
     print(kdist)
@@ -108,21 +110,32 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
     print(len(neighbor_ix), neighbor_ix)
 
     cmap = plt.cm.viridis
-    expl_var = pca.explained_variance_ratio_ * 100
-    print('expl.var', sum(expl_var), expl_var)
     plt.figure(figsize=(10, 8))
 
     centroids = kmeans.cluster_centers_
+
+    centroids_black = centroids #10, 12, 5, 2
     plt.scatter(
-        centroids[:, 0],
-        centroids[:, 1],
+        centroids_black[:, 0],
+        centroids_black[:, 1],
         marker="x",
         s=269,
         linewidths=3,
-        color="b",
+        color="black",
         zorder=10,
         label='Centroids'
     )
+    # centroids_blue = centroids[[1,2,3,10,15], :]  #[0,1], :] # 3, 15, 14
+    # plt.scatter(
+    #     centroids_blue[:, 0],
+    #     centroids_blue[:, 1],
+    #     marker="x",
+    #     s=269,
+    #     linewidths=3,
+    #     color="b",
+    #     zorder=10,
+    #     label='Selected'
+    # )
     if n_clusters < 5:
         plt.scatter(
             test_latent[neighbors, 0],
@@ -154,6 +167,29 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
     # Save or show the plot
     plt.tight_layout()
     plt.savefig(f"{basepath}/{mdir}/pca_kmeans_viz.png")
+    plt.savefig(f"{basepath}/cluster/pca_kmeans_viz.png")
+
+
+    plt.clf()
+    # loop over clusters, one fig per cluster
+    mdir = 'mmb-ft-lin'
+    n_col = 3
+    n_row = n_neighbors // n_col
+    for p, cluster in enumerate(neighbor_ix):
+        fig, axs = plt.subplots(n_row, n_col,
+                                figsize=(n_col*9, n_row*8))
+        for i in range(n_row):
+            for j, uid in enumerate(cluster[i*n_col:(i+1)*n_col]):
+                print(p, i, j, '\t', 'clu', p, cluster, uid)
+                fig = Image.open(f"{basepath}/{mdir}/viz/{uid}_mmb-ft_MolViz.png")
+                # axs[j, i].imshow(fig)
+                # axs[j, i].axis('off')
+                axs[i, j].imshow(fig)
+                axs[i, j].axis('off')
+
+        # plt.title("Cluster {p}, KMeans, {models}")
+        plt.tight_layout()
+        plt.savefig(f"{basepath}/cluster/mmb_cluster{p}.png")
 
 
 
@@ -174,6 +210,9 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
 
 
 
+    plt.clf()
+    n_neighbors = 5
+    neighbor_ix = [np.argsort(kdist[:, cl])[:n_neighbors] for cl in range(n_clusters)]
     # models = ['mmb-ft-lin', 'mmb-hier', 'mmb-ft-avg-hier', 'mmb-avg-hier', 'ecfp-lin']
     # models = ['mmb-ft-lin', 'mmb-ft-avg-hier', 'ecfp-lin']
     models = ['mmb-ft-lin', 'mmb-ft-avg-lin', 'ecfp-lin-scaled']
@@ -184,7 +223,7 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
                                 figsize=(n_models*9, n_neighbors*8))
         for i, mdir in enumerate(models):
             if 'ecfp' in mdir:
-                fname = 'MorganAttrib_reg'
+                fname = 'MorganAttrib_div'
             else:
                 mname = mdir.replace('-lin', '').replace('-hier', '')
                 fname = f"{mname}_MolViz"
@@ -199,6 +238,7 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
         # plt.title("Cluster {p}, KMeans, {models}")
         plt.tight_layout()
         plt.savefig(f"{basepath}/cluster/cluster{p}_grid_viz.png")
+
 
 if __name__ == "__main__":
     plot_pca_cluster()

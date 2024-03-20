@@ -16,14 +16,14 @@ split:
   scale: false
 model:
   model: mmb-ft
-  finetune: false
+  finetune: true
   n_batch: 48
   seed: 42
   n_epochs: 30
 head:
   head: lin
 xai:
-  model: mmb-ft
+  model: mmb
   xai: mmb
   mask: true
   sign: None
