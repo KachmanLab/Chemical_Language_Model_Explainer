@@ -114,18 +114,33 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
 
     centroids = kmeans.cluster_centers_
 
-    centroids_black = centroids #10, 12, 5, 2
-    plt.scatter(
-        centroids_black[:, 0],
-        centroids_black[:, 1],
-        marker="x",
-        s=269,
-        linewidths=3,
-        color="black",
-        zorder=10,
-        label='Centroids'
-    )
-    # centroids_blue = centroids[[1,2,3,10,15], :]  #[0,1], :] # 3, 15, 14
+    # markers = ['h', 'D', 'X', 's', '^', 'v', 'o', '*']
+    markers = ['s', 'v', 'o', 'D']
+    for i, ct in enumerate(centroids):
+        plt.scatter(
+            centroids[i, 0],
+            centroids[i, 1],
+            marker=markers[i],
+            s=269,
+            linewidths=3,
+            color="black",
+            zorder=10,
+            label=f'Centroid {i+1}'
+        )
+    
+    # centroids_black = centroids #10, 12, 5, 2
+    # plt.scatter(
+    #     centroids_black[:, 0],
+    #     centroids_black[:, 1],
+    #     marker="x",
+    #     # marker=["1","2","3","4"],
+    #     s=269,
+    #     linewidths=3,
+    #     color="black",
+    #     zorder=10,
+    #     label='Centroids'
+    # )
+    # # centroids_blue = centroids[[1,2,3,10,15], :]  #[0,1], :] # 3, 15, 14
     # plt.scatter(
     #     centroids_blue[:, 0],
     #     centroids_blue[:, 1],
@@ -141,7 +156,7 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
             test_latent[neighbors, 0],
             test_latent[neighbors, 1],
             marker="x",
-            s=69,
+            s=39,
             linewidths=3,
             color="black",
             zorder=10,
@@ -214,7 +229,6 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
     n_neighbors = 5
     neighbor_ix = [np.argsort(kdist[:, cl])[:n_neighbors] for cl in range(n_clusters)]
     # models = ['mmb-ft-lin', 'mmb-hier', 'mmb-ft-avg-hier', 'mmb-avg-hier', 'ecfp-lin']
-    # models = ['mmb-ft-lin', 'mmb-ft-avg-hier', 'ecfp-lin']
     models = ['mmb-ft-lin', 'mmb-ft-avg-lin', 'ecfp-lin-scaled']
     n_models = len(models)
     # loop over clusters, one fig per cluster
