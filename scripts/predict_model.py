@@ -15,6 +15,7 @@ from sklearn.linear_model import LinearRegression
 from src.explainer import ColorMapper, MolecularSelfAttentionViz
 import numpy as np
 import seaborn as sns
+from sklearn.preprocessing import RobustScaler
 
 @hydra.main(
     version_base="1.3", config_path="../conf", config_name="config")
@@ -89,6 +90,10 @@ def predict_model(cfg: DictConfig) -> None:
     all_valid = trainer.predict(model, valid_loader)
     all_test = trainer.predict(model, test_loader)
 
+
+
+
+
     results = pd.DataFrame(columns=[
         'SMILES', 'Tokens', 'Prediction', 'Label', 'Split']
     )
@@ -120,6 +125,19 @@ def predict_model(cfg: DictConfig) -> None:
     ###################################
     yhat = torch.concat([f.get('preds') for f in all_test])
     y = torch.concat([f.get('labels') for f in all_test])
+
+    if cfg.split.scale:
+        scaler = RobustScaler(quantile_range=[10, 90])
+        scaler.center_ = -2.68
+        scaler.scale_ = 5.779  # 5.8
+
+        yhat = scaler.inverse_transform(torch.reshape(yhat, (1, -1)))
+        y = scaler.inverse_transform(torch.reshape(y, (1, -1)))
+        # yhat = scaler.inverse_transform(torch.unsqueeze(yhat, 0))
+        # y = scaler.inverse_transform(torch.unsqueeze(y, 0))
+
+        yhat = torch.squeeze(torch.tensor(yhat))
+        y = torch.squeeze(torch.tensor(y))
 
     mse = nn.MSELoss()(yhat, y)
     mae = nn.L1Loss()(yhat, y)

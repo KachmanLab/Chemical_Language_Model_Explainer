@@ -17,6 +17,7 @@ import hydra
 import pickle
 from omegaconf import OmegaConf, DictConfig
 import pandas as pd
+import shap
 
 
 @hydra.main(
@@ -39,9 +40,15 @@ def explain_ecfp(cfg: DictConfig) -> None:
     mdir = f"{cfg.model.model}-{cfg.head.head}"
     ckpt_path = f"{basepath}/{mdir}/best.pt"
 
-    if cfg.model.model == 'ecfp':
-        model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
-        model.head.load_state_dict(torch.load(ckpt_path))
+    if cfg.model.model in 'ecfp':
+        if cfg.head.head in ['lin', 'hier']:
+            model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
+            model.head.load_state_dict(torch.load(ckpt_path))
+        # elif cfg.head.head in ['svr', 'rf']:
+        #     model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
+        #     model.head = SVR(kernel='rbf')
+            # WIP..
+
     else:
         raise NotImplementedError
 
@@ -82,6 +89,17 @@ def explain_ecfp(cfg: DictConfig) -> None:
     def get_weights(bits, weight_vector):
         return [f"{weight_vector[int(b)][0]:.3f}\t#{b}" for b in bits]
 
+    def get_shap_weights(bits, model, X):
+        if cfg.head.head == 'svr':
+            explainer = shap.KernelExplainer(model.predict, X)
+        elif cfg.head.head == 'rf':
+            explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X)[0]
+
+        # return shap_values
+        print([f"{shap_values[int(b)][0]:.3f}\t#{b}" for b in bits][:7])
+        return [f"{shap_values[int(b)][0]:.3f}\t#{b}" for b in bits]
+
     def make_morgan_dict(smi, nbits=cfg.model.nbits):
         mol = Chem.MolFromSmiles(smi)
         bi = {}
@@ -109,8 +127,8 @@ def explain_ecfp(cfg: DictConfig) -> None:
         #     print("Atom index:", atom.GetIdx(), ", Atomic symbol:", atom.GetSymbol())
 
         atom_weights = np.zeros(len(mol.GetAtoms()))
-        atom_positive = np.zeros(len(mol.GetAtoms()))
-        atom_negative = np.zeros(len(mol.GetAtoms()))
+        # atom_positive = np.zeros(len(mol.GetAtoms()))
+        # atom_negative = np.zeros(len(mol.GetAtoms()))
         for _mol, x, bi in bits_dict.values():
             assert Chem.MolToSmiles(mol) == Chem.MolToSmiles(_mol)
             w_x = weights_vec[int(x)]
@@ -125,12 +143,12 @@ def explain_ecfp(cfg: DictConfig) -> None:
                     w_x = w_x / len(atomsToUse)
                 atom_weights[list(atomsToUse)] += w_x
 
-                if w_x > 0:
-                    atom_positive[list(atomsToUse)] += w_x
-                elif w_x < 0:
-                    atom_negative[list(atomsToUse)] += w_x
+                # if w_x > 0:
+                #     atom_positive[list(atomsToUse)] += w_x
+                # elif w_x < 0:
+                #     atom_negative[list(atomsToUse)] += w_x
 
-        return atom_weights, atom_positive, atom_negative
+        return atom_weights #, atom_positive, atom_negative
 
     def extend_morgan(mol, atomId, radius=2):
         ''' get atoms in radius centered on atomId. code from rdkit. '''
@@ -182,32 +200,40 @@ def explain_ecfp(cfg: DictConfig) -> None:
     # neg_cmapper = ColorMapper(color='red')
     div_cmap = sns.color_palette("coolwarm", as_cmap=True)
     mapper = ColorMapper(diverging=True, cmap=div_cmap)
-    pos_cmap = sns.light_palette('red', reverse=False, as_cmap=True)
-    neg_cmap = sns.light_palette('blue', reverse=False, as_cmap=True)
-    
+    # pos_cmap = sns.light_palette('red', reverse=False, as_cmap=True)
+    # neg_cmap = sns.light_palette('blue', reverse=False, as_cmap=True)
+
     # plot entire test set:
     smiles = test_dataset.smiles
     labels = test_dataset.labels
     ecfps = test_dataset.ecfp
     # vmin, vmax = 0., 0.
     morgan_preds, morgan_weights = [], []
-    morgan_positive, morgan_negative = [], []
+    # morgan_positive, morgan_negative = [], []
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
         pred = model(ecfp[None, ...]).detach().numpy().item()
         # pred = model.predict(ecfp[None, ...]).detach().numpy().item()
         # pred = model.predict(test_dataset[:64]).detach().numpy().item()
 
         bits_dict = make_morgan_dict(smi, nbits=cfg.model.nbits)
-        morgan_weight, morgan_pos, morgan_neg = attribute_morgan(
-            smi, bits_dict, weights)
+        # morgan_weight, morgan_pos, morgan_neg = attribute_morgan(
+        #     smi, bits_dict, weights)
+        if cfg.head.head == 'lin':
+            morgan_weight = attribute_morgan(smi, bits_dict, weights)
+        elif cfg.head.head == 'svr':
+            shap_weights = get_shap_weights(bits_dict, model, ecfp)
+            morgan_weight = attribute_morgan(smi, bits_dict, shap_weights)
+        elif cfg.head.head == 'rf':
+            shap_weights = get_shap_weights(bits_dict, model, ecfp)
+            morgan_weight = attribute_morgan(smi, bits_dict, shap_weights)
 
         topk_bits_dict = sort_dict_by_weight(bits_dict, weights, topk=cfg.xai.topk)
         _ = draw_morgan_bits(topk_bits_dict, uid=uid)
 
         morgan_preds.append(pred)
         morgan_weights.append(morgan_weight)
-        morgan_positive.append(morgan_pos)
-        morgan_negative.append(morgan_neg)
+        # morgan_positive.append(morgan_pos)
+        # morgan_negative.append(morgan_neg)
         # min, max = np.min(morgan_weights), np.max(morgan_weights)
         # vmin, vmax = np.min(min, vmin), np.max(max, vmax)
 
@@ -217,16 +243,16 @@ def explain_ecfp(cfg: DictConfig) -> None:
 
         norm = Normalize()
         _ = plot_weighted_mol(to_rdkit_cmap(morgan_weight, div_cmap), smi, logs, pred, uid, '_reg')
-        norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos, pos_cmap), smi, logs, pred, uid, '_pos')
-        norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg, neg_cmap), smi, logs, pred, uid, '_neg')
+        # norm = Normalize()
+        # _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos, pos_cmap), smi, logs, pred, uid, '_pos')
+        # norm = Normalize()
+        # _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg, neg_cmap), smi, logs, pred, uid, '_neg')
 
     attributions = pd.DataFrame({
         "smiles": smiles,
         "atom_weights": morgan_weights,
-        "atom_pos": morgan_positive,
-        "atom_neg": morgan_negative,
+        # "atom_pos": morgan_positive,
+        # "atom_neg": morgan_negative,
         "preds": morgan_preds,
         # "labels": list(labels)
         'split': 'test'

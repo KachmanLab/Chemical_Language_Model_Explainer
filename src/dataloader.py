@@ -25,7 +25,7 @@ class PropertyDataset(Dataset):
         self.scale = scale
         self.augment = augment
         print(smilesname, propname)
-        print(split, n_splits)
+        print(split, n_splits, 'splits')
 
         # split data into accurate test set according to SolProp
         df = pd.read_csv(file_path)
@@ -77,11 +77,17 @@ class PropertyDataset(Dataset):
         tr_va_df = df.drop(test_idx).reset_index(drop=True)
 
         if self.scale:
-            # self.scaler = RobustScaler(quantile_range=[10, 90]).fit(
-            #     np.expand_dims(np.array(tr_va_df[self.propname]), -1))
-
-            self.scaler = MinMaxScaler().fit(
+            self.scaler = RobustScaler(quantile_range=[10, 90]).fit(
                 np.expand_dims(np.array(tr_va_df[self.propname]), -1))
+
+            print('scaler params')
+            paramdict = self.scaler.get_params()
+            print(paramdict)
+            print(self.scaler.center_)
+            print(self.scaler.scale_)
+            # json.dumps(paramdict)
+            # self.scaler = MinMaxScaler().fit(
+            #     np.expand_dims(np.array(tr_va_df[self.propname]), -1))
 
             # self.scaler = QuantileTransformer(
             #     output_distribution='uniform'  # 'normal'
@@ -265,6 +271,30 @@ class AqSolDataset(PropertyDataset):
         test_idx = np.where(
             (df['count'] > 1) & (df['logS_aq_std'] < 0.2))[0]
         return test_idx
+
+
+class HJvMDataset(PropertyDataset):
+    def __init__(self, subset, file_path, smilesname, propname,
+                 split, split_frac, n_splits=5, data_seed=42,
+                 scale=False, augment=False):
+        super().__init__(subset, file_path, smilesname, propname,
+                         split, split_frac, n_splits, data_seed,
+                         scale, augment)
+
+    def custom_preprocess(self, df):
+        df['split'] = 'train'
+        testdf = pd.read_csv('/workspace/data/HJvM_aqueous_test.csv')
+        testdf['split'] = 'test'
+        fulldf = pd.concat([df, testdf], axis=0)
+        print('train', len(df), 'test', len(testdf))
+        print('full', len(fulldf), np.unique(fulldf['SMILES']))
+        return fulldf.reset_index(drop=True)
+
+    def custom_split(self, df):
+        test_idx = np.where(df['split'] == 'test')[0]
+        print(len(test_idx), test_idx)
+        return test_idx
+
 
 
 class CMCDataset(PropertyDataset):
