@@ -56,6 +56,7 @@ stages:
       - data/${task.task}/${split.split}/
       - src/model.py
       - scripts/train_model.py
+      - scripts/train_sklearn.py
     metrics:
       - out/${task.task}/${split.split}/${model.model}-${head.head}/metrics.json:
           persist: true

@@ -55,11 +55,11 @@ def explain_ecfp(cfg: DictConfig) -> None:
             assert weights.shape[0] == cfg.model.nbits
 
         elif cfg.head.head in ['svr', 'rf']:
-            # elif cfg.head.head == 'svr':
-            #     model = SVR(kernel='rbf')
-            # elif cfg.head.head == 'rf':
-            #     model = RandomForestRegressor(n_estimators=100,
-            #                                   random_state=42)
+            if cfg.head.head == 'svr':
+                model = SVR(kernel='rbf')
+            elif cfg.head.head == 'rf':
+                model = RandomForestRegressor(n_estimators=100,
+                                              random_state=42)
             with open(ckpt_path, 'rb') as file:
                 model = pickle.load(file)
 
@@ -99,15 +99,21 @@ def explain_ecfp(cfg: DictConfig) -> None:
         return [f"{weight_vector[int(b)][0]:.3f}\t#{b}" for b in bits]
 
     def get_shap_weights(bits, model, X):
+        X = np.array(X.unsqueeze(0))
+        print(X.shape)
         if cfg.head.head == 'svr':
             explainer = shap.KernelExplainer(model.predict, X)
         elif cfg.head.head == 'rf':
             explainer = shap.TreeExplainer(model)
+
         shap_values = explainer.shap_values(X)[0]
 
         # return shap_values
-        print([f"{shap_values[int(b)][0]:.3f}\t#{b}" for b in bits][:7])
-        return [f"{shap_values[int(b)][0]:.3f}\t#{b}" for b in bits]
+        print([int(b) for b in bits])
+        print(shap_values)
+        # print([f"{shap_values[int(b)][0]:.3f}\t#{b}" for b in bits][:7])
+        [print( f"{shap_values[int(b)]}", '\t', b) for b in bits]
+        return [f"{shap_values[int(b)]}" for b in bits]
 
     def make_morgan_dict(smi, nbits=cfg.model.nbits):
         mol = Chem.MolFromSmiles(smi)
@@ -220,7 +226,11 @@ def explain_ecfp(cfg: DictConfig) -> None:
     morgan_preds, morgan_weights = [], []
     # morgan_positive, morgan_negative = [], []
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
-        pred = model(ecfp[None, ...]).detach().numpy().item()
+        if cfg.head.head in ['lin', 'hier']:
+            pred = model(ecfp[None, ...]).detach().numpy().item()
+        elif cfg.head.head in ['svr', 'rf']:
+            pred = model.predict(ecfp[None, ...])
+
         # pred = model.predict(ecfp[None, ...]).detach().numpy().item()
         # pred = model.predict(test_dataset[:64]).detach().numpy().item()
 

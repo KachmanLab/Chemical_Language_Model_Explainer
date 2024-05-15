@@ -94,23 +94,27 @@ def predict_model(cfg: DictConfig) -> None:
     elif 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']:
         with open(ckpt_path, 'rb') as file:
             model = pickle.load(file)
-            all_valid = model.predict(valid.ecfp)
-            all_test = model.predict(test.ecfp)
-
+        all_valid = {'preds': model.predict(valid.ecfp),
+                     'labels': valid.labels}
+        all_test = {'preds': model.predict(test.ecfp),
+                    'labels': test.labels}
 
     results = pd.DataFrame(columns=[
         'SMILES', 'Tokens', 'Prediction', 'Label', 'Split']
     )
     for split, all in list(zip(['test', 'valid'], [all_test, all_valid])):
         # reverse order for consistency with plotting
-        if cfg.model.model == 'ecfp':
+        if 'ecfp' in cfg.model.model:
             smiles = test.smiles if split == 'test' else valid.smiles
             tokens = None
-        else:
+        elif 'mmb' in cfg.model.model:
             smiles = list(chain(*[f.get('smiles') for f in all]))
             tokens = list(chain(*[f.get('tokens') for f in all]))
 
-        if cfg.head.head not in ['svr', 'rf']:
+        if cfg.head.head in ['svr', 'rf']:
+            preds = all.get('preds')
+            labels = all.get('labels')
+        elif cfg.head.head in ['lin', 'hier']:
             preds = torch.concat([f.get('preds') for f in all]).cpu().numpy()
             labels = torch.concat([f.get('labels') for f in all]).cpu().numpy()
 
@@ -129,8 +133,14 @@ def predict_model(cfg: DictConfig) -> None:
     results.to_csv(f"{basepath}/{mdir}/predictions.csv", index=False)
 
     ###################################
-    yhat = torch.concat([f.get('preds') for f in all_test])
-    y = torch.concat([f.get('labels') for f in all_test])
+    # yhat = torch.concat([f.get('preds') for f in all_test])
+    # y = torch.concat([f.get('labels') for f in all_test])
+    if cfg.head.head in ['svr', 'rf']:
+        yhat = torch.tensor(all.get('preds'))
+        y = torch.tensor(all.get('labels'))
+    elif cfg.head.head in ['lin', 'hier']:
+        yhat = torch.concat([f.get('preds') for f in all]).cpu().numpy()
+        y = torch.concat([f.get('labels') for f in all]).cpu().numpy()
 
     if cfg.split.scale:
         scaler = RobustScaler(quantile_range=[10, 90])

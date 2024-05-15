@@ -55,12 +55,12 @@ def train(cfg: DictConfig) -> None:
                                   shuffle=False, num_workers=8)
 
         # configure model
-        if 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']:
-            model = ECFPModel(head=cfg.head.head,
-                              dim=cfg.model.nbits)
-            model.fit(train)
+        # if 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']:
+        #     model = ECFPModel(head=cfg.head.head,
+        #                       dim=cfg.model.nbits)
+        #     model.fit(train.ecfp, train.labels)
 
-        elif fold == 0:
+        if fold == 0:
             if cfg.model.model in ['mmb', 'mmb-ft']:
                 model = AqueousRegModel(head=cfg.head.head,
                                         finetune=cfg.model.finetune)

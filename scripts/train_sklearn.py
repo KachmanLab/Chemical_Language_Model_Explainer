@@ -17,12 +17,24 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 
 
+def evaluate(preds, labels, prefix=''):
+    metric = {}
+    mae = mean_absolute_error(preds, labels)
+    mse = mean_squared_error(preds, labels, squared=True)
+    rmse = mean_squared_error(preds, labels, squared=False)
+
+    metric[f'{prefix}_mae'] = mae
+    metric[f'{prefix}_mse'] = mse
+    metric[f'{prefix}_rmse'] = rmse
+    return metric
+
+
 @hydra.main(
     version_base="1.3", config_path="../conf", config_name="config")
 def train_sklearn(cfg: DictConfig) -> None:
     # print(OmegaConf.to_yaml(cfg))
 
-    print('FIT CONFIG from params.yaml')
+    print('FIT SKLEARN CONFIG from params.yaml')
     cfg = OmegaConf.load('./params.yaml')
     print(OmegaConf.to_yaml(cfg))
 
@@ -33,6 +45,7 @@ def train_sklearn(cfg: DictConfig) -> None:
         test = pickle.load(f)
         if cfg.model.model == 'ecfp':
             test = ECFPDataSplit(test, nbits=cfg.model.nbits)
+            print(test.ecfp.shape, test.labels.shape)
 
     basepath = f"./out/{cfg.task.task}/{cfg.split.split}"
     mdir = f"{cfg.model.model}-{cfg.head.head}"
@@ -60,13 +73,7 @@ def train_sklearn(cfg: DictConfig) -> None:
 
         print('validating fold', fold)
         valid_preds = model.predict(valid.ecfp)
-        val_rmse = mean_squared_error(valid_preds, valid.labels, squared=False)
-        val_mse = mean_squared_error(valid_preds, valid.labels, squared=True)
-        val_mae = mean_absolute_error(valid_preds, valid.labels)
-
-        metrics[fold]['val_mae'] = val_mae
-        metrics[fold]['val_mse'] = val_mse
-        metrics[fold]['val_rmse'] = val_rmse
+        metrics[fold] = evaluate(valid_preds, valid.labels, 'val')
 
         path = f"{basepath}/{mdir}/model/head{fold}.pt"
         with open(path, 'wb') as file:
@@ -87,13 +94,7 @@ def train_sklearn(cfg: DictConfig) -> None:
         pickle.dump(model, file)
 
     test_preds = model.predict(test.ecfp)
-    test_rmse = mean_squared_error(test_preds, test.labels, squared=False)
-    test_mse = mean_squared_error(test_preds, test.labels, squared=True)
-    test_mae = mean_absolute_error(test_preds, test.labels)
-
-    metrics['test']['test_mae'] = test_mae
-    metrics['test']['test_mse'] = test_mse
-    metrics['test']['test_rmse'] = test_rmse
+    metrics['test'] = evaluate(test_preds, test.labels, 'test')
     print(metrics)
     with open(f"{basepath}/{mdir}/metrics.json", 'w') as f:
         json.dump(metrics, f)
