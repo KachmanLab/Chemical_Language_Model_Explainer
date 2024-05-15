@@ -18,6 +18,8 @@ import pickle
 from omegaconf import OmegaConf, DictConfig
 import pandas as pd
 import shap
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
 
 
 @hydra.main(
@@ -44,21 +46,28 @@ def explain_ecfp(cfg: DictConfig) -> None:
         if cfg.head.head in ['lin', 'hier']:
             model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
             model.head.load_state_dict(torch.load(ckpt_path))
-        # elif cfg.head.head in ['svr', 'rf']:
-        #     model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
-        #     model.head = SVR(kernel='rbf')
-            # WIP..
+
+            weights = model.head.fc1.weight[0].cpu().detach().numpy()
+            weights = weights[:, None]
+
+            print('using trained model weights', ckpt_path)
+            print(weights.shape)
+            assert weights.shape[0] == cfg.model.nbits
+
+        elif cfg.head.head in ['svr', 'rf']:
+            # elif cfg.head.head == 'svr':
+            #     model = SVR(kernel='rbf')
+            # elif cfg.head.head == 'rf':
+            #     model = RandomForestRegressor(n_estimators=100,
+            #                                   random_state=42)
+            with open(ckpt_path, 'rb') as file:
+                model = pickle.load(file)
 
     else:
         raise NotImplementedError
 
-    weights = model.head.fc1.weight[0].cpu().detach().numpy()
-    weights = weights[:, None]
 
     # TODO ADD torch.ABS() for pos/neg attrib
-    print('using trained model weights', ckpt_path)
-    print(weights.shape)
-    assert weights.shape[0] == cfg.model.nbits
     # bias = model.head.fc1.bias[0].cpu().detach().numpy()
     # print('bias', bias)
     # vec = torch.abs(self.fc1.weight[0]).cpu().detach().numpy()
@@ -220,12 +229,12 @@ def explain_ecfp(cfg: DictConfig) -> None:
         #     smi, bits_dict, weights)
         if cfg.head.head == 'lin':
             morgan_weight = attribute_morgan(smi, bits_dict, weights)
-        elif cfg.head.head == 'svr':
+        elif cfg.head.head in ['svr', 'rf']:
             shap_weights = get_shap_weights(bits_dict, model, ecfp)
             morgan_weight = attribute_morgan(smi, bits_dict, shap_weights)
-        elif cfg.head.head == 'rf':
-            shap_weights = get_shap_weights(bits_dict, model, ecfp)
-            morgan_weight = attribute_morgan(smi, bits_dict, shap_weights)
+        # elif cfg.head.head == 'rf':
+        #     shap_weights = get_shap_weights(bits_dict, model, ecfp)
+        #     morgan_weight = attribute_morgan(smi, bits_dict, shap_weights)
 
         topk_bits_dict = sort_dict_by_weight(bits_dict, weights, topk=cfg.xai.topk)
         _ = draw_morgan_bits(topk_bits_dict, uid=uid)

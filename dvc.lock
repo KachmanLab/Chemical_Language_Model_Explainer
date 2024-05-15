@@ -421,8 +421,8 @@ stages:
     - pwd
     - echo "SPLIT DATA --task aq --property aq --loader AqSolDataset --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S)' --split accurate --n_splits 5 --split_frac 0.9 --data_seed
-      42 --color r"
+      --plot_propname 'log(S)' --split accurate --n_splits 2 --split_frac 0.9 --data_seed
+      42 --color r --scale"
     - mkdir -p data/aq/accurate/
     - python3 scripts/split_data.py
     deps:
@@ -432,17 +432,17 @@ stages:
       size: 3022
     - path: src/dataloader.py
       hash: md5
-      md5: 8507846235c2db809d1b5187678640c5
-      size: 22804
+      md5: a7c3aad7e1dcd95cb7e93d48b7a21835
+      size: 23030
     params:
       params.yaml:
         split:
           split: accurate
-          n_splits: 5
+          n_splits: 2
           split_frac: 0.9
           data_seed: 42
           color: r
-          scale: false
+          scale: true
         task:
           task: aq
           property: aq
@@ -455,9 +455,9 @@ stages:
     outs:
     - path: data/aq/accurate/
       hash: md5
-      md5: 7d2ba515bbf96b7822355f3ced6d6e7b.dir
-      size: 3008991
-      nfiles: 12
+      md5: 445aaefb9590b7669c6013e409cde1d2.dir
+      size: 1726705
+      nfiles: 6
   train_model:
     cmd:
     - mkdir -p out/aq/accurate/mmb-ft-lin/{viz,model}

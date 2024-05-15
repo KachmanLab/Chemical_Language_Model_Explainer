@@ -54,44 +54,48 @@ def predict_model(cfg: DictConfig) -> None:
     valid_loader = DataLoader(valid, batch_size=cfg.model.n_batch,
                               shuffle=False, num_workers=8)
 
-    head = cfg.head.head
-    if cfg.model.model in ['mmb', 'mmb-ft']:
-        model = AqueousRegModel(head=head,
-                                finetune=cfg.model.finetune)
-        model.head.load_state_dict(torch.load(ckpt_path))
-        model.explainer = MolecularSelfAttentionViz(save_heatmap=False)
-    elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
-        model = BaselineAqueousModel(head=head,
-                                     finetune=cfg.model.finetune)
-        model.head.load_state_dict(torch.load(ckpt_path))
-    elif cfg.model.model == 'ecfp':
-        model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
-        model.head.load_state_dict(torch.load(ckpt_path))
+    if 'mmb' in cfg.model.model:
+        head = cfg.head.head
+        if cfg.model.model in ['mmb', 'mmb-ft']:
+            model = AqueousRegModel(head=head,
+                                    finetune=cfg.model.finetune)
+            model.head.load_state_dict(torch.load(ckpt_path))
+            model.explainer = MolecularSelfAttentionViz(save_heatmap=False)
+        elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
+            model = BaselineAqueousModel(head=head,
+                                         finetune=cfg.model.finetune)
+            model.head.load_state_dict(torch.load(ckpt_path))
+        elif cfg.model.model == 'ecfp':
+            model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
+            model.head.load_state_dict(torch.load(ckpt_path))
 
-    if cfg.model.finetune or 'ft' in cfg.model.model:
-        mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
-        model.mmb.load_state_dict(torch.load(mmb_path))
-        # model.head.load_state_dict(torch.load(ckpt_path))
-        # model.explainer = MolecularSelfAttentionViz(save_heatmap=False)
+        if cfg.model.finetune or 'ft' in cfg.model.model:
+            mmb_path = f"{basepath}/{mdir}/best_mmb.pt"
+            model.mmb.load_state_dict(torch.load(mmb_path))
+            # model.head.load_state_dict(torch.load(ckpt_path))
+            # model.explainer = MolecularSelfAttentionViz(save_heatmap=False)
 
-    trainer = pl.Trainer(
-        accelerator='gpu',
-        gpus=1,
-        precision=16,
-    )
+        trainer = pl.Trainer(
+            accelerator='gpu',
+            gpus=1,
+            precision=16,
+        )
 
-    metrics[f'val_{best_fold}'] = trainer.validate(model, valid_loader)[0]
-    metrics[f'test_{best_fold}'] = trainer.validate(model, test_loader)[0]
-    print('val scores', 'best fold: ', metrics[f'val_{best_fold}'],
-          'valid', metrics['valid'])
-    print('test scores', 'best fold', metrics[f'test_{best_fold}'],
-          'valid', metrics['test'])
+        metrics[f'val_{best_fold}'] = trainer.validate(model, valid_loader)[0]
+        metrics[f'test_{best_fold}'] = trainer.validate(model, test_loader)[0]
+        print('val scores', 'best fold: ', metrics[f'val_{best_fold}'],
+              'valid', metrics['valid'])
+        print('test scores', 'best fold', metrics[f'test_{best_fold}'],
+              'valid', metrics['test'])
 
-    all_valid = trainer.predict(model, valid_loader)
-    all_test = trainer.predict(model, test_loader)
+        all_valid = trainer.predict(model, valid_loader)
+        all_test = trainer.predict(model, test_loader)
 
-
-
+    elif 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']:
+        with open(ckpt_path, 'rb') as file:
+            model = pickle.load(file)
+            all_valid = model.predict(valid.ecfp)
+            all_test = model.predict(test.ecfp)
 
 
     results = pd.DataFrame(columns=[
@@ -105,8 +109,10 @@ def predict_model(cfg: DictConfig) -> None:
         else:
             smiles = list(chain(*[f.get('smiles') for f in all]))
             tokens = list(chain(*[f.get('tokens') for f in all]))
-        preds = torch.concat([f.get('preds') for f in all]).cpu().numpy()
-        labels = torch.concat([f.get('labels') for f in all]).cpu().numpy()
+
+        if cfg.head.head not in ['svr', 'rf']:
+            preds = torch.concat([f.get('preds') for f in all]).cpu().numpy()
+            labels = torch.concat([f.get('labels') for f in all]).cpu().numpy()
 
         res = pd.DataFrame({
             'SMILES': smiles,

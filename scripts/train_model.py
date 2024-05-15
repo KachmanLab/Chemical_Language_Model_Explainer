@@ -3,7 +3,9 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 import wandb
-from src.model import AqueousRegModel, BaselineAqueousModel, ECFPLinear
+from src.model import (
+    AqueousRegModel, BaselineAqueousModel, ECFPLinear, ECFPModel
+)
 from src.dataloader import ECFPDataSplit
 import pickle
 import json
@@ -43,7 +45,7 @@ def train(cfg: DictConfig) -> None:
             train = pickle.load(f)
         with open(f"{root}/valid{fold}.pkl", 'rb') as f:
             valid = pickle.load(f)
-        if cfg.model.model in 'ecfp':
+        if 'ecfp' in cfg.model.model:
             train = ECFPDataSplit(train, nbits=cfg.model.nbits)
             valid = ECFPDataSplit(valid, nbits=cfg.model.nbits)
         print('len train, val', len(train), len(valid))
@@ -53,7 +55,12 @@ def train(cfg: DictConfig) -> None:
                                   shuffle=False, num_workers=8)
 
         # configure model
-        if fold == 0:
+        if 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']:
+            model = ECFPModel(head=cfg.head.head,
+                              dim=cfg.model.nbits)
+            model.fit(train)
+
+        elif fold == 0:
             if cfg.model.model in ['mmb', 'mmb-ft']:
                 model = AqueousRegModel(head=cfg.head.head,
                                         finetune=cfg.model.finetune)
@@ -67,16 +74,6 @@ def train(cfg: DictConfig) -> None:
                 if cfg.head.head in ['lin', 'hier']:
                     model = ECFPLinear(head=cfg.head.head,
                                        dim=cfg.model.nbits)
-                elif cfg.head.head == 'svr':
-                    model = ECFPLinear(head=cfg.head.head,
-                                       dim=cfg.model.nbits)
-                    model.head = SVR(kernel='rbf')
-                elif cfg.head.head == 'rf':
-                    model = ECFPLinear(head=cfg.head.head,
-                                       dim=cfg.model.nbits)
-                    model.head = RandomForestRegressor(n_estimators=100,
-                                                       random_state=cfg.model.seed)
-
             if cfg.model.finetune or 'ft' in cfg.model.model:
                 # unfreeze to train the whole model instead of just the head
                 # cfg['finetune'] = True
@@ -116,10 +113,10 @@ def train(cfg: DictConfig) -> None:
 
         if 'mmb' in cfg.model.model:
             trainer.fit(model, train_loader, valid_loader)
-        elif 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']:
+        # elif 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']:
             # TODO merge with val set
-            feat, lab = train[:]
-            model.head.fit(feat, lab)
+            # feat, lab = train[:]
+            # model.head.fit(feat, lab)
 
             # lasso = Lasso(alpha=0.2, fit_intercept=False)
         #     feat, lab = train[:]

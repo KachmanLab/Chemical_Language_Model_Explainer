@@ -44,7 +44,9 @@ stages:
     cmd: 
       - mkdir -p out/${task.task}/${split.split}/${model.model}-${head.head}/{viz,model}
       - echo "TRAIN ${model} ${head}"
-      - python3 scripts/train_model.py #${task} ${split} ${model} ${head}
+      # - python3 scripts/train_model.py #${task} ${split} ${model} ${head}
+      - python3 scripts/train_${head.fit}.py #${task} ${split} ${model} ${head}
+      
     params:
       - task
       - split

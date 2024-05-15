@@ -11,6 +11,8 @@ from nemo_src.infer import NeMoMegaMolBARTWrapper
 from src.explainer import ColorMapper, MolecularSelfAttentionViz
 from src.maskedhead import (
     MaskedRegressionHead, MaskedLinearRegressionHead)
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
 
 
 class REGRegExTokenizer(RegExTokenizer):
@@ -342,6 +344,11 @@ class ECFPLinear(pl.LightningModule):
             self.head = LinearRegressionHead(dim=dim)
         elif head == 'hier':
             self.head = RegressionHead(dim=dim)
+        # elif head == 'svr':
+        #     self.head = SVR(kernel='rbf')
+        # elif head == 'rf':
+        #     self.head = RandomForestRegressor(n_estimators=100,
+        #                                       random_state=42)
         print(head, dim)
         self.criterion = nn.HuberLoss()
         self.criterion_mse = nn.MSELoss()
@@ -414,6 +421,24 @@ class ECFPLinear(pl.LightningModule):
         for layer in self.head.children():
             if hasattr(layer, 'reset_parameters'):
                 layer.reset_parameters()
+
+
+# class ECFPModel(ECFPLinear):
+#     def __init__(self, head='svr', dim=2048):
+#         super().__init__()
+#         self.dim = dim
+#         if head == 'svr':
+#             self.head = SVR(kernel='rbf')
+#         elif head == 'rf':
+#             self.head = RandomForestRegressor(n_estimators=100,
+#                                               random_state=42)
+#
+#     def fit(self, data):
+#         ecfp, labels = data[:]
+#         return self.head.fit(ecfp, labels)
+#
+#     def forward(self, ecfp):
+#         return self.head.predict(ecfp)
 
 
 ##########################################
