@@ -13,10 +13,11 @@ from sklearn.cluster import KMeans
 # from src.dataloader import ECFPDataSplit
 from src.model import MMB_R_Featurizer, MMB_AVG_Featurizer
 from src.dataloader import ECFPDataSplit
-import os 
+import os
 from mpl_toolkits.axes_grid1 import ImageGrid
 from PIL import Image
 from io import BytesIO
+
 
 @hydra.main(
     version_base="1.3", config_path="../conf", config_name="config")
@@ -76,7 +77,6 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
         test_emb = trainer.predict(model, test_loader)
         valid_emb = np.array(torch.concat(valid_emb))
         test_emb = np.array(torch.concat(test_emb))
-
 
     pca = PCA(n_components=2, random_state=cfg.split.data_seed)
     pca = pca.fit(valid_emb)
@@ -184,7 +184,6 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
     plt.savefig(f"{basepath}/{mdir}/pca_kmeans_viz.png")
     plt.savefig(f"{basepath}/cluster/pca_kmeans_viz.png")
 
-
     plt.clf()
     # loop over clusters, one fig per cluster
     mdir = 'mmb-ft-lin'
@@ -207,8 +206,6 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
         plt.savefig(f"{basepath}/cluster/mmb_cluster{p}.png")
 
 
-
-
     # PLOT 1 grid of mol's 
     # fig, axs = plt.subplots(n_neighbors, n_clusters,
     #                         figsize=(n_clusters*9, n_neighbors*8))
@@ -223,9 +220,8 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
     # plt.tight_layout()
     # plt.savefig(f"{basepath}/{mdir}/cluster_grid_viz.png")
 
-
-
     plt.clf()
+
     n_neighbors = 5
     neighbor_ix = [np.argsort(kdist[:, cl])[:n_neighbors] for cl in range(n_clusters)]
     # models = ['mmb-ft-lin', 'mmb-hier', 'mmb-ft-avg-hier', 'mmb-avg-hier', 'ecfp-lin']
@@ -253,6 +249,24 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
         plt.tight_layout()
         plt.savefig(f"{basepath}/cluster/cluster{p}_grid_viz.png")
 
+
+    # repeat for mmb-only
+    # n_clus = 4
+    # for p in range(n_clusters // n_clus):
+    #     fig, axs = plt.subplots(n_neighbors, n_clus,
+    #                             figsize=(n_clus*9, n_neighbors*8))
+    #     for i, cluster in enumerate(neighbor_ix[p*n_clus:(p+1)*n_clus]):
+    #         for j, uid in enumerate(cluster[:n_neighbors]):
+    #             fig = Image.open(
+    #                 f"{basepath}/{mdir}/viz/{uid}_{mdir}_MolViz.png"
+    #             )
+    #             # axs[i, j].imshow(molfig[i*n_cols+j])
+    #             print(i, j, '\t', cluster, uid)
+    #             axs[j, i].imshow(fig)
+    #             axs[j, i].axis('off')
+    #
+    #     plt.tight_layout()
+    #     plt.savefig(f"{basepath}/{mdir}/mmb_pca_kmeans_cl{p}.png")
 
 if __name__ == "__main__":
     plot_pca_cluster()

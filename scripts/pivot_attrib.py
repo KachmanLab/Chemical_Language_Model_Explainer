@@ -11,14 +11,17 @@ import os
 import json
 from sklearn.metrics.pairwise import cosine_similarity
 
+
 def restore_array(st):
     st = st.strip("'[").strip("']").split(' ')
     st = [s for s in st if s not in ['']]
     return np.array(st, dtype=float)
 
+
 def clean_string(st):
     tokens = st.strip("[").strip("]").split(',')
     return [t.replace("'", "").replace(" ", "") for t in tokens]
+
 
 def explode_attribs(models=None):
     cfg = OmegaConf.load('./params.yaml')
@@ -41,16 +44,23 @@ def explode_attribs(models=None):
                 # SHAP for -avg-
                 df['rel_weights'] = df['shap_weights'].apply(restore_array)
                 df['uid'] = range(len(df))
+                df['tokens'] = df['tokens'].apply(clean_string)
+            elif 'ecfp' in mdir:
+                # ECFP
+                df['rel_weights'] = df['atom_weights'].apply(restore_array)
             else:
                 # <R> for ours
                 df['rel_weights'] = df['rel_weights'].apply(restore_array)
-            df['tokens'] = df['tokens'].apply(clean_string)
-
-            # extract relevant columns
-            df = df.loc[:, ['uid', 'tokens', 'rel_weights']]
+                df['tokens'] = df['tokens'].apply(clean_string)
 
             # explode (pivot) from one uid per row to one token-weight per row
-            dfexp = df.explode(['rel_weights', 'tokens'])
+            if 'ecfp' in mdir:
+                df = df.loc[:, ['uid', 'rel_weights', 'smiles']]
+                dfexp = df.explode(['rel_weights'])
+            else:
+                # extract relevant columns
+                df = df.loc[:, ['uid', 'tokens', 'rel_weights']]
+                dfexp = df.explode(['rel_weights', 'tokens'])
 
             # cleanup
             dfexp = dfexp.reset_index(drop=True)
@@ -60,6 +70,7 @@ def explode_attribs(models=None):
         except FileNotFoundError:
             print(f"File not found: {basepath}/{mdir}")
             continue
+
 
 if __name__ == "__main__":
     explode_attribs()
