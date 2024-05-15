@@ -172,7 +172,7 @@ class ColorMapper():
         return {i: [tuple(self.cmap(w))] for i, w in enumerate(weight)}
 
 
-def make_legend(colormap=None):
+def make_legend(colormap=None, orientation='vertical'):
     if colormap:
         mapper = ColorMapper(cmap=colormap)
     else:
@@ -181,10 +181,15 @@ def make_legend(colormap=None):
     sm.set_array([])  # create a scalar mappable without any data
 
     # Create an empty figure and add the colorbar to it
-    fig, ax = plt.subplots(figsize=(1.5, 8))
+    if orientation == 'vertical':
+        fig, ax = plt.subplots(figsize=(1.5, 8))
+    elif orientation == 'horizontal':
+        fig, ax = plt.subplots(figsize=(8, 1.5))
     fig.subplots_adjust(bottom=0.2)
 
-    cbar = fig.colorbar(sm, cax=ax, orientation='vertical',
+    fig.subplots_adjust(bottom=0.2)
+
+    cbar = fig.colorbar(sm, cax=ax, orientation=orientation,
                         ticks=list(np.linspace(0, 1, 11)))
                         # label='Relative importance (a.u.)',
 
@@ -193,23 +198,26 @@ def make_legend(colormap=None):
 
     # Save the colorbar as an image file
     plt.tight_layout()
-    plt.savefig(f'{basepath}/{mdir}/viz/colorbar_au.png',
+    plt.savefig(f'{basepath}/{mdir}/viz/colorbar_au_{orientation}.png',
         dpi=300, bbox_inches='tight', pad_inches=0.02)
     plt.close()
 
-def make_div_legend():
+def make_div_legend(orientation='vertical'):
     coolwarm = sns.color_palette("coolwarm", as_cmap=True)
     mapper = ColorMapper(diverging=True, cmap=coolwarm)
-    # norm = Normalize(vmin=-1, vmax=1)
+    norm = Normalize(vmin=-1, vmax=1)
     # norm = ColorMapper.div_norm
-    sm = ScalarMappable(cmap=mapper.cmap, norm=None)
+    sm = ScalarMappable(cmap=mapper.cmap, norm=norm) #None)
     sm.set_array([])  # create a scalar mappable without any data
 
     # Create an empty figure and add the colorbar to it
-    fig, ax = plt.subplots(figsize=(1.5, 8))
+    if orientation == 'vertical':
+        fig, ax = plt.subplots(figsize=(1.5, 8))
+    elif orientation == 'horizontal':
+        fig, ax = plt.subplots(figsize=(8, 1.5))
     fig.subplots_adjust(bottom=0.2)
 
-    cbar = fig.colorbar(sm, cax=ax, orientation='vertical',
+    cbar = fig.colorbar(sm, cax=ax, orientation=orientation,
                         ticks=list(np.linspace(-1, 1, 11)))
                         # label='Relative importance (a.u.)',
 
@@ -218,7 +226,7 @@ def make_div_legend():
 
     # Save the colorbar as an image file
     plt.tight_layout()
-    plt.savefig(f'{basepath}/{mdir}/viz/colorbar_au.png',
+    plt.savefig(f'{basepath}/{mdir}/viz/colorbar_div_{orientation}.png',
         dpi=300, bbox_inches='tight', pad_inches=0.02)
     plt.close()
 
@@ -350,3 +358,8 @@ def plot_weighted_molecule(atom_colors, smiles, token, label, pred, prefix="", s
 # show sum(per-feature-attrib) == total-feature-attrib
 
 
+if __name__ == "__main__":
+    make_div_legend()
+    make_legend()
+    make_div_legend(orientation='horizontal')
+    make_legend(orientation='horizontal')
