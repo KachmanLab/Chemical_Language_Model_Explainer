@@ -18,8 +18,9 @@ import pickle
 from omegaconf import OmegaConf, DictConfig
 import pandas as pd
 import shap
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.svm import SVR
+import json
+# from sklearn.ensemble import RandomForestRegressor
+# from sklearn.svm import SVR
 
 
 @hydra.main(
@@ -55,17 +56,23 @@ def explain_ecfp(cfg: DictConfig) -> None:
             assert weights.shape[0] == cfg.model.nbits
 
         elif cfg.head.head in ['svr', 'rf']:
-            if cfg.head.head == 'svr':
-                model = SVR(kernel='rbf')
-            elif cfg.head.head == 'rf':
-                model = RandomForestRegressor(n_estimators=100,
-                                              random_state=42)
+            # if cfg.head.head == 'svr':
+            #     model = SVR(kernel='rbf')
+            # elif cfg.head.head == 'rf':
+            #     model = RandomForestRegressor(n_estimators=100,
+            #                                   random_state=42)
             with open(ckpt_path, 'rb') as file:
                 model = pickle.load(file)
 
+            with open(f"{basepath}/{mdir}/metrics.json", 'r') as f:
+                metrics = json.load(f)
+            best_fold = np.argmin([v['val_mae'] for k, v in metrics.items()
+                                   if k not in ['valid', 'test', 'best_fold']])
+            with open(f"{root}/train[.pkl", 'rb') as f:
+                train = pickle.load(f)
+            train_dataset = ECFPDataSplit(train, nbits=cfg.model.nbits)
     else:
         raise NotImplementedError
-
 
     # TODO ADD torch.ABS() for pos/neg attrib
     # bias = model.head.fc1.bias[0].cpu().detach().numpy()
@@ -92,34 +99,42 @@ def explain_ecfp(cfg: DictConfig) -> None:
             reverse=True
         )}
         if topk:
-            bits_dict = {k: v for i, (k, v) in enumerate(bits_dict.items()) if i < topk}
+            bits_dict = {k: v for i, (k, v) in enumerate(
+                bits_dict.items()) if i < topk}
         return bits_dict
 
     def get_weights(bits, weight_vector):
-        return [f"{weight_vector[int(b)][0]:.3f}\t#{b}" for b in bits]
+        # return [f"{weight_vector[int(b)][0]:.3f}\t#{b}" for b in bits]
+        # print([f"{weight_vector[int(b)]:.3f}\t#{b}" for b in bits])
+        # print([f"{weight_vector[int(b)][0]:.3f}\t#{b}" for b in bits])
+        if cfg.head.head in ['lin']:
+            return [f"{weight_vector[int(b)][0]:.3f}\t#{b}" for b in bits]
+        elif cfg.head.head in ['svr', 'rf']:
+            return [f"{weight_vector[int(b)]:.3f}\t#{b}" for b in bits]
 
-    def get_shap_weights(bits, model, X):
-        X = np.array(X.unsqueeze(0))
-        print(X.shape)
-        if cfg.head.head == 'svr':
-            explainer = shap.KernelExplainer(model.predict, X)
-        elif cfg.head.head == 'rf':
-            explainer = shap.TreeExplainer(model)
+    def calc_shap_weights(explainer, X):
+        X = np.array(X)
+        if X.shape[0] == cfg.model.nbits:
+            X = X.unsqueeze(0)
 
         shap_values = explainer.shap_values(X)[0]
-
+        print('len shap val vec', len(shap_values))
+        return shap_values
         # return shap_values
-        print([int(b) for b in bits])
-        print(shap_values)
+        # print([int(b) for b in bits])
+        # print('vals', shap_values)
+        # print('len', len(shap_values))
         # print([f"{shap_values[int(b)][0]:.3f}\t#{b}" for b in bits][:7])
-        [print( f"{shap_values[int(b)]}", '\t', b) for b in bits]
-        return [f"{shap_values[int(b)]}" for b in bits]
+        # print("*"*22)
+        # [print(f"{shap_values[int(b)]}") for b in bits]
+        # return [f"{shap_values[int(b)]}" for b in bits]
+        # return [f"{shap_values[int(b)][0]:.3f}\t#{b}" for b in bits]
 
     def make_morgan_dict(smi, nbits=cfg.model.nbits):
         mol = Chem.MolFromSmiles(smi)
         bi = {}
         fp = AllChem.GetMorganFingerprintAsBitVect(
-                mol, radius=2, bitInfo=bi, nBits=nbits
+            mol, radius=2, bitInfo=bi, nBits=nbits
         )
         bits_dict = {str(x): (mol, x, bi) for x in fp.GetOnBits()}
         return bits_dict
@@ -163,7 +178,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
                 # elif w_x < 0:
                 #     atom_negative[list(atomsToUse)] += w_x
 
-        return atom_weights #, atom_positive, atom_negative
+        return atom_weights  # , atom_positive, atom_negative
 
     def extend_morgan(mol, atomId, radius=2):
         ''' get atoms in radius centered on atomId. code from rdkit. '''
@@ -176,7 +191,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
             atomsToUse.add(mol.GetBondWithIdx(b).GetEndAtomIdx())
         return atomsToUse
 
-    def to_rdkit_cmap(atom_weight, cmap = None):
+    def to_rdkit_cmap(atom_weight, cmap=None):
         '''helper to map to shape required by RDkit to visualize '''
         if not cmap:
             cmap = sns.light_palette("green", reverse=False, as_cmap=True)
@@ -225,6 +240,15 @@ def explain_ecfp(cfg: DictConfig) -> None:
     # vmin, vmax = 0., 0.
     morgan_preds, morgan_weights = [], []
     # morgan_positive, morgan_negative = [], []
+
+    if cfg.head.head == 'svr':
+        explainer = shap.KernelExplainer(model.predict,
+                                         train_dataset.ecfp)
+    elif cfg.head.head == 'rf':
+        explainer = shap.TreeExplainer(model,
+                                       train_dataset.ecfp)
+        # all_weights = calc_shap_weights(model, ecfps)
+
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
         if cfg.head.head in ['lin', 'hier']:
             pred = model(ecfp[None, ...]).detach().numpy().item()
@@ -237,16 +261,23 @@ def explain_ecfp(cfg: DictConfig) -> None:
         bits_dict = make_morgan_dict(smi, nbits=cfg.model.nbits)
         # morgan_weight, morgan_pos, morgan_neg = attribute_morgan(
         #     smi, bits_dict, weights)
-        if cfg.head.head == 'lin':
-            morgan_weight = attribute_morgan(smi, bits_dict, weights)
-        elif cfg.head.head in ['svr', 'rf']:
-            shap_weights = get_shap_weights(bits_dict, model, ecfp)
-            morgan_weight = attribute_morgan(smi, bits_dict, shap_weights)
-        # elif cfg.head.head == 'rf':
-        #     shap_weights = get_shap_weights(bits_dict, model, ecfp)
-        #     morgan_weight = attribute_morgan(smi, bits_dict, shap_weights)
 
-        topk_bits_dict = sort_dict_by_weight(bits_dict, weights, topk=cfg.xai.topk)
+        if cfg.head.head in ['svr', 'rf']:
+            # for svr, rf re-calculate weights using shap,
+            # for lin the weights vec stays permanent
+            weights = calc_shap_weights(explainer, ecfp)
+            [print(f"{weights[int(b)]}", '\t', b) for b in bits_dict]
+            # wgt = all_weights[uid]
+            # [print(f"{wgt[int(b)]}", '\t', b) for b in bits_dict]
+            # assert np.allclose(wgt, weights, 1e-2)
+
+            # weights = model.coef_[0]
+            # print(weights.shape)
+
+        morgan_weight = attribute_morgan(smi, bits_dict, weights)
+
+        topk_bits_dict = sort_dict_by_weight(
+            bits_dict, weights, topk=cfg.xai.topk)
         _ = draw_morgan_bits(topk_bits_dict, uid=uid)
 
         morgan_preds.append(pred)
@@ -261,11 +292,15 @@ def explain_ecfp(cfg: DictConfig) -> None:
         _ = plot_weighted_mol(morgan_div, smi, logs, pred, uid, '_div')
 
         norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(morgan_weight, div_cmap), smi, logs, pred, uid, '_reg')
+        _ = plot_weighted_mol(to_rdkit_cmap(
+            morgan_weight, div_cmap), smi, logs, pred, uid, '_reg')
         # norm = Normalize()
         # _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos, pos_cmap), smi, logs, pred, uid, '_pos')
         # norm = Normalize()
         # _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg, neg_cmap), smi, logs, pred, uid, '_neg')
+
+        if uid > 32:
+            break
 
     attributions = pd.DataFrame({
         "smiles": smiles,
@@ -279,9 +314,9 @@ def explain_ecfp(cfg: DictConfig) -> None:
 
     attributions = attributions.reset_index().rename(columns={'index': 'uid'})
     attributions.to_csv(f"{basepath}/{mdir}/attributions.csv", index=False)
-#print(vmin, vmax)
+# print(vmin, vmax)
 
-#https://github.com/rdkit/rdkit/blob/d9d1fe2838053484027ba9f5f74629069c6984dc/rdkit/Chem/Draw/__init__.py#L947
+# https://github.com/rdkit/rdkit/blob/d9d1fe2838053484027ba9f5f74629069c6984dc/rdkit/Chem/Draw/__init__.py#L947
 
    #  prOint(type(p))
    #  import io
@@ -299,29 +334,29 @@ def explain_ecfp(cfg: DictConfig) -> None:
    #  im.text(text_position, "ASRWUADRTUADRURADNW Your Title Here",
    #          #fill=text_color, font=font)
    #          )
-   #  
+   #
    #  print(type(im))
    #  print(type(p))
    #  p.save(f"/workspace/results/aqueous/ecfp/{uid}_morgan_bits.png")
    #  # bytes_container = io.BytesIO()
    #  # im.save(bytes_container, format='PNG')
    #  # image_in_bytes = bytes_container.getvalue()
-   # 
+   #
    #
 
-#smi = 'c1ccccc1CC1CC1'
+# smi = 'c1ccccc1CC1CC1'
 
-#ECFP (Morgan)
+# ECFP (Morgan)
 # fpgen = AllChem.GetMorganGenerator(radius=2)
 # ao = AllChem.AdditionalOutput()
 # ao.CollectBitInfoMap()
 
-#list_bits = [(mol, x, bi) for x in fp.GetOnBits()]   # (mol, bit, bit info)
-#legends = [str(x) for x in fp.GetOnBits()]
-#Draw.DrawMorganBits(list_bits, molsPerRow=4,legends=legends)
+# list_bits = [(mol, x, bi) for x in fp.GetOnBits()]   # (mol, bit, bit info)
+# legends = [str(x) for x in fp.GetOnBits()]
+# Draw.DrawMorganBits(list_bits, molsPerRow=4,legends=legends)
 
 
-### SVG
+# SVG
 # drawOptions = Draw.rdMolDraw2D.MolDrawOptions()
 #     drawOptions.continuousHighlight = False
 #     drawOptions.includeMetadata = False
@@ -336,23 +371,23 @@ def explain_ecfp(cfg: DictConfig) -> None:
     # with open(f"/workspace/results/aqueous/ecfp/{uid}_morgan_bits.svg", 'w') as f:
     #     f.write(svg)
 
-    #drawer = rdMolDraw2D.MolDraw2DSVG(molSize[0], molSize[1])
-    # p = Draw.DrawMorganBits(bits_dict.values(), molsPerRow=4, 
+    # drawer = rdMolDraw2D.MolDraw2DSVG(molSize[0], molSize[1])
+    # p = Draw.DrawMorganBits(bits_dict.values(), molsPerRow=4,
     #                     legends=get_weights(bits_dict.keys(), weights))
     #
     # print(type(p))
     # p.save('/workspace/results/aqueous/ecfp/morgan_bits.png')
- 
 
-#p.savefig('/workspace/results/aqueous/ecfp/morgan_bits.png',
-    #bbox_inches='tight')
-                    #drawOptions=drawOptions)
-                    #legends=dict_bits.keys())  
-#p.save("/workspace/results/aqueous/ecfp/morgan_bits.png")
-#with open('/workspace/results/aqueous/ecfp/morgan_bits.svg', 'w') as f:
-    #f.write(drawer.GetDrawingText())
-    #plt.save(f)
-    #f.write(d.GetDrawingText())
+
+# p.savefig('/workspace/results/aqueous/ecfp/morgan_bits.png',
+    # bbox_inches='tight')
+    # drawOptions=drawOptions)
+    # legends=dict_bits.keys())
+# p.save("/workspace/results/aqueous/ecfp/morgan_bits.png")
+# with open('/workspace/results/aqueous/ecfp/morgan_bits.svg', 'w') as f:
+    # f.write(drawer.GetDrawingText())
+    # plt.save(f)
+    # f.write(d.GetDrawingText())
 
 # key = list(bits_dict.keys())[0]
 # tpl = bits_dict.get(key)
@@ -369,7 +404,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
 # for bitid in bi:
 #     mfp2_svg = Draw.DrawMorganBit(mol, bitid, bi, useSVG=True)
 #     svgs_ecfp.append(mfp2_svg)
-#     
+#
 #
 # ## RDKIT FP
 # fpgen = AllChem.GetRDKitFPGenerator()

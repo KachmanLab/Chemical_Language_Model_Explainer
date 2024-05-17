@@ -15,7 +15,7 @@ from omegaconf import OmegaConf, DictConfig
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
-
+from sklearn.model_selection import GridSearchCV
 
 def evaluate(preds, labels, prefix=''):
     metric = {}
@@ -64,12 +64,28 @@ def train_sklearn(cfg: DictConfig) -> None:
         # configure model
         assert 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']
         if cfg.head.head == 'svr':
-            model = SVR(kernel='rbf')
+            model = SVR(kernel='rbf',
+                        # gamma=0.01,
+                        # C=10
+                        )
         elif cfg.head.head == 'rf':
-            model = RandomForestRegressor(n_estimators=100,
+            model = RandomForestRegressor(n_estimators=200,
+                                          min_samples_split=2,
+                                          min_samples_leaf=1,
                                           random_state=42)
 
+        print('ecfptrain', train.ecfp.shape)
+        print('lab', train.labels.shape)
         model.fit(train.ecfp, train.labels)
+
+        # param_grid = {
+        #     'C': [1, 10, 100, 1000],
+        #     'gamma': [0.01, 0.1, 1, 'scale'],  # 'scale' is a good default
+        #     'epsilon': [0.01, 0.1, 0.5]
+        # }
+        # grid_search = GridSearchCV(model, param_grid, cv=5)
+        # grid_search.fit(train.ecfp, train.labels)
+        # print("Best parameters:", grid_search.best_params_)
 
         print('validating fold', fold)
         valid_preds = model.predict(valid.ecfp)
