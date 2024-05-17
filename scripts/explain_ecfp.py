@@ -68,7 +68,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
                 metrics = json.load(f)
             best_fold = np.argmin([v['val_mae'] for k, v in metrics.items()
                                    if k not in ['valid', 'test', 'best_fold']])
-            with open(f"{root}/train[.pkl", 'rb') as f:
+            with open(f"{root}/train{best_fold}.pkl", 'rb') as f:
                 train = pickle.load(f)
             train_dataset = ECFPDataSplit(train, nbits=cfg.model.nbits)
     else:
@@ -115,7 +115,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
     def calc_shap_weights(explainer, X):
         X = np.array(X)
         if X.shape[0] == cfg.model.nbits:
-            X = X.unsqueeze(0)
+            X = X[None, ...]
 
         shap_values = explainer.shap_values(X)[0]
         print('len shap val vec', len(shap_values))
@@ -241,12 +241,16 @@ def explain_ecfp(cfg: DictConfig) -> None:
     morgan_preds, morgan_weights = [], []
     # morgan_positive, morgan_negative = [], []
 
+    # background_data = shap.sample(np.array(
+    #     valid_dataset.ecfp),
+    #     nsamples=100)
+    background_data = shap.kmeans(np.array(train_dataset.ecfp), k=50)
     if cfg.head.head == 'svr':
         explainer = shap.KernelExplainer(model.predict,
-                                         train_dataset.ecfp)
+                                         background_data)
     elif cfg.head.head == 'rf':
         explainer = shap.TreeExplainer(model,
-                                       train_dataset.ecfp)
+                                       background_data)
         # all_weights = calc_shap_weights(model, ecfps)
 
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
