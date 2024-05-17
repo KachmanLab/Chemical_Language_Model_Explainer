@@ -16,17 +16,19 @@ split:
   scale: true
 model:
   model: ecfp
-  nbits: 512
+  nbits: 2048
   finetune: false
   n_batch: 64
   seed: 42
-  n_epochs: 1
+  n_epochs: 50
 head:
-  head: svr
+  head: rf
   fit: sklearn
 xai:
   model: ecfp
   xai: ecfp
-  topk: 9
   mask: false
+  sign: None
+  save_heat: false
   cmap: div
+  topk: 9

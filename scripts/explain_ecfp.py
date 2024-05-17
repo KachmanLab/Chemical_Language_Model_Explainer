@@ -244,15 +244,19 @@ def explain_ecfp(cfg: DictConfig) -> None:
     # background_data = shap.sample(np.array(
     #     valid_dataset.ecfp),
     #     nsamples=100)
-    background_data = shap.kmeans(np.array(train_dataset.ecfp), k=50)
     if cfg.head.head == 'svr':
+        background_data = shap.kmeans(np.array(train_dataset.ecfp), k=50)
         explainer = shap.KernelExplainer(model.predict,
                                          background_data)
     elif cfg.head.head == 'rf':
+        # background_data = shap.sample(np.array(train_dataset.ecfp),
+        #                               nsamples=100)
+        background_data = np.array(train_dataset.ecfp)
         explainer = shap.TreeExplainer(model,
                                        background_data)
         # all_weights = calc_shap_weights(model, ecfps)
 
+    print('explaining')
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
         if cfg.head.head in ['lin', 'hier']:
             pred = model(ecfp[None, ...]).detach().numpy().item()
@@ -303,8 +307,11 @@ def explain_ecfp(cfg: DictConfig) -> None:
         # norm = Normalize()
         # _ = plot_weighted_mol(to_rdkit_cmap(morgan_neg, neg_cmap), smi, logs, pred, uid, '_neg')
 
-        if uid > 32:
-            break
+        # if uid > 128:
+        #     smiles = smiles[:128]
+        #     morgan_weights = morgan_weights[:128]
+        #     morgan_preds = morgan_preds[:128]
+        #     break
 
     attributions = pd.DataFrame({
         "smiles": smiles,

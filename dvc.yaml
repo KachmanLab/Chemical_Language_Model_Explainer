@@ -121,8 +121,8 @@ stages:
        /workspace/final/${task.task}/${split.split}/
       - cp -r dvc.lock /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/dvc.lock
       - cp -r params.yaml /workspace/final/${task.task}/${split.split}/${model.model}-${head.head}/params.yaml
-      - python3 scripts/plot_models.py
       - python3 scripts/plot_similarity.py
+      - python3 scripts/plot_models.py
       - echo "Finished full ${task.task} ${split.split} pipeline with ${model.model}-${head.head}"
     deps:
       - scripts/plot_models.py

@@ -17,12 +17,14 @@ def plot_models():
     print(OmegaConf.to_yaml(cfg))
 
     basepath = f"/workspace/final/{cfg.task.task}/{cfg.split.split}"
-    models = ['mmb-hier', 'mmb-lin',
-              'mmb-ft-hier', 'mmb-ft-lin',
-              'mmb-avg-hier', 'mmb-avg-lin',
-              'mmb-ft-avg-hier', 'mmb-ft-avg-lin',
-              'ecfp-hier', 'ecfp-lin',
-              ]
+    models = ['ecfp-rf', 'ecfp-svr']
+    # models = ['mmb-hier', 'mmb-lin',
+    #           'mmb-ft-hier', 'mmb-ft-lin',
+    #           'mmb-avg-hier', 'mmb-avg-lin',
+    #           'mmb-ft-avg-hier', 'mmb-ft-avg-lin',
+    #           'ecfp-hier', 'ecfp-lin',
+    #           'ecfp-rf', 'ecfp-svr',
+    #           ]
 
     metrics = {}
     for mdir in models:
@@ -30,9 +32,13 @@ def plot_models():
             with open(f"{basepath}/{mdir}/metrics.json", 'r') as f:
                 metric = json.load(f)
                 print(mdir, metric.keys())
-                print('asserting', str(cfg.split.n_splits-1) in list(metrics.keys()))
+                print('asserting', str(cfg.split.n_splits-1)
+                      in list(metrics.keys()))
                 val_mae = [
                     metric[str(i)]['val_mae'] for i in range(cfg.split.n_splits)
+                ]
+                val_rmse = [
+                    metric[str(i)]['val_rmse'] for i in range(cfg.split.n_splits)
                 ]
                 test_mae = metric['test']['test_mae']
                 metrics[mdir] = {'val_mae': val_mae, 'test_mae': test_mae}
@@ -71,6 +77,14 @@ def plot_models():
         # Plotting Test MAE (darker color)
         ax.bar(i + width/2, test_mae, width, color=colors_dark[i],
                alpha=0.7, label=f'{model} (Test)')
+
+        cv_mae_min = np.min(metrics[model]['val_mae'])
+        cv_mae_max = np.max(metrics[model]['val_mae'])
+        print('MAE', model, cv_mae_min, cv_mae_max)
+        # print(metrics[model]['val_rmse'])
+        # cv_rmse_min = np.min(metrics[model]['val_rmse'])
+        # cv_rmse_max = np.max(metrics[model]['val_rmse'])
+        # print('RMSE', model, cv_rmse_min, cv_rmse_max)
 
     # Adding labels and title
     ax.set_ylabel('Mean Absolute Error (MAE)', fontsize=15)

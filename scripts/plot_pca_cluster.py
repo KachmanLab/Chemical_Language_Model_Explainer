@@ -186,7 +186,10 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
 
     plt.clf()
     # loop over clusters, one fig per cluster
-    mdir = 'mmb-ft-lin'
+    # mdir = 'mmb-ft-lin'
+    # suffix = 'mmb-ft_MolViz'
+    mdir = 'ecfp-rf'
+    suffix = 'MorganAttrib_div'
     n_col = 3
     n_row = n_neighbors // n_col
     for p, cluster in enumerate(neighbor_ix):
@@ -195,7 +198,7 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
         for i in range(n_row):
             for j, uid in enumerate(cluster[i*n_col:(i+1)*n_col]):
                 print(p, i, j, '\t', 'clu', p, cluster, uid)
-                fig = Image.open(f"{basepath}/{mdir}/viz/{uid}_mmb-ft_MolViz.png")
+                fig = Image.open(f"{basepath}/{mdir}/viz/{uid}_{suffix}.png")
                 # axs[j, i].imshow(fig)
                 # axs[j, i].axis('off')
                 axs[i, j].imshow(fig)
@@ -225,7 +228,8 @@ def plot_pca_cluster(cfg: DictConfig) -> None:
     n_neighbors = 5
     neighbor_ix = [np.argsort(kdist[:, cl])[:n_neighbors] for cl in range(n_clusters)]
     # models = ['mmb-ft-lin', 'mmb-hier', 'mmb-ft-avg-hier', 'mmb-avg-hier', 'ecfp-lin']
-    models = ['mmb-ft-lin', 'mmb-ft-avg-lin', 'ecfp-lin-scaled']
+    # models = ['mmb-ft-lin', 'mmb-ft-avg-lin', 'ecfp-lin-scaled', 'ecfp-rf'] #'ecfp-svr', 
+    models = ['ecfp-rf']
     n_models = len(models)
     # loop over clusters, one fig per cluster
     for p, cluster in enumerate(neighbor_ix[:n_clusters]):
