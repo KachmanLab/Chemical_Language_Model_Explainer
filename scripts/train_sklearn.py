@@ -45,7 +45,7 @@ def train_sklearn(cfg: DictConfig) -> None:
 
     with open(f"{root}/test.pkl", 'rb') as f:
         test = pickle.load(f)
-        if cfg.model.model == 'ecfp':
+        if 'ecfp' in cfg.model.model:
             test = ECFPDataSplit(test, nbits=cfg.model.nbits)
             print(test.ecfp.shape, test.labels.shape)
 

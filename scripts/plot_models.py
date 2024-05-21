@@ -68,24 +68,31 @@ def plot_models():
         # Placeholder data for CV MAE and Test MAE
 
         cv_mae_mean = np.mean(metrics[model]['val_mae'])
-        cv_mae_std = np.std(metrics[model]['val_mae'])
+        # cv_mae_std = np.std(metrics[model]['val_mae'])
         test_mae = metrics[model]['test_mae']
 
+        # plot MAE from 5 CV as points instead of yerr
+        for j, cv_mae in enumerate(cv_maes):
+            ax.scatter(i - width/2, cv_mae, color=colors_light[i], edgecolor='black', zorder=3)
+
+        # Plotting the average CV MAE as a line
+        # ax.plot([i - width/2 - 0.1, i - width/2 + 0.1], [cv_mae_mean, cv_mae_mean], color='red', linewidth=2)
+
         # Plotting CV MAE (lighter color)
-        ax.bar(i - width/2, cv_mae_mean, width, yerr=cv_mae_std,
+        ax.bar(i - width/2, cv_mae_mean, width, # yerr=cv_mae_std,
                color=colors_light[i], label=f'{model} (Valid)')
 
         # Plotting Test MAE (darker color)
-        ax.bar(i + width/2, test_mae, width, color=colors_dark[i],
-               alpha=0.7, label=f'{model} (Test)')
+        ax.bar(i + width/2, test_mae, width, 
+               color=colors_dark[i], label=f'{model} (Test)')
 
         cv_mae_min = np.min(metrics[model]['val_mae'])
         cv_mae_max = np.max(metrics[model]['val_mae'])
         print('MAE', model, cv_mae_min, cv_mae_max)
         # print(metrics[model]['val_rmse'])
-        # cv_rmse_min = np.min(metrics[model]['val_rmse'])
-        # cv_rmse_max = np.max(metrics[model]['val_rmse'])
-        # print('RMSE', model, cv_rmse_min, cv_rmse_max)
+        cv_rmse_min = np.min(metrics[model]['val_rmse'])
+        cv_rmse_max = np.max(metrics[model]['val_rmse'])
+        print('RMSE', model, cv_rmse_min, cv_rmse_max)
 
     # Adding labels and title
     ax.set_ylabel('Mean Absolute Error (MAE)', fontsize=15)

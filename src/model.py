@@ -423,24 +423,6 @@ class ECFPLinear(pl.LightningModule):
                 layer.reset_parameters()
 
 
-# class ECFPModel(ECFPLinear):
-#     def __init__(self, head='svr', dim=2048):
-#         super().__init__()
-#         self.dim = dim
-#         if head == 'svr':
-#             self.head = SVR(kernel='rbf')
-#         elif head == 'rf':
-#             self.head = RandomForestRegressor(n_estimators=100,
-#                                               random_state=42)
-#
-#     def fit(self, data):
-#         ecfp, labels = data[:]
-#         return self.head.fit(ecfp, labels)
-#
-#     def forward(self, ecfp):
-#         return self.head.predict(ecfp)
-
-
 ##########################################
 class BaselineAqueousModel(AqueousRegModel):
     def __init__(self, head, finetune=False):

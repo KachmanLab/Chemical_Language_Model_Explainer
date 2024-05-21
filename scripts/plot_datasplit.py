@@ -50,7 +50,7 @@ def plot_datasplit(cfg: DictConfig) -> None:
     elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
         model = MMB_AVG_Featurizer(head=head,
                                    finetune=cfg.model.finetune)
-    elif cfg.model.model == 'ecfp':
+    elif 'ecfp' in cfg.model.model:
         valid_emb = np.array(ECFPDataSplit(valid).ecfp)
         test_emb = np.array(ECFPDataSplit(test).ecfp)
 

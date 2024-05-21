@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 from src.model import (
-    AqueousRegModel, BaselineAqueousModel, ECFPLinear, ECFPModel
+    AqueousRegModel, BaselineAqueousModel, ECFPLinear
 )
 from src.dataloader import ECFPDataSplit
 import pickle
