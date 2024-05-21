@@ -207,7 +207,7 @@ class ECFPDataSplit(DataSplit):
 class MurckoScaffoldSplitter():
     # 10544 798 461 with k=3, seed=42
     # 7287 3590 921 with k=2, seed=42
-    def __init__(self, smiles, n_splits=1, test_size=0.1, seed=42, top_k=3):
+    def __init__(self, smiles, n_splits=1, test_size=0.1, seed=42, top_k=2):
         self.n_splits = n_splits
         self.test_size = test_size,
         self.seed = seed

@@ -4,4 +4,4 @@ split_frac: 0.9
 data_seed: 42
 scaffold_k: 3
 color: b
-scale: false
+scale: true

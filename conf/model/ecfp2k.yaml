@@ -1,4 +1,4 @@
-model: ecfp
+model: ecfp2k
 nbits: 2048
 finetune: false
 n_batch: 64

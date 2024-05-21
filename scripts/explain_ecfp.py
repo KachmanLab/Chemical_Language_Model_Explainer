@@ -44,7 +44,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
     mdir = f"{cfg.model.model}-{cfg.head.head}"
     ckpt_path = f"{basepath}/{mdir}/best.pt"
 
-    if cfg.model.model in 'ecfp':
+    if 'ecfp' in cfg.model.model:
         if cfg.head.head in ['lin', 'hier']:
             model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
             model.head.load_state_dict(torch.load(ckpt_path))
@@ -257,8 +257,8 @@ def explain_ecfp(cfg: DictConfig) -> None:
                                        background_data)
         # all_weights = calc_shap_weights(model, ecfps)
 
-    elif cfg.head.head in ['sverad']:
-        all_weights = model.feature_weights(csr_matrix(ecfps))
+    # elif cfg.head.head in ['sverad']:
+    #     all_weights = model.feature_weights(csr_matrix(ecfps))
 
     print('explaining')
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
@@ -286,11 +286,11 @@ def explain_ecfp(cfg: DictConfig) -> None:
             # weights = model.coef_[0]
             # print(weights.shape)
         elif cfg.head.head in ['sverad']:
-            weights = all_weights[uid]
-            # weights = model.feature_weights(csr_matrix(ecfp[None, ...]))[0]
-            print(weights.shape)
-            print(weights)
-            [print(f"{weights[int(b)]}", '\t', b) for b in bits_dict]
+            # weights = all_weights[uid]
+            weights = model.feature_weights(csr_matrix(ecfp[None, ...]))[0]
+            # print(weights.shape)
+            # print(weights)
+            # [print(f"{weights[int(b)]}", '\t', b) for b in bits_dict]
         morgan_weight = attribute_morgan(smi, bits_dict, weights)
 
         topk_bits_dict = sort_dict_by_weight(

@@ -46,7 +46,7 @@ def predict_model(cfg: DictConfig) -> None:
         valid = pickle.load(f)
     with open(f"{root}/test.pkl", 'rb') as f:
         test = pickle.load(f)
-    if cfg.model.model == 'ecfp':
+    if 'ecfp' in cfg.model.model:
         valid = ECFPDataSplit(valid, nbits=cfg.model.nbits)
         test = ECFPDataSplit(test, nbits=cfg.model.nbits)
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
@@ -65,7 +65,7 @@ def predict_model(cfg: DictConfig) -> None:
             model = BaselineAqueousModel(head=head,
                                          finetune=cfg.model.finetune)
             model.head.load_state_dict(torch.load(ckpt_path))
-        elif cfg.model.model == 'ecfp':
+        elif cfg.model.model in ['ecfp', 'ecfp2k'] :
             model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
             model.head.load_state_dict(torch.load(ckpt_path))
 

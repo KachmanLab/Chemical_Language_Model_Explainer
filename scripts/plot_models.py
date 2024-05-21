@@ -17,7 +17,8 @@ def plot_models():
     print(OmegaConf.to_yaml(cfg))
 
     basepath = f"/workspace/final/{cfg.task.task}/{cfg.split.split}"
-    models = ['ecfp-rf', 'ecfp-svr']
+    models = ['ecfp-rf', 'ecfp-sverad', 'ecfp2k-rf', 'ecfp2k-sverad']
+
     # models = ['mmb-hier', 'mmb-lin',
     #           'mmb-ft-hier', 'mmb-ft-lin',
     #           'mmb-avg-hier', 'mmb-avg-lin',

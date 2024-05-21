@@ -8,14 +8,15 @@ task:
   plot_title: Aqueous solubility
   plot_propname: log(S)
 split:
-  split: accurate
+  split: scaffold
   n_splits: 5
   split_frac: 0.9
   data_seed: 42
-  color: r
+  scaffold_k: 3
+  color: b
   scale: true
 model:
-  model: ecfp
+  model: ecfp2k
   nbits: 2048
   finetune: false
   n_batch: 64
