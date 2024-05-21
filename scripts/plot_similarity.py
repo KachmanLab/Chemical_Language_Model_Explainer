@@ -30,7 +30,7 @@ def plot_similarity():
               'mmb-ft-avg-hier', 'mmb-ft-avg-lin',
               #'ecfp-hier',
               'ecfp-lin', 'ecfp-lin-scaled'
-              'ecfp-svr', 'ecfp-rf'
+              'ecfp-svr', 'ecfp-rf', 'ecfp-sverad'
               # 'mmb-ft-lin-scaled', 'mmb-ft-lin-scaled-clamp',
               ]
 

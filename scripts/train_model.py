@@ -46,8 +46,9 @@ def train(cfg: DictConfig) -> None:
         with open(f"{root}/valid{fold}.pkl", 'rb') as f:
             valid = pickle.load(f)
         if 'ecfp' in cfg.model.model:
-            train = ECFPDataSplit(train, nbits=cfg.model.nbits)
-            valid = ECFPDataSplit(valid, nbits=cfg.model.nbits)
+            raise NotImplementedError
+            # train = ECFPDataSplit(train, nbits=cfg.model.nbits)
+            # valid = ECFPDataSplit(valid, nbits=cfg.model.nbits)
         print('len train, val', len(train), len(valid))
         train_loader = DataLoader(train, batch_size=cfg.model.n_batch,
                                   shuffle=True, num_workers=8)
@@ -69,11 +70,13 @@ def train(cfg: DictConfig) -> None:
                 model = BaselineAqueousModel(head=cfg.head.head,
                                              finetune=cfg.model.finetune)
             elif cfg.model.model == 'ecfp':
-                model = ECFPLinear(head=cfg.head.head,
-                                   dim=cfg.model.nbits)
-                if cfg.head.head in ['lin', 'hier']:
-                    model = ECFPLinear(head=cfg.head.head,
-                                       dim=cfg.model.nbits)
+                # moved to train_sklearn
+                raise NotImplementedError
+                # model = ECFPLinear(head=cfg.head.head,
+                #                    dim=cfg.model.nbits)
+                # if cfg.head.head in ['lin', 'hier']:
+                #     model = ECFPLinear(head=cfg.head.head,
+                #                        dim=cfg.model.nbits)
             if cfg.model.finetune or 'ft' in cfg.model.model:
                 # unfreeze to train the whole model instead of just the head
                 # cfg['finetune'] = True

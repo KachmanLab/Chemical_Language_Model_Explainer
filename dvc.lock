@@ -421,7 +421,7 @@ stages:
     - pwd
     - echo "SPLIT DATA --task aq --property aq --loader AqSolDataset --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S)' --split accurate --n_splits 1 --split_frac 0.9 --data_seed
+      --plot_propname 'log(S)' --split accurate --n_splits 5 --split_frac 0.9 --data_seed
       42 --color r --scale"
     - mkdir -p data/aq/accurate/
     - python3 scripts/split_data.py
@@ -438,7 +438,7 @@ stages:
       params.yaml:
         split:
           split: accurate
-          n_splits: 1
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -455,29 +455,29 @@ stages:
     outs:
     - path: data/aq/accurate/
       hash: md5
-      md5: b4f8ad0d6f8c12c42c36c37791fea4ae.dir
-      size: 1287563
-      nfiles: 4
+      md5: 89f2924dc35b9f64357f913cfad11ed8.dir
+      size: 3044131
+      nfiles: 12
   train_model:
     cmd:
-    - mkdir -p out/aq/accurate/ecfp-rf/{viz,model}
-    - echo "TRAIN --model ecfp --nbits 2048 --n_batch 64 --seed 42 --n_epochs 50 --head
-      rf --fit sklearn"
+    - mkdir -p out/aq/accurate/ecfp-sverad/{viz,model}
+    - echo "TRAIN --model ecfp --nbits 2048 --n_batch 64 --seed 42 --n_epochs 1 --head
+      sverad --fit sklearn"
     - python3 scripts/train_sklearn.py
     deps:
     - path: data/aq/accurate/
       hash: md5
-      md5: b4f8ad0d6f8c12c42c36c37791fea4ae.dir
-      size: 1287563
-      nfiles: 4
+      md5: 89f2924dc35b9f64357f913cfad11ed8.dir
+      size: 3044131
+      nfiles: 12
     - path: scripts/train_model.py
       hash: md5
-      md5: 7659fc0592045bd766361a060c83cf56
-      size: 7168
+      md5: a1406a875de568a8c1a85683dc0be566
+      size: 7303
     - path: scripts/train_sklearn.py
       hash: md5
-      md5: 019304eefcfe020561c1036512c26be1
-      size: 4139
+      md5: 4498b15f89fc363641569d3b57a441b2
+      size: 4452
     - path: src/model.py
       hash: md5
       md5: 72ec74221911f70e60259a624f3b3e4d
@@ -485,7 +485,7 @@ stages:
     params:
       params.yaml:
         head:
-          head: rf
+          head: sverad
           fit: sklearn
         model:
           model: ecfp
@@ -493,10 +493,10 @@ stages:
           finetune: false
           n_batch: 64
           seed: 42
-          n_epochs: 50
+          n_epochs: 1
         split:
           split: accurate
-          n_splits: 1
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -511,36 +511,36 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: out/aq/accurate/ecfp-rf/best.pt
+    - path: out/aq/accurate/ecfp-sverad/best.pt
       hash: md5
-      md5: c89ad15b4dfe132184578f78b850e51e
-      size: 142612368
-    - path: out/aq/accurate/ecfp-rf/metrics.json
+      md5: 31278b3e6231d0d28cbee9ffb0e8ae9c
+      size: 2806820
+    - path: out/aq/accurate/ecfp-sverad/metrics.json
       hash: md5
-      md5: d587b82703c171ea3b13ab0ffed2ff8f
-      size: 233
-    - path: out/aq/accurate/ecfp-rf/model/
+      md5: c7b901c4eb4c5de501679f84c50be3c2
+      size: 645
+    - path: out/aq/accurate/ecfp-sverad/model/
       hash: md5
-      md5: e3ce8077becefb2322aa340ed34a7ee8.dir
-      size: 142612196
-      nfiles: 1
+      md5: 0f54e1dd9d6a073c5433a0f5105d7f88.dir
+      size: 14047094
+      nfiles: 5
   explain_model:
     cmd:
-    - mkdir -p out/aq/accurate/ecfp-rf/viz
+    - mkdir -p out/aq/accurate/ecfp-sverad/viz
     - python3 scripts/explain_ecfp.py
     deps:
     - path: data/aq/accurate/test.pkl
       hash: md5
-      md5: 8896c44da73f7ce0ec08ad391538abf8
+      md5: fbea079e3216c3b2fa02fdbba3630749
       size: 20038
-    - path: out/aq/accurate/ecfp-rf/best.pt
+    - path: out/aq/accurate/ecfp-sverad/best.pt
       hash: md5
-      md5: c89ad15b4dfe132184578f78b850e51e
-      size: 142612368
+      md5: 31278b3e6231d0d28cbee9ffb0e8ae9c
+      size: 2806820
     - path: scripts/explain_ecfp.py
       hash: md5
-      md5: aff486da878d6ba27df15cbb062182d6
-      size: 16460
+      md5: 3185b8b6c5bf3d26c373021194e6ed8b
+      size: 16913
     - path: src/explainer.py
       hash: md5
       md5: cc8c2cc7ea7ec45d6c9530b2eab87642
@@ -552,7 +552,7 @@ stages:
     params:
       params.yaml:
         head:
-          head: rf
+          head: sverad
           fit: sklearn
         model:
           model: ecfp
@@ -560,10 +560,10 @@ stages:
           finetune: false
           n_batch: 64
           seed: 42
-          n_epochs: 50
+          n_epochs: 1
         split:
           split: accurate
-          n_splits: 1
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -586,38 +586,38 @@ stages:
           cmap: div
           topk: 9
     outs:
-    - path: out/aq/accurate/ecfp-rf/attributions.csv
+    - path: out/aq/accurate/ecfp-sverad/attributions.csv
       hash: md5
-      md5: 744ee8b2c704f56a23260d69627866e3
-      size: 152982
-    - path: out/aq/accurate/ecfp-rf/viz
+      md5: 9cb0c5eead97cb2e9a6eb266c24a69d7
+      size: 147000
+    - path: out/aq/accurate/ecfp-sverad/viz
       hash: md5
-      md5: 67781387b658794eadb337ec3d66b4d7.dir
-      size: 66892309
-      nfiles: 1734
+      md5: fb59f7fa80ecd4fa376b06f52ea4bef5.dir
+      size: 34685282
+      nfiles: 1156
   predict_model:
     cmd:
-    - mkdir -p out/aq/accurate/ecfp-rf/viz
+    - mkdir -p out/aq/accurate/ecfp-sverad/viz
     - python3 scripts/predict_model.py
     - python3 scripts/plot_datasplit.py
     deps:
     - path: data/aq/accurate/
       hash: md5
-      md5: b4f8ad0d6f8c12c42c36c37791fea4ae.dir
-      size: 1287563
-      nfiles: 4
-    - path: out/aq/accurate/ecfp-rf/best.pt
+      md5: 89f2924dc35b9f64357f913cfad11ed8.dir
+      size: 3044131
+      nfiles: 12
+    - path: out/aq/accurate/ecfp-sverad/best.pt
       hash: md5
-      md5: c89ad15b4dfe132184578f78b850e51e
-      size: 142612368
+      md5: 31278b3e6231d0d28cbee9ffb0e8ae9c
+      size: 2806820
     - path: scripts/plot_datasplit.py
       hash: md5
-      md5: 90e17f0062cfb0834170702f6ae16040
-      size: 6175
+      md5: 13cda2a306bf6bd9981b01e42bd077b9
+      size: 6155
     - path: scripts/predict_model.py
       hash: md5
-      md5: 15721d06b59dbb1132fa7ba0e9f8b9da
-      size: 7839
+      md5: d463879c0fa8d77f3eaf137b5c6fb695
+      size: 7889
     - path: src/model.py
       hash: md5
       md5: 72ec74221911f70e60259a624f3b3e4d
@@ -625,7 +625,7 @@ stages:
     params:
       params.yaml:
         head:
-          head: rf
+          head: sverad
           fit: sklearn
         model:
           model: ecfp
@@ -633,10 +633,10 @@ stages:
           finetune: false
           n_batch: 64
           seed: 42
-          n_epochs: 50
+          n_epochs: 1
         split:
           split: accurate
-          n_splits: 1
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -651,69 +651,69 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: out/aq/accurate/ecfp-rf/latent_viz.png
+    - path: out/aq/accurate/ecfp-sverad/latent_viz.png
       hash: md5
-      md5: cb2862cc4b80e5959aac82126631736e
-      size: 264384
-    - path: out/aq/accurate/ecfp-rf/parity_plot.png
+      md5: 19f6cf341a71965e28d27b85f23c617b
+      size: 260701
+    - path: out/aq/accurate/ecfp-sverad/parity_plot.png
       hash: md5
-      md5: 119d2b8904093e11dc055f9820033fb7
-      size: 55942
-    - path: out/aq/accurate/ecfp-rf/predictions.csv
+      md5: 7399725eec1307400f1e6bd72b354850
+      size: 48983
+    - path: out/aq/accurate/ecfp-sverad/predictions.csv
       hash: md5
-      md5: 6fb0a840fbbcee9861e38bda72c27b4e
-      size: 137533
+      md5: faecdd344936e7a1e176c5268b0a673d
+      size: 138175
   all:
     cmd:
     - pwd
-    - mkdir -p /workspace/final/aq/accurate/ecfp-rf/{model,viz}
-    - cp -r out/aq/accurate/ecfp-rf/ /workspace/final/aq/accurate/
-    - cp -r dvc.lock /workspace/final/aq/accurate/ecfp-rf/dvc.lock
-    - cp -r params.yaml /workspace/final/aq/accurate/ecfp-rf/params.yaml
+    - mkdir -p /workspace/final/aq/accurate/ecfp-sverad/{model,viz}
+    - cp -r out/aq/accurate/ecfp-sverad/ /workspace/final/aq/accurate/
+    - cp -r dvc.lock /workspace/final/aq/accurate/ecfp-sverad/dvc.lock
+    - cp -r params.yaml /workspace/final/aq/accurate/ecfp-sverad/params.yaml
     - python3 scripts/plot_similarity.py
     - python3 scripts/plot_models.py
-    - echo "Finished full aq accurate pipeline with ecfp-rf"
+    - echo "Finished full aq accurate pipeline with ecfp-sverad"
     deps:
     - path: out/aq/accurate/
       hash: md5
-      md5: c7090bbe49e770351841590e44dd6653.dir
-      size: 414942713
-      nfiles: 2953
-    - path: out/aq/accurate/ecfp-rf/attributions.csv
+      md5: 27c8b3e1360359e3bf8603100d765ef8.dir
+      size: 52134780
+      nfiles: 1168
+    - path: out/aq/accurate/ecfp-sverad/attributions.csv
       hash: md5
-      md5: 744ee8b2c704f56a23260d69627866e3
-      size: 152982
-    - path: out/aq/accurate/ecfp-rf/best.pt
+      md5: 9cb0c5eead97cb2e9a6eb266c24a69d7
+      size: 147000
+    - path: out/aq/accurate/ecfp-sverad/best.pt
       hash: md5
-      md5: c89ad15b4dfe132184578f78b850e51e
-      size: 142612368
-    - path: out/aq/accurate/ecfp-rf/latent_viz.png
+      md5: 31278b3e6231d0d28cbee9ffb0e8ae9c
+      size: 2806820
+    - path: out/aq/accurate/ecfp-sverad/latent_viz.png
       hash: md5
-      md5: cb2862cc4b80e5959aac82126631736e
-      size: 264384
-    - path: out/aq/accurate/ecfp-rf/model
+      md5: 19f6cf341a71965e28d27b85f23c617b
+      size: 260701
+    - path: out/aq/accurate/ecfp-sverad/model
       hash: md5
-      md5: e3ce8077becefb2322aa340ed34a7ee8.dir
-      size: 142612196
-      nfiles: 1
-    - path: out/aq/accurate/ecfp-rf/parity_plot.png
+      md5: 0f54e1dd9d6a073c5433a0f5105d7f88.dir
+      size: 14047094
+      nfiles: 5
+    - path: out/aq/accurate/ecfp-sverad/parity_plot.png
       hash: md5
-      md5: 119d2b8904093e11dc055f9820033fb7
-      size: 55942
-    - path: out/aq/accurate/ecfp-rf/predictions.csv
+      md5: 7399725eec1307400f1e6bd72b354850
+      size: 48983
+    - path: out/aq/accurate/ecfp-sverad/predictions.csv
       hash: md5
-      md5: 6fb0a840fbbcee9861e38bda72c27b4e
-      size: 137533
-    - path: out/aq/accurate/ecfp-rf/viz
+      md5: faecdd344936e7a1e176c5268b0a673d
+      size: 138175
+    - path: out/aq/accurate/ecfp-sverad/viz
       hash: md5
-      md5: 67781387b658794eadb337ec3d66b4d7.dir
-      size: 66892309
-      nfiles: 1734
+      md5: fb59f7fa80ecd4fa376b06f52ea4bef5.dir
+      size: 34685282
+      nfiles: 1156
     - path: scripts/plot_models.py
       hash: md5
       md5: f560f1dee6ae028ebff251d204a7d059
       size: 3997
     - path: scripts/plot_similarity.py
       hash: md5
-      md5: f8d7e4a5835719331546f96745daa741
-      size: 3697
+      md5: e310a494cb520609254e2d7298ffcfbf
+      size: 3712

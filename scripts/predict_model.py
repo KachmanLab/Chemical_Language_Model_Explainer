@@ -91,7 +91,7 @@ def predict_model(cfg: DictConfig) -> None:
         all_valid = trainer.predict(model, valid_loader)
         all_test = trainer.predict(model, test_loader)
 
-    elif 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']:
+    elif 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf', 'sverad']:
         with open(ckpt_path, 'rb') as file:
             model = pickle.load(file)
         all_valid = {'preds': model.predict(valid.ecfp),
@@ -111,7 +111,7 @@ def predict_model(cfg: DictConfig) -> None:
             smiles = list(chain(*[f.get('smiles') for f in all]))
             tokens = list(chain(*[f.get('tokens') for f in all]))
 
-        if cfg.head.head in ['svr', 'rf']:
+        if cfg.head.head in ['svr', 'rf', 'sverad']:
             preds = all.get('preds')
             labels = all.get('labels')
         elif cfg.head.head in ['lin', 'hier']:
@@ -135,12 +135,12 @@ def predict_model(cfg: DictConfig) -> None:
     ###################################
     # yhat = torch.concat([f.get('preds') for f in all_test])
     # y = torch.concat([f.get('labels') for f in all_test])
-    if cfg.head.head in ['svr', 'rf']:
-        yhat = torch.tensor(all.get('preds'))
-        y = torch.tensor(all.get('labels'))
+    if cfg.head.head in ['svr', 'rf', 'sverad']:
+        yhat = torch.tensor(all_test.get('preds'))
+        y = torch.tensor(all_test.get('labels'))
     elif cfg.head.head in ['lin', 'hier']:
-        yhat = torch.concat([f.get('preds') for f in all]).cpu().numpy()
-        y = torch.concat([f.get('labels') for f in all]).cpu().numpy()
+        yhat = torch.concat([f.get('preds') for f in all_test]).cpu().numpy()
+        y = torch.concat([f.get('labels') for f in all_test]).cpu().numpy()
 
     if cfg.split.scale:
         scaler = RobustScaler(quantile_range=[10, 90])

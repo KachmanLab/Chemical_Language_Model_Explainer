@@ -9,7 +9,7 @@ task:
   plot_propname: log(S)
 split:
   split: accurate
-  n_splits: 1
+  n_splits: 5
   split_frac: 0.9
   data_seed: 42
   color: r
@@ -20,9 +20,9 @@ model:
   finetune: false
   n_batch: 64
   seed: 42
-  n_epochs: 50
+  n_epochs: 1
 head:
-  head: rf
+  head: sverad
   fit: sklearn
 xai:
   model: ecfp

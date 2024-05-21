@@ -3,7 +3,6 @@ import json
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
-import pandas as pd
 import pickle
 import hydra
 from omegaconf import OmegaConf, DictConfig

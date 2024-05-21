@@ -19,6 +19,7 @@ from omegaconf import OmegaConf, DictConfig
 import pandas as pd
 import shap
 import json
+from scipy.sparse import csr_matrix
 # from sklearn.ensemble import RandomForestRegressor
 # from sklearn.svm import SVR
 
@@ -55,7 +56,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
             print(weights.shape)
             assert weights.shape[0] == cfg.model.nbits
 
-        elif cfg.head.head in ['svr', 'rf']:
+        elif cfg.head.head in ['svr', 'rf', 'sverad']:
             # if cfg.head.head == 'svr':
             #     model = SVR(kernel='rbf')
             # elif cfg.head.head == 'rf':
@@ -256,11 +257,14 @@ def explain_ecfp(cfg: DictConfig) -> None:
                                        background_data)
         # all_weights = calc_shap_weights(model, ecfps)
 
+    elif cfg.head.head in ['sverad']:
+        all_weights = model.feature_weights(csr_matrix(ecfps))
+
     print('explaining')
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
         if cfg.head.head in ['lin', 'hier']:
             pred = model(ecfp[None, ...]).detach().numpy().item()
-        elif cfg.head.head in ['svr', 'rf']:
+        elif cfg.head.head in ['svr', 'rf', 'sverad']:
             pred = model.predict(ecfp[None, ...])
 
         # pred = model.predict(ecfp[None, ...]).detach().numpy().item()
@@ -281,7 +285,12 @@ def explain_ecfp(cfg: DictConfig) -> None:
 
             # weights = model.coef_[0]
             # print(weights.shape)
-
+        elif cfg.head.head in ['sverad']:
+            weights = all_weights[uid]
+            # weights = model.feature_weights(csr_matrix(ecfp[None, ...]))[0]
+            print(weights.shape)
+            print(weights)
+            [print(f"{weights[int(b)]}", '\t', b) for b in bits_dict]
         morgan_weight = attribute_morgan(smi, bits_dict, weights)
 
         topk_bits_dict = sort_dict_by_weight(
@@ -299,9 +308,10 @@ def explain_ecfp(cfg: DictConfig) -> None:
         morgan_div = mapper.to_rdkit_cmap(mapper.div_norm(morgan_weight))
         _ = plot_weighted_mol(morgan_div, smi, logs, pred, uid, '_div')
 
-        norm = Normalize()
-        _ = plot_weighted_mol(to_rdkit_cmap(
-            morgan_weight, div_cmap), smi, logs, pred, uid, '_reg')
+        # norm = Normalize()
+        # _ = plot_weighted_mol(to_rdkit_cmap(
+        #     morgan_weight, div_cmap), smi, logs, pred, uid, '_reg')
+
         # norm = Normalize()
         # _ = plot_weighted_mol(to_rdkit_cmap(morgan_pos, pos_cmap), smi, logs, pred, uid, '_pos')
         # norm = Normalize()
