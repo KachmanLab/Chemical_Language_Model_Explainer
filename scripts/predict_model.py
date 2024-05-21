@@ -139,8 +139,8 @@ def predict_model(cfg: DictConfig) -> None:
         yhat = torch.tensor(all_test.get('preds'))
         y = torch.tensor(all_test.get('labels'))
     elif cfg.head.head in ['lin', 'hier']:
-        yhat = torch.concat([f.get('preds') for f in all_test]).cpu().numpy()
-        y = torch.concat([f.get('labels') for f in all_test]).cpu().numpy()
+        yhat = torch.concat([f.get('preds') for f in all_test]).cpu()
+        y = torch.concat([f.get('labels') for f in all_test]).cpu()
 
     if cfg.split.scale:
         scaler = RobustScaler(quantile_range=[10, 90])

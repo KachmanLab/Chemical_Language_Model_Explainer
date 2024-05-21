@@ -34,7 +34,7 @@ def train(cfg: DictConfig) -> None:
         if cfg.model.model == 'ecfp':
             test = ECFPDataSplit(test, nbits=cfg.model.nbits)
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
-                             shuffle=False, num_workers=8)
+                             shuffle=False, num_workers=2)
 
     basepath = f"./out/{cfg.task.task}/{cfg.split.split}"
     mdir = f"{cfg.model.model}-{cfg.head.head}"
