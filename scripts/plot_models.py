@@ -48,9 +48,27 @@ def plot_models():
                         metric[str(i)]['val_rmse'] for i in range(cfg.split.n_splits)
                     ]
                     test_rmse = metric['test']['test_rmse']
+                elif 'val_mse' in metric[str(0)].keys():
+                    val_rmse = [np.sqrt(
+                        metric[str(i)]['val_mse']) for i in range(cfg.split.n_splits)
+                    ]
+                    test_rmse = np.sqrt(metric['test']['test_mse'])
                 else:
                     val_rmse = [0. for i in range(cfg.split.n_splits)]
                     test_rmse = 0.
+
+                if cfg.split.scale:
+                    if cfg.split.split == 'scaffold':
+                        # scaler.center_ = -2.61
+                        scale_ = 5.657
+                    elif cfg.split.split in ['accurate', 'random']:
+                        # scaler.center_ = -2.68
+                        scale_ = 5.779
+
+                    val_mae = [e * scale_ for e in val_mae]
+                    test_mae = test_mae * scale_
+                    val_rmse = [e * scale_ for e in val_rmse]
+                    test_rmse = test_rmse * scale_
 
                 metrics[mdir] = {'val_mae': val_mae, 'test_mae': test_mae,
                                  'val_rmse': val_rmse, 'test_rmse': test_rmse}
@@ -64,84 +82,71 @@ def plot_models():
     colors_dark = plt.cm.viridis(np.linspace(0, 0.75, len(models)))
     colors_light = plt.cm.viridis(np.linspace(0.05, 0.8, len(models)))
 
-    # colors_light = colors_dark + np.array([0.3, 0.3, 0.3, 0])
-    # colors_light = np.clip(colors_light, 0, 1)  # Ensuring valid color values
+    res = []
+    for error in ['mae', 'rmse']:
+        # Updated plotting with the revised color scheme
+        fig, ax = plt.subplots(figsize=(14, 6))
+        width = 0.35  # Width of the bars
 
-    # base_colors = plt.cm.tab10(np.linspace(0, 1, len(models)))
-    # colors_light = base_colors + np.array([0.3, 0.3, 0.3, 0])
-    # colors_light = np.clip(colors_light, 0, 1)  # Ensuring valid color values
-    # colors_dark = base_colors
+        for i, model in enumerate(models):
+            # Placeholder data for CV MAE and Test MAE
+            cv_errs = metrics[model][f'val_{error}']
+            test_err = metrics[model][f'test_{error}']
 
-    for scale in [False, True]:
-        for error in ['mae', 'rmse']:
-        # for error in ['mae']:
-            # Updated plotting with the revised color scheme
-            fig, ax = plt.subplots(figsize=(14, 6))
-            width = 0.35  # Width of the bars
+            cv_err_mean = np.mean(cv_errs)
+            cv_err_std = np.std(cv_errs)
 
-            for i, model in enumerate(models):
-                # Placeholder data for CV MAE and Test MAE
-                cv_errs = metrics[model][f'val_{error}']
-                test_err = metrics[model][f'test_{error}']
+            # plot MAE from 5 CV as points instead of yerr
+            for j, cv_err in enumerate(cv_errs):
+                ax.scatter(i - width/2, cv_err, color=colors_light[i],
+                           edgecolor='black', zorder=3)
 
-                if cfg.split.scale and scale:
-                    suffix = '_scaled'
-                    scaler = RobustScaler(quantile_range=[10, 90])
-                    if cfg.split.split == 'scaffold':
-                        scaler.center_ = -2.61
-                        scaler.scale_ = 5.657
-                    elif cfg.split.split in ['accurate', 'random']:
-                        scaler.center_ = -2.68
-                        scaler.scale_ = 5.779
+            # Plotting the average CV MAE as a line
+            # ax.plot([i - width/2 - 0.1, i - width/2 + 0.1],
+            # [cv_mae_mean, cv_mae_mean], color='red', linewidth=2)
 
-                    # cv_errs = [scaler.inverse_transform(e) for e in cv_errs
-                    cv_errs = scaler.inverse_transform(np.array(
-                        cv_errs).reshape(1, -1))[0].tolist()
-                    test_err = scaler.inverse_transform(np.array(
-                        test_err).reshape(1, -1))[0].tolist()
-                else:
-                    suffix = ''
+            # Plotting CV MAE (lighter color)
+            ax.bar(i - width/2, cv_err_mean, width,
+                   color=colors_light[i], label=f'{model} (Valid)')
 
-                cv_err_mean = np.mean(cv_errs)
-                cv_err_std = np.std(cv_errs)
+            # Plotting Test MAE (darker color)
+            ax.bar(i + width/2, test_err, width,
+                   color=colors_dark[i], label=f'{model} (Test)')
 
-                # plot MAE from 5 CV as points instead of yerr
-                for j, cv_err in enumerate(cv_errs):
-                    ax.scatter(i - width/2, cv_err, color=colors_light[i],
-                               edgecolor='black', zorder=3)
+            cv_err_min = np.min(metrics[model][f'val_{error}'])
+            cv_err_max = np.max(metrics[model][f'val_{error}'])
+            print('err', error, model, cv_err_min, cv_err_max)
 
-                # Plotting the average CV MAE as a line
-                # ax.plot([i - width/2 - 0.1, i - width/2 + 0.1],
-                # [cv_mae_mean, cv_mae_mean], color='red', linewidth=2)
+            res.append({
+                'Model': model,
+                f'{error}-mean': np.round(cv_err_mean, 4),
+                f'{error}-std': np.round(cv_err_std, 4),
+                f'{error}-min': np.round(cv_err_min, 4),
+                f'{error}-max': np.round(cv_err_max, 4),
+            })
+        # Adding labels and title
+        if error == 'mae':
+            ax.set_ylabel('Mean Absolute Error (MAE)', fontsize=15)
+        elif error == 'rmse':
+            ax.set_ylabel('Root Mean Squared Error (RMSE)', fontsize=15)
+        plt.gca().tick_params(axis='y', labelsize='large')
+        ax.set_xticks(range(len(models)))
+        ax.set_xticklabels(models, ha='center', rotation=75, fontsize=14)
+        # ax.set_xticklabels(models, ha='center', fontsize=13)
+        # ax.set_xticklabels(models, rotation=45, ha='right')
+        # ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 
-                # Plotting CV MAE (lighter color)
-                ax.bar(i - width/2, cv_err_mean, width,
-                       color=colors_light[i], label=f'{model} (Valid)')
+        plt.tight_layout()
+        plt.savefig(f"{basepath}/model_comparison_{error}.png")
+        plt.clf()
 
-                # Plotting Test MAE (darker color)
-                ax.bar(i + width/2, test_err, width,
-                       color=colors_dark[i], label=f'{model} (Test)')
-
-                cv_err_min = np.min(metrics[model][f'val_{error}'])
-                cv_err_max = np.max(metrics[model][f'val_{error}'])
-                print('err', error, model, cv_err_min, cv_err_max)
-
-            # Adding labels and title
-            if error == 'mae':
-                ax.set_ylabel('Mean Absolute Error (MAE)', fontsize=15)
-            elif error == 'rmse':
-                ax.set_ylabel('Root Mean Squared Error (RMSE)', fontsize=15)
-            plt.gca().tick_params(axis='y', labelsize='large')
-            ax.set_xticks(range(len(models)))
-            ax.set_xticklabels(models, ha='center', rotation=30, fontsize=14)
-            # ax.set_xticklabels(models, ha='center', fontsize=13)
-            # ax.set_xticklabels(models, rotation=45, ha='right')
-            # ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-
-            plt.tight_layout()
-            plt.savefig(f"{basepath}/model_comparison_{error}{suffix}.png")
-            plt.clf()
-
+    df = pd.DataFrame(res)
+    df.set_index('Model', inplace=True)
+    df = df.pivot_table(index='Model')
+    df = df[['mae-mean', 'mae-std', 'mae-min', 'mae-max',
+            'rmse-mean', 'rmse-std', 'rmse-min', 'rmse-max']]
+    df.to_csv(f"{basepath}/model_metrics.csv")
+    print(df)
 
 if __name__ == "__main__":
     plot_models()

@@ -137,4 +137,5 @@ stages:
       - out/${task.task}/${split.split}/${model.model}-${head.head}/predictions.csv
       - out/${task.task}/${split.split}/${model.model}-${head.head}/attributions.csv
       - out/${task.task}/${split.split}/${model.model}-${head.head}/viz
-    # final/${task.task}/${split.split}/${model.model}-${head.head}/model_comparision_mae.png"
+      # - final/${task.task}/${split.split}/${model.model}-${head.head}/model_comparison_mae.png
+      # - final/${task.task}/${split.split}/${model.model}-${head.head}/model_comparison_rmse.png
