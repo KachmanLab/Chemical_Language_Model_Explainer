@@ -61,14 +61,14 @@ def explain_shap(cfg: DictConfig) -> None:
     cfg = OmegaConf.load('./params.yaml')
     print('SHAP EXPLAIN CONFIG from params.yaml')
     print(OmegaConf.to_yaml(cfg))
-    cfg.model.n_batch = 32
+    cfg.model.n_batch = 2
 
     pl.seed_everything(cfg.model.seed)
     root = f"./data/{cfg.task.task}/{cfg.split.split}"
     with open(f"{root}/test.pkl", 'rb') as f:
         test = pickle.load(f)
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
-                             shuffle=False, num_workers=8)
+                             shuffle=False, num_workers=1)
 
     basepath = f"./out/{cfg.task.task}/{cfg.split.split}"
     mdir = f"{cfg.model.model}-{cfg.head.head}"
@@ -197,7 +197,7 @@ def explain_shap(cfg: DictConfig) -> None:
             if uid not in []:  # 17, 39, 94, 210, 217
                 # segmentation fault, likely due to weird structure?
                 plot_weighted_molecule(atom_color, smi, token, lab, pred,
-                    f"{uid}_{xai}", f"{basepath}/{mdir}/viz/")
+                                       f"{uid}_{xai}", f"{basepath}/{mdir}/viz/")
                 # plot_weighted_molecule(pos_color, smi, token, lab, pred,
                 #     f"{uid}_pos_{xai}", f"{basepath}/{mdir}/viz/")
                 # plot_weighted_molecule(neg_color, smi, token, lab, pred,
@@ -216,14 +216,15 @@ def explain_shap(cfg: DictConfig) -> None:
             'shap_weights': shapvals,
             'atom_weights': atom_weights,
             'split': 'test'
-            })
+        })
         attributions = pd.concat([attributions, res], axis=0)
 
     print('token/shap equal len', all([len(t) == len(s) for t, s in zip(
         attributions.tokens, attributions.shap_weights
     )]))
 
-    attributions = attributions.reset_index(drop=True).rename(columns={'index': 'uid'})
+    attributions = attributions.reset_index(
+        drop=True).rename(columns={'index': 'uid'})
     attributions.to_csv(f"{basepath}/{mdir}/attributions.csv", index=False)
     # results = results.reset_index(drop=True)
     # results = results.reset_index().rename(columns={'index':'uid'})

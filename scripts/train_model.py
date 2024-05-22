@@ -12,9 +12,6 @@ import json
 import numpy as np
 import hydra
 from omegaconf import OmegaConf, DictConfig
-from sklearn.linear_model import Lasso
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.svm import SVR
 
 
 @hydra.main(
@@ -31,7 +28,7 @@ def train(cfg: DictConfig) -> None:
 
     with open(f"{root}/test.pkl", 'rb') as f:
         test = pickle.load(f)
-        if cfg.model.model == 'ecfp':
+        if 'ecfp' in cfg.model.model:
             test = ECFPDataSplit(test, nbits=cfg.model.nbits)
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
                              shuffle=False, num_workers=2)
@@ -46,9 +43,8 @@ def train(cfg: DictConfig) -> None:
         with open(f"{root}/valid{fold}.pkl", 'rb') as f:
             valid = pickle.load(f)
         if 'ecfp' in cfg.model.model:
-            raise NotImplementedError
-            # train = ECFPDataSplit(train, nbits=cfg.model.nbits)
-            # valid = ECFPDataSplit(valid, nbits=cfg.model.nbits)
+            train = ECFPDataSplit(train, nbits=cfg.model.nbits)
+            valid = ECFPDataSplit(valid, nbits=cfg.model.nbits)
         print('len train, val', len(train), len(valid))
         train_loader = DataLoader(train, batch_size=cfg.model.n_batch,
                                   shuffle=True, num_workers=8)
@@ -69,14 +65,9 @@ def train(cfg: DictConfig) -> None:
             elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
                 model = BaselineAqueousModel(head=cfg.head.head,
                                              finetune=cfg.model.finetune)
-            elif cfg.model.model == 'ecfp':
-                # moved to train_sklearn
-                raise NotImplementedError
-                # model = ECFPLinear(head=cfg.head.head,
-                #                    dim=cfg.model.nbits)
-                # if cfg.head.head in ['lin', 'hier']:
-                #     model = ECFPLinear(head=cfg.head.head,
-                #                        dim=cfg.model.nbits)
+            elif 'ecfp' in cfg.model.model and cfg.head.head in ['lin', 'hier']:
+                model = ECFPLinear(head=cfg.head.head,
+                                   dim=cfg.model.nbits)
             if cfg.model.finetune or 'ft' in cfg.model.model:
                 # unfreeze to train the whole model instead of just the head
                 # cfg['finetune'] = True
@@ -114,21 +105,7 @@ def train(cfg: DictConfig) -> None:
             auto_lr_find=False,
         )
 
-        if 'mmb' in cfg.model.model:
-            trainer.fit(model, train_loader, valid_loader)
-        # elif 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']:
-            # TODO merge with val set
-            # feat, lab = train[:]
-            # model.head.fit(feat, lab)
-
-            # lasso = Lasso(alpha=0.2, fit_intercept=False)
-        #     feat, lab = train[:]
-        #     lasso.fit(feat, lab)
-        #
-        #     model.head.fc1.weight.requires_grad = False
-        #     model.head.fc1.weight[0] = torch.FloatTensor(lasso.coef_)
-
-        # trainer.fit(model, train_loader, valid_loader)
+        trainer.fit(model, train_loader, valid_loader)
 
         print('validating fold', fold)
         metrics[fold] = trainer.validate(model, valid_loader)[0]

@@ -54,18 +54,22 @@ def predict_model(cfg: DictConfig) -> None:
     valid_loader = DataLoader(valid, batch_size=cfg.model.n_batch,
                               shuffle=False, num_workers=8)
 
-    if 'mmb' in cfg.model.model:
+    # if 'mmb' in cfg.model.model or ('ecfp' in cfg.model.model and cfg.head.head in ['lin', 'hier']):
+    if 'mmb' in cfg.model.model or cfg.head.head in ['lin', 'hier']:
         head = cfg.head.head
         if cfg.model.model in ['mmb', 'mmb-ft']:
             model = AqueousRegModel(head=head,
                                     finetune=cfg.model.finetune)
             model.head.load_state_dict(torch.load(ckpt_path))
             model.explainer = MolecularSelfAttentionViz(save_heatmap=False)
+
         elif cfg.model.model in ['mmb-avg', 'mmb-ft-avg']:
             model = BaselineAqueousModel(head=head,
                                          finetune=cfg.model.finetune)
             model.head.load_state_dict(torch.load(ckpt_path))
-        elif cfg.model.model in ['ecfp', 'ecfp2k'] :
+
+        elif cfg.model.model in ['ecfp', 'ecfp2k']:
+            assert cfg.head.head in ['lin', 'hier']
             model = ECFPLinear(head=cfg.head.head, dim=cfg.model.nbits)
             model.head.load_state_dict(torch.load(ckpt_path))
 

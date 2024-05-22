@@ -461,9 +461,9 @@ stages:
       nfiles: 12
   train_model:
     cmd:
-    - mkdir -p out/aq/scaffold/mmb-ft-lin/{viz,model}
-    - echo "TRAIN --model mmb-ft --finetune --n_batch 48 --seed 42 --n_epochs 1 --head
-      lin --fit model"
+    - mkdir -p out/aq/scaffold/ecfp2k-hier/{viz,model}
+    - echo "TRAIN --model ecfp2k --nbits 2048 --n_batch 64 --seed 42 --n_epochs 1
+      --head hier --fit model"
     - python3 scripts/train_model.py
     deps:
     - path: data/aq/scaffold/
@@ -473,8 +473,8 @@ stages:
       nfiles: 12
     - path: scripts/train_model.py
       hash: md5
-      md5: 0a20ad7978bd20b520538e18b36e56f4
-      size: 7292
+      md5: 23d34b811e6367dddc2bcb557c00bcdf
+      size: 6904
     - path: scripts/train_sklearn.py
       hash: md5
       md5: 2b78e94fc83168e2ffc6f7b05e22fb93
@@ -486,12 +486,13 @@ stages:
     params:
       params.yaml:
         head:
-          head: lin
+          head: hier
           fit: model
         model:
-          model: mmb-ft
-          finetune: true
-          n_batch: 48
+          model: ecfp2k
+          nbits: 2048
+          finetune: false
+          n_batch: 64
           seed: 42
           n_epochs: 1
         split:
@@ -512,19 +513,19 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: out/aq/scaffold/mmb-ft-lin/best.pt
+    - path: out/aq/scaffold/ecfp2k-hier/best.pt
       hash: md5
-      md5: d3d70c66143199e359270cb290e9b20a
-      size: 7395
-    - path: out/aq/scaffold/mmb-ft-lin/metrics.json
+      md5: 6705386ac6ec530491dc3442d97c91d1
+      size: 560079
+    - path: out/aq/scaffold/ecfp2k-hier/metrics.json
       hash: md5
-      md5: 0a54ab152bfcec38b84fc3c4ddbbc919
-      size: 528
-    - path: out/aq/scaffold/mmb-ft-lin/model/
+      md5: f5d06945b943828114afa144848800d9
+      size: 714
+    - path: out/aq/scaffold/ecfp2k-hier/model/
       hash: md5
-      md5: 97d9b47e20a1f3f4e1217d4829e71a28.dir
-      size: 476232675
-      nfiles: 11
+      md5: df952268df5496ce71593fa281d0cd54.dir
+      size: 2800395
+      nfiles: 5
   explain_model:
     cmd:
     - mkdir -p out/aq/scaffold/mmb-ft-lin/viz
@@ -597,27 +598,28 @@ stages:
       nfiles: 927
   predict_model:
     cmd:
-    - mkdir -p out/aq/scaffold/mmb-ft-lin/viz
+    - mkdir -p out/aq/scaffold/ecfp2k-hier/viz
     - python3 scripts/predict_model.py
     - python3 scripts/plot_datasplit.py
+    - cp -r out/aq/scaffold/ecfp2k-hier/ /workspace/final/aq/scaffold/
     deps:
     - path: data/aq/scaffold/
       hash: md5
       md5: df0b822e1ac02641de8ea1f4b6fc0473.dir
       size: 2915975
       nfiles: 12
-    - path: out/aq/scaffold/mmb-ft-lin/best.pt
+    - path: out/aq/scaffold/ecfp2k-hier/best.pt
       hash: md5
-      md5: d3d70c66143199e359270cb290e9b20a
-      size: 7395
+      md5: 6705386ac6ec530491dc3442d97c91d1
+      size: 560079
     - path: scripts/plot_datasplit.py
       hash: md5
       md5: 67df0b5de0b523caccd498d817163775
       size: 6155
     - path: scripts/predict_model.py
       hash: md5
-      md5: b73faae93af1ffdf2132f1fd0cd2ea3a
-      size: 7886
+      md5: 0eee0938ae34d2b2b60e6fdf0f70f057
+      size: 8078
     - path: src/model.py
       hash: md5
       md5: 4f052a39e4c74b5331734c86b93e8cc4
@@ -625,12 +627,13 @@ stages:
     params:
       params.yaml:
         head:
-          head: lin
+          head: hier
           fit: model
         model:
-          model: mmb-ft
-          finetune: true
-          n_batch: 48
+          model: ecfp2k
+          nbits: 2048
+          finetune: false
+          n_batch: 64
           seed: 42
           n_epochs: 1
         split:
@@ -651,18 +654,18 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: out/aq/scaffold/mmb-ft-lin/latent_viz.png
+    - path: out/aq/scaffold/ecfp2k-hier/latent_viz.png
       hash: md5
-      md5: d81c4c60c0ecac01b8bbd0a6951a6cab
-      size: 239079
-    - path: out/aq/scaffold/mmb-ft-lin/parity_plot.png
+      md5: 2496e75e53dd13e1b5c6cf5e8aeb30bd
+      size: 304695
+    - path: out/aq/scaffold/ecfp2k-hier/parity_plot.png
       hash: md5
-      md5: 12e9de12f47661ff6499875b9563a68f
-      size: 55315
-    - path: out/aq/scaffold/mmb-ft-lin/predictions.csv
+      md5: 88d9acc38d96641a7c3f9e919bb49129
+      size: 48683
+    - path: out/aq/scaffold/ecfp2k-hier/predictions.csv
       hash: md5
-      md5: 082e415f4a4294ef449d2424fb999d83
-      size: 555248
+      md5: 48305c5becf4be3e9f4d229a15f7a683
+      size: 176937
   all:
     cmd:
     - pwd

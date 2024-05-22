@@ -16,18 +16,18 @@ split:
   color: b
   scale: true
 model:
-  model: mmb-ft
-  finetune: true
-  n_batch: 48
+  model: ecfp2k
+  nbits: 2048
+  finetune: false
+  n_batch: 64
   seed: 42
   n_epochs: 1
 head:
-  head: lin
+  head: hier
   fit: model
 xai:
-  model: mmb
-  xai: mmb
-  mask: true
-  sign: None
-  save_heat: false
-  cmap: None
+  model: ecfp
+  xai: ecfp
+  topk: 9
+  mask: false
+  cmap: div
