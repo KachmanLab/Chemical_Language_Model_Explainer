@@ -59,13 +59,16 @@ def plot_models():
                     val_rmse = [0. for i in range(cfg.split.n_splits)]
                     test_rmse = 0.
 
-                if cfg.split.scale:
+                if cfg.split.scale or 'scaled' in mdir:
                     if cfg.split.split == 'scaffold':
                         # scaler.center_ = -2.61
                         scale_ = 5.657
-                    elif cfg.split.split in ['accurate', 'random']:
+                    elif cfg.split.split == 'accurate':
                         # scaler.center_ = -2.68
                         scale_ = 5.779
+                    elif cfg.split.split == 'random':
+                        # scaler.center_ = -2.68
+                        scale_ = 5.78
 
                     val_mae = [e * scale_ for e in val_mae]
                     test_mae = test_mae * scale_

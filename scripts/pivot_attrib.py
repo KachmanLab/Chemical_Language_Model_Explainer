@@ -30,11 +30,17 @@ def explode_attribs(models=None):
 
     basepath = f"/workspace/final/{cfg.task.task}/{cfg.split.split}"
     if not models:
-        models = ['mmb-hier', 'mmb-lin',
-              'mmb-ft-hier', 'mmb-ft-lin',
-              'mmb-avg-hier', 'mmb-avg-lin',
-              'mmb-ft-avg-hier', 'mmb-ft-avg-lin']
-              # not implemented for 'ecfp-hier','ecfp-lin'
+        models = [
+            'mmb-ft-lin', 'mmb-ft-hier',
+            'mmb-lin', 'mmb-hier',
+            'mmb-ft-avg-lin', 'mmb-ft-avg-hier',
+            'mmb-avg-lin', 'mmb-avg-hier',
+            'ecfp-lin', 'ecfp2k-lin',
+            'ecfp-lin-scaled', 'ecfp2k-lin-scaled',
+            'ecfp-hier', 'ecfp2k-hier',
+            'ecfp-svr', 'ecfp2k-svr',
+            'ecfp-rf', 'ecfp2k-rf',
+        ]
 
     for mdir in models:
         try:
@@ -65,7 +71,7 @@ def explode_attribs(models=None):
             # cleanup
             dfexp = dfexp.reset_index(drop=True)
             dfexp = dfexp.rename(columns={'tokens': 'token', 'rel_weights': 'weight'})
-            dfexp.to_csv(f"{basepath}/{mdir}/{mdir}_expl_attrib.csv", index=False)
+            dfexp.to_csv(f"{basepath}/attribs/{mdir}_attribs.csv", index=False)
 
         except FileNotFoundError:
             print(f"File not found: {basepath}/{mdir}")

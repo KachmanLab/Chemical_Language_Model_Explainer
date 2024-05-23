@@ -421,9 +421,9 @@ stages:
     - pwd
     - echo "SPLIT DATA --task aq --property aq --loader AqSolDataset --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S)' --split random --n_splits 3 --split_frac 0.9 --data_seed
+      --plot_propname 'log(S)' --split accurate --n_splits 5 --split_frac 0.9 --data_seed
       42 --color r"
-    - mkdir -p data/aq/random/
+    - mkdir -p data/aq/accurate/
     - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
@@ -437,8 +437,8 @@ stages:
     params:
       params.yaml:
         split:
-          split: random
-          n_splits: 3
+          split: accurate
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -453,31 +453,31 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: data/aq/random/
+    - path: data/aq/accurate/
       hash: md5
-      md5: 5295dc47127af9aa2e2d0c8f42b21bbe.dir
-      size: 2057177
-      nfiles: 8
+      md5: 0f00946f0c8268b62b2a80dcf44259c5.dir
+      size: 3008991
+      nfiles: 12
   train_model:
     cmd:
-    - mkdir -p out/aq/random/ecfp2k-lin/{viz,model}
+    - mkdir -p out/aq/accurate/ecfp2k-rf/{viz,model}
     - echo "TRAIN --model ecfp2k --nbits 2048 --n_batch 48 --seed 42 --n_epochs 30
-      --head lin --fit model"
-    - python3 scripts/train_model.py
+      --head rf --fit sklearn"
+    - python3 scripts/train_sklearn.py
     deps:
-    - path: data/aq/random/
+    - path: data/aq/accurate/
       hash: md5
-      md5: 5295dc47127af9aa2e2d0c8f42b21bbe.dir
-      size: 2057177
-      nfiles: 8
+      md5: 0f00946f0c8268b62b2a80dcf44259c5.dir
+      size: 3008991
+      nfiles: 12
     - path: scripts/train_model.py
       hash: md5
       md5: bfbfd6c042eeb900f227cae3a11e83e3
       size: 6344
     - path: scripts/train_sklearn.py
       hash: md5
-      md5: 27ef9b02a316571b66d264d15c73c90e
-      size: 4450
+      md5: 965c34ea380b3caf505849c75a38719b
+      size: 4271
     - path: src/model.py
       hash: md5
       md5: e7b58ba72bb006addebd9becc588e612
@@ -485,8 +485,8 @@ stages:
     params:
       params.yaml:
         head:
-          head: lin
-          fit: model
+          head: rf
+          fit: sklearn
         model:
           model: ecfp2k
           nbits: 2048
@@ -495,8 +495,8 @@ stages:
           seed: 42
           n_epochs: 30
         split:
-          split: random
-          n_splits: 3
+          split: accurate
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -511,36 +511,36 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: out/aq/random/ecfp2k-lin/best.pt
+    - path: out/aq/accurate/ecfp2k-rf/best.pt
       hash: md5
-      md5: 8811b7bc13f2231b2974dcc306ce85b8
-      size: 25827
-    - path: out/aq/random/ecfp2k-lin/metrics.json
+      md5: 649131ddf8331da801a4b0354b073d92
+      size: 142646416
+    - path: out/aq/accurate/ecfp2k-rf/metrics.json
       hash: md5
-      md5: d0e252ed72a0806cefeebc6c8bc00310
-      size: 496
-    - path: out/aq/random/ecfp2k-lin/model/
+      md5: 1326919d002bde36f3e93a88d8404d3c
+      size: 622
+    - path: out/aq/accurate/ecfp2k-rf/model/
       hash: md5
-      md5: 7be8b2a1da0b654efe177de8b422f0c1.dir
-      size: 77481
-      nfiles: 3
+      md5: 5b24b750bef3789b6b5adc979061b0f6.dir
+      size: 712546804
+      nfiles: 5
   explain_model:
     cmd:
-    - mkdir -p out/aq/random/ecfp2k-lin/viz
+    - mkdir -p out/aq/accurate/ecfp2k-rf/viz
     - python3 scripts/explain_ecfp.py
     deps:
-    - path: data/aq/random/test.pkl
+    - path: data/aq/accurate/test.pkl
       hash: md5
-      md5: 78c62374cf82a5532247e3efd3622796
-      size: 48533
-    - path: out/aq/random/ecfp2k-lin/best.pt
+      md5: 9891a523a7b66e58b19c119650c71a27
+      size: 20038
+    - path: out/aq/accurate/ecfp2k-rf/best.pt
       hash: md5
-      md5: 8811b7bc13f2231b2974dcc306ce85b8
-      size: 25827
+      md5: 649131ddf8331da801a4b0354b073d92
+      size: 142646416
     - path: scripts/explain_ecfp.py
       hash: md5
-      md5: 74eadddbccfda71626116b9c13d881da
-      size: 16923
+      md5: a7d8c2a7287f0e1061b6b951914c5bf8
+      size: 16899
     - path: src/explainer.py
       hash: md5
       md5: cc8c2cc7ea7ec45d6c9530b2eab87642
@@ -552,8 +552,8 @@ stages:
     params:
       params.yaml:
         head:
-          head: lin
-          fit: model
+          head: rf
+          fit: sklearn
         model:
           model: ecfp2k
           nbits: 2048
@@ -562,8 +562,8 @@ stages:
           seed: 42
           n_epochs: 30
         split:
-          split: random
-          n_splits: 3
+          split: accurate
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -584,38 +584,38 @@ stages:
           mask: false
           cmap: div
     outs:
-    - path: out/aq/random/ecfp2k-lin/attributions.csv
+    - path: out/aq/accurate/ecfp2k-rf/attributions.csv
       hash: md5
-      md5: 93e0e1d620e6e4206af67395d71d9919
-      size: 381993
-    - path: out/aq/random/ecfp2k-lin/viz
+      md5: b1676d23d372e211d1f0f826bcff5501
+      size: 151480
+    - path: out/aq/accurate/ecfp2k-rf/viz
       hash: md5
-      md5: 254d9f59a5f9d704304eb183d08752d1.dir
-      size: 94913553
-      nfiles: 2362
+      md5: c300948e0bd9fe94c72569f8a7c74e09.dir
+      size: 43639963
+      nfiles: 1156
   predict_model:
     cmd:
-    - mkdir -p out/aq/random/ecfp2k-lin/viz
+    - mkdir -p out/aq/accurate/ecfp2k-rf/viz
     - python3 scripts/predict_model.py
     - python3 scripts/plot_datasplit.py
     deps:
-    - path: data/aq/random/
+    - path: data/aq/accurate/
       hash: md5
-      md5: 5295dc47127af9aa2e2d0c8f42b21bbe.dir
-      size: 2057177
-      nfiles: 8
-    - path: out/aq/random/ecfp2k-lin/best.pt
+      md5: 0f00946f0c8268b62b2a80dcf44259c5.dir
+      size: 3008991
+      nfiles: 12
+    - path: out/aq/accurate/ecfp2k-rf/best.pt
       hash: md5
-      md5: 8811b7bc13f2231b2974dcc306ce85b8
-      size: 25827
+      md5: 649131ddf8331da801a4b0354b073d92
+      size: 142646416
     - path: scripts/plot_datasplit.py
       hash: md5
       md5: 67df0b5de0b523caccd498d817163775
       size: 6155
     - path: scripts/predict_model.py
       hash: md5
-      md5: 0eee0938ae34d2b2b60e6fdf0f70f057
-      size: 8078
+      md5: 23ff467aea9b73822284078601c370ec
+      size: 8048
     - path: src/model.py
       hash: md5
       md5: e7b58ba72bb006addebd9becc588e612
@@ -623,8 +623,8 @@ stages:
     params:
       params.yaml:
         head:
-          head: lin
-          fit: model
+          head: rf
+          fit: sklearn
         model:
           model: ecfp2k
           nbits: 2048
@@ -633,8 +633,8 @@ stages:
           seed: 42
           n_epochs: 30
         split:
-          split: random
-          n_splits: 3
+          split: accurate
+          n_splits: 5
           split_frac: 0.9
           data_seed: 42
           color: r
@@ -649,69 +649,69 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: out/aq/random/ecfp2k-lin/latent_viz.png
+    - path: out/aq/accurate/ecfp2k-rf/latent_viz.png
       hash: md5
-      md5: 238e4482a0367af70643d2669465c51b
-      size: 293421
-    - path: out/aq/random/ecfp2k-lin/parity_plot.png
+      md5: 7ae1ceac56f3ee6d8386ed110e3ae62b
+      size: 241902
+    - path: out/aq/accurate/ecfp2k-rf/parity_plot.png
       hash: md5
-      md5: 3db8cb323fd3cdcf0f64b73e771ed640
-      size: 55120
-    - path: out/aq/random/ecfp2k-lin/predictions.csv
+      md5: 08971f5fd60660d449f41f53eb15c7ce
+      size: 51954
+    - path: out/aq/accurate/ecfp2k-rf/predictions.csv
       hash: md5
-      md5: 0bce93b3bcffcc34a4072d68fb31bb00
-      size: 167191
+      md5: ef2dfecd2be524805dfdbb6c761ff4ff
+      size: 130512
   all:
     cmd:
     - pwd
-    - mkdir -p /workspace/final/aq/random/ecfp2k-lin/{model,viz}
-    - cp -r out/aq/random/ecfp2k-lin/ /workspace/final/aq/random/
-    - cp -r dvc.lock /workspace/final/aq/random/ecfp2k-lin/dvc.lock
-    - cp -r params.yaml /workspace/final/aq/random/ecfp2k-lin/params.yaml
+    - mkdir -p /workspace/final/aq/accurate/ecfp2k-rf/{model,viz}
+    - cp -r out/aq/accurate/ecfp2k-rf/ /workspace/final/aq/accurate/
+    - cp -r dvc.lock /workspace/final/aq/accurate/ecfp2k-rf/dvc.lock
+    - cp -r params.yaml /workspace/final/aq/accurate/ecfp2k-rf/params.yaml
     - python3 scripts/plot_similarity.py
     - python3 scripts/plot_models.py
-    - echo "Finished full aq random pipeline with ecfp2k-lin"
+    - echo "Finished full aq accurate pipeline with ecfp2k-rf"
     deps:
-    - path: out/aq/random/
+    - path: out/aq/accurate/
       hash: md5
-      md5: e8e4f1a936dc9149e99857d01185e7c3.dir
-      size: 95915082
-      nfiles: 2371
-    - path: out/aq/random/ecfp2k-lin/attributions.csv
+      md5: d0a6a890f74b186a5a690874adbb69b3.dir
+      size: 1217190263
+      nfiles: 1178
+    - path: out/aq/accurate/ecfp2k-rf/attributions.csv
       hash: md5
-      md5: 93e0e1d620e6e4206af67395d71d9919
-      size: 381993
-    - path: out/aq/random/ecfp2k-lin/best.pt
+      md5: b1676d23d372e211d1f0f826bcff5501
+      size: 151480
+    - path: out/aq/accurate/ecfp2k-rf/best.pt
       hash: md5
-      md5: 8811b7bc13f2231b2974dcc306ce85b8
-      size: 25827
-    - path: out/aq/random/ecfp2k-lin/latent_viz.png
+      md5: 649131ddf8331da801a4b0354b073d92
+      size: 142646416
+    - path: out/aq/accurate/ecfp2k-rf/latent_viz.png
       hash: md5
-      md5: 238e4482a0367af70643d2669465c51b
-      size: 293421
-    - path: out/aq/random/ecfp2k-lin/model
+      md5: 7ae1ceac56f3ee6d8386ed110e3ae62b
+      size: 241902
+    - path: out/aq/accurate/ecfp2k-rf/model
       hash: md5
-      md5: 7be8b2a1da0b654efe177de8b422f0c1.dir
-      size: 77481
-      nfiles: 3
-    - path: out/aq/random/ecfp2k-lin/parity_plot.png
+      md5: 5b24b750bef3789b6b5adc979061b0f6.dir
+      size: 712546804
+      nfiles: 5
+    - path: out/aq/accurate/ecfp2k-rf/parity_plot.png
       hash: md5
-      md5: 3db8cb323fd3cdcf0f64b73e771ed640
-      size: 55120
-    - path: out/aq/random/ecfp2k-lin/predictions.csv
+      md5: 08971f5fd60660d449f41f53eb15c7ce
+      size: 51954
+    - path: out/aq/accurate/ecfp2k-rf/predictions.csv
       hash: md5
-      md5: 0bce93b3bcffcc34a4072d68fb31bb00
-      size: 167191
-    - path: out/aq/random/ecfp2k-lin/viz
+      md5: ef2dfecd2be524805dfdbb6c761ff4ff
+      size: 130512
+    - path: out/aq/accurate/ecfp2k-rf/viz
       hash: md5
-      md5: 254d9f59a5f9d704304eb183d08752d1.dir
-      size: 94913553
-      nfiles: 2362
+      md5: c300948e0bd9fe94c72569f8a7c74e09.dir
+      size: 43639963
+      nfiles: 1156
     - path: scripts/plot_models.py
       hash: md5
-      md5: 30bbd91df4f3f4fce833ac3a92570335
-      size: 6086
+      md5: 5029bd150d703156f197f206efc1627a
+      size: 6039
     - path: scripts/plot_similarity.py
       hash: md5
-      md5: 78833d1284557837b2ae568656677684
-      size: 3801
+      md5: e0f8dbf182973c6704998119cc1d3708
+      size: 3690
