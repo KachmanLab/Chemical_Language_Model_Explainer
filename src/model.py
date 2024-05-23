@@ -198,11 +198,12 @@ class AqueousRegModel(pl.LightningModule):
             outputs = self(inputs)
         val_loss = self.criterion(outputs, labels)
         val_mae = self.criterion_mae(outputs, labels)
-        # val_mse = self.criterion_mse(outputs, labels, square=False)
+        val_mse = self.criterion_mse(outputs, labels)
         metrics = {
             'val_loss': val_loss,
             'val_mae': val_mae,
-            # 'val_mse': val_mse,
+            'val_mse': val_mse,
+            'val_rmse': torch.sqrt(val_mse),
         }
         self.log_dict(metrics)
         return metrics
@@ -215,10 +216,10 @@ class AqueousRegModel(pl.LightningModule):
             outputs = self(inputs)
         test_mae = self.criterion_mae(outputs, labels)
         test_mse = self.criterion_mse(outputs, labels)
-        # test_rmse = self.criterion_rmse(outputs, labels)
         metrics = {
             'test_mae': test_mae,
             'test_mse': test_mse,
+            'test_rmse': torch.sqrt(test_mse),
         }
         self.log_dict(metrics)
         return metrics

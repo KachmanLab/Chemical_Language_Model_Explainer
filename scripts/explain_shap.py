@@ -61,7 +61,7 @@ def explain_shap(cfg: DictConfig) -> None:
     cfg = OmegaConf.load('./params.yaml')
     print('SHAP EXPLAIN CONFIG from params.yaml')
     print(OmegaConf.to_yaml(cfg))
-    cfg.model.n_batch = 2
+    cfg.model.n_batch = 4
 
     pl.seed_everything(cfg.model.seed)
     root = f"./data/{cfg.task.task}/{cfg.split.split}"
