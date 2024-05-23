@@ -56,7 +56,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
             print(weights.shape)
             assert weights.shape[0] == cfg.model.nbits
 
-        elif cfg.head.head in ['svr', 'rf', 'sverad']:
+        elif cfg.head.head in ['svr', 'rf']:
             # if cfg.head.head == 'svr':
             #     model = SVR(kernel='rbf')
             # elif cfg.head.head == 'rf':
@@ -245,11 +245,11 @@ def explain_ecfp(cfg: DictConfig) -> None:
     # background_data = shap.sample(np.array(
     #     valid_dataset.ecfp),
     #     nsamples=100)
-    if cfg.head.head == 'svr':
-        background_data = shap.kmeans(np.array(train_dataset.ecfp), k=50)
-        explainer = shap.KernelExplainer(model.predict,
-                                         background_data)
-    elif cfg.head.head == 'rf':
+    # if cfg.head.head == 'svr':
+    #     background_data = shap.kmeans(np.array(train_dataset.ecfp), k=50)
+    #     explainer = shap.KernelExplainer(model.predict,
+    #                                      background_data)
+    if cfg.head.head == 'rf':
         # background_data = shap.sample(np.array(train_dataset.ecfp),
         #                               nsamples=100)
         background_data = np.array(train_dataset.ecfp)
@@ -264,7 +264,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
     for uid, (smi, logs, ecfp) in enumerate(zip(smiles, labels, ecfps)):
         if cfg.head.head in ['lin', 'hier']:
             pred = model(ecfp[None, ...]).detach().numpy().item()
-        elif cfg.head.head in ['svr', 'rf', 'sverad']:
+        elif cfg.head.head in ['svr', 'rf']:
             pred = model.predict(ecfp[None, ...])
 
         # pred = model.predict(ecfp[None, ...]).detach().numpy().item()
@@ -274,7 +274,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
         # morgan_weight, morgan_pos, morgan_neg = attribute_morgan(
         #     smi, bits_dict, weights)
 
-        if cfg.head.head in ['svr', 'rf']:
+        if cfg.head.head in ['rf']:
             # for svr, rf re-calculate weights using shap,
             # for lin the weights vec stays permanent
             weights = calc_shap_weights(explainer, ecfp)
@@ -285,7 +285,7 @@ def explain_ecfp(cfg: DictConfig) -> None:
 
             # weights = model.coef_[0]
             # print(weights.shape)
-        elif cfg.head.head in ['sverad']:
+        elif cfg.head.head in ['svr']:
             # weights = all_weights[uid]
             weights = model.feature_weights(csr_matrix(ecfp[None, ...]))[0]
             # print(weights.shape)

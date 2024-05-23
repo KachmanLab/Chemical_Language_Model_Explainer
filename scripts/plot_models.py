@@ -20,15 +20,17 @@ def plot_models():
     basepath = f"/workspace/final/{cfg.task.task}/{cfg.split.split}"
     models = ['ecfp-rf', 'ecfp-sverad', 'ecfp2k-rf', 'ecfp2k-sverad']
 
-    models = ['mmb-hier', 'mmb-lin',
-              'mmb-ft-hier', 'mmb-ft-lin',
-              'mmb-avg-hier', 'mmb-avg-lin',
-              'mmb-ft-avg-hier', 'mmb-ft-avg-lin',
-              'ecfp-hier', 'ecfp-lin',
-              'ecfp2k-hier', 'ecfp2k-lin',
-              'ecfp-rf', 'ecfp-sverad',
-              'ecfp2k-rf', 'ecfp2k-sverad'
-              ]
+    models = [
+        'mmb-ft-lin', 'mmb-ft-hier',
+        'mmb-lin', 'mmb-hier',
+        'mmb-ft-avg-lin', 'mmb-ft-avg-hier',
+        'mmb-avg-lin', 'mmb-avg-hier',
+        'ecfp-lin', 'ecfp2k-lin',
+        'ecfp-lin-scaled', 'ecfp2k-lin-scaled',
+        'ecfp-hier', 'ecfp2k-hier',
+        'ecfp-svr', 'ecfp2k-svr',
+        'ecfp-rf', 'ecfp2k-rf',
+    ]
 
     metrics = {}
     for mdir in models:
@@ -123,6 +125,7 @@ def plot_models():
                 f'{error}-std': np.round(cv_err_std, 4),
                 f'{error}-min': np.round(cv_err_min, 4),
                 f'{error}-max': np.round(cv_err_max, 4),
+                f'{error}-test': np.round(test_err, 4),
             })
         # Adding labels and title
         if error == 'mae':
@@ -143,8 +146,8 @@ def plot_models():
     df = pd.DataFrame(res)
     df.set_index('Model', inplace=True)
     df = df.pivot_table(index='Model')
-    df = df[['mae-mean', 'mae-std', 'mae-min', 'mae-max',
-            'rmse-mean', 'rmse-std', 'rmse-min', 'rmse-max']]
+    df = df[['mae-mean', 'mae-std', 'mae-min', 'mae-max', 'mae-test',
+            'rmse-mean', 'rmse-std', 'rmse-min', 'rmse-max', 'rmse-test']]
     df.to_csv(f"{basepath}/model_metrics.csv")
     print(df)
 

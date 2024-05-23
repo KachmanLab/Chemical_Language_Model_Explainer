@@ -2,6 +2,6 @@ split: scaffold
 n_splits: 5
 split_frac: 0.9
 data_seed: 42
-scaffold_k: 3
-color: b
-scale: true
+scaffold_k: 0
+color: r
+scale: false

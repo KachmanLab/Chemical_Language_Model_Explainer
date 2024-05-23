@@ -24,15 +24,17 @@ def plot_similarity():
     print(OmegaConf.to_yaml(cfg))
 
     basepath = f"/workspace/final/{cfg.task.task}/{cfg.split.split}"
-    models = ['mmb-hier', 'mmb-lin',
-              'mmb-ft-hier', 'mmb-ft-lin',
-              'mmb-avg-hier', 'mmb-avg-lin',
-              'mmb-ft-avg-hier', 'mmb-ft-avg-lin',
-              #'ecfp-hier',
-              'ecfp-lin', 'ecfp-lin-scaled'
-              'ecfp-svr', 'ecfp-rf', 'ecfp-sverad'
-              # 'mmb-ft-lin-scaled', 'mmb-ft-lin-scaled-clamp',
-              ]
+    models = [
+        'mmb-ft-lin', 'mmb-ft-hier',
+        'mmb-lin', 'mmb-hier',
+        'mmb-ft-avg-lin', 'mmb-ft-avg-hier',
+        'mmb-avg-lin', 'mmb-avg-hier',
+        'ecfp-lin', 'ecfp2k-lin',
+        'ecfp-lin-scaled', 'ecfp2k-lin-scaled',
+        'ecfp-hier', 'ecfp2k-hier',
+        'ecfp-svr', 'ecfp2k-svr',
+        'ecfp-rf', 'ecfp2k-rf',
+    ]
 
     attributions = {}
     for mdir in models:

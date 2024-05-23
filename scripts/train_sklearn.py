@@ -14,7 +14,7 @@ import hydra
 from omegaconf import OmegaConf, DictConfig
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.svm import SVR
+# from sklearn.svm import SVR
 from sverad.sverad_svm import ExplainingSVR
 from sklearn.model_selection import GridSearchCV
 from scipy.sparse import csr_matrix
@@ -64,19 +64,14 @@ def train_sklearn(cfg: DictConfig) -> None:
         print('len train, val', len(train), len(valid))
 
         # configure model
-        assert 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf', 'sverad']
+        assert 'ecfp' in cfg.model.model and cfg.head.head in ['svr', 'rf']
         if cfg.head.head == 'svr':
-            model = SVR(kernel='rbf',
-                        # gamma=0.01,
-                        # C=10
-                        )
-        elif cfg.head.head == 'sverad':
             model = ExplainingSVR(C=1.0)
             train.ecfp = csr_matrix(train.ecfp)
             valid.ecfp = csr_matrix(valid.ecfp)
             test.ecfp = csr_matrix(test.ecfp)
         elif cfg.head.head == 'rf':
-            model = RandomForestRegressor(n_estimators=100,
+            model = RandomForestRegressor(n_estimators=200,
                                           min_samples_split=2,
                                           min_samples_leaf=1,
                                           random_state=42)

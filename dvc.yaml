@@ -71,8 +71,8 @@ stages:
       - mkdir -p out/${task.task}/${split.split}/${model.model}-${head.head}/viz
       - python3 scripts/predict_model.py
       - python3 scripts/plot_datasplit.py
-      - cp -r out/${task.task}/${split.split}/${model.model}-${head.head}/
-       /workspace/final/${task.task}/${split.split}/
+      # - cp -r out/${task.task}/${split.split}/${model.model}-${head.head}/
+       # /workspace/final/${task.task}/${split.split}/
     deps:
       - src/model.py
       - scripts/predict_model.py
