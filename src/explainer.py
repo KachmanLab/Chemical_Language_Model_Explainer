@@ -145,8 +145,8 @@ class ColorMapper():
         cnt_pre = np.sum(np.where(weights < 0., 1, 0))
 
         amax = np.max(np.abs(weights))
-        # if amax == 0.:
-        #     amax = 1.
+        if np.round(amax, 0) == 0:
+            amax = 1
         weights = (weights + 1e-16) * (1/amax)
         weights = (weights * 0.5) + 0.5
 

@@ -18,7 +18,6 @@ def plot_models():
     print(OmegaConf.to_yaml(cfg))
 
     basepath = f"/workspace/final/{cfg.task.task}/{cfg.split.split}"
-    models = ['ecfp-rf', 'ecfp-sverad', 'ecfp2k-rf', 'ecfp2k-sverad']
 
     models = [
         'mmb-ft-lin', 'mmb-ft-hier',
@@ -124,11 +123,11 @@ def plot_models():
 
             res.append({
                 'Model': model,
-                f'{error}-mean': np.round(cv_err_mean, 4),
-                f'{error}-std': np.round(cv_err_std, 4),
-                f'{error}-min': np.round(cv_err_min, 4),
-                f'{error}-max': np.round(cv_err_max, 4),
-                f'{error}-test': np.round(test_err, 4),
+                f'{error}-mean': np.round(cv_err_mean, 3),
+                f'{error}-std': np.round(cv_err_std, 3),
+                f'{error}-min': np.round(cv_err_min, 3),
+                f'{error}-max': np.round(cv_err_max, 3),
+                f'{error}-test': np.round(test_err, 3),
             })
         # Adding labels and title
         if error == 'mae':
@@ -148,11 +147,31 @@ def plot_models():
 
     df = pd.DataFrame(res)
     df.set_index('Model', inplace=True)
-    df = df.pivot_table(index='Model')
+    df = df.pivot_table(index='Model', sort=False)
     df = df[['mae-mean', 'mae-std', 'mae-min', 'mae-max', 'mae-test',
             'rmse-mean', 'rmse-std', 'rmse-min', 'rmse-max', 'rmse-test']]
     df.to_csv(f"{basepath}/model_metrics.csv")
     print(df)
+
+
+    ##################
+    basepath = f"/workspace/final/{cfg.task.task}"
+    finaldf = []
+    for split in ['random', 'accurate', 'scaffold']:
+        df = pd.read_csv(f"{basepath}/{split}/model_metrics.csv")
+        df['split'] = split
+        finaldf.append(df)
+
+    final_df = pd.concat(finaldf)
+    final_df.set_index('Model', inplace=True)
+    final_df = final_df.pivot_table(index='Model', columns='split', sort=False,
+                        values=['mae-test', 'mae-std', 'rmse-test', 'rmse-std'])
+
+    final_df.columns = [f'{split}-{metric}' for metric, split in final_df.columns]
+    # final_df.columns = ['_'.join(col).strip() for col in final_df.columns.values]
+    final_df.to_csv(f"{basepath}/all_model_metrics.csv")
+    print(finaldf)
+
 
 if __name__ == "__main__":
     plot_models()

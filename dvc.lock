@@ -421,9 +421,9 @@ stages:
     - pwd
     - echo "SPLIT DATA --task aq --property aq --loader AqSolDataset --filepath /workspace/data/AqueousSolu.csv
       --propname logS_aq_avg --smilesname 'smiles solute' --plot_title 'Aqueous solubility'
-      --plot_propname 'log(S)' --split accurate --n_splits 5 --split_frac 0.9 --data_seed
-      42 --color r"
-    - mkdir -p data/aq/accurate/
+      --plot_propname 'log(S)' --split scaffold --n_splits 5 --split_frac 0.9 --data_seed
+      42 --scaffold_k 0 --color r"
+    - mkdir -p data/aq/scaffold/
     - python3 scripts/split_data.py
     deps:
     - path: scripts/split_data.py
@@ -437,10 +437,11 @@ stages:
     params:
       params.yaml:
         split:
-          split: accurate
+          split: scaffold
           n_splits: 5
           split_frac: 0.9
           data_seed: 42
+          scaffold_k: 0
           color: r
           scale: false
         task:
@@ -453,22 +454,22 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: data/aq/accurate/
+    - path: data/aq/scaffold/
       hash: md5
-      md5: 0f00946f0c8268b62b2a80dcf44259c5.dir
-      size: 3008991
+      md5: 5e2663c51b6e6b175ece4459fdf31136.dir
+      size: 2881218
       nfiles: 12
   train_model:
     cmd:
-    - mkdir -p out/aq/accurate/ecfp2k-rf/{viz,model}
-    - echo "TRAIN --model ecfp2k --nbits 2048 --n_batch 48 --seed 42 --n_epochs 30
-      --head rf --fit sklearn"
-    - python3 scripts/train_sklearn.py
+    - mkdir -p out/aq/scaffold/mmb-ft-avg-hier/{viz,model}
+    - echo "TRAIN --model mmb-ft-avg --finetune --n_batch 48 --seed 42 --n_epochs
+      1 --head hier --fit model"
+    - python3 scripts/train_model.py
     deps:
-    - path: data/aq/accurate/
+    - path: data/aq/scaffold/
       hash: md5
-      md5: 0f00946f0c8268b62b2a80dcf44259c5.dir
-      size: 3008991
+      md5: 5e2663c51b6e6b175ece4459fdf31136.dir
+      size: 2881218
       nfiles: 12
     - path: scripts/train_model.py
       hash: md5
@@ -485,20 +486,20 @@ stages:
     params:
       params.yaml:
         head:
-          head: rf
-          fit: sklearn
+          head: hier
+          fit: model
         model:
-          model: ecfp2k
-          nbits: 2048
-          finetune: false
+          model: mmb-ft-avg
+          finetune: true
           n_batch: 48
           seed: 42
-          n_epochs: 30
+          n_epochs: 1
         split:
-          split: accurate
+          split: scaffold
           n_splits: 5
           split_frac: 0.9
           data_seed: 42
+          scaffold_k: 0
           color: r
           scale: false
         task:
@@ -511,40 +512,40 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: out/aq/accurate/ecfp2k-rf/best.pt
+    - path: out/aq/scaffold/mmb-ft-avg-hier/best.pt
       hash: md5
-      md5: 649131ddf8331da801a4b0354b073d92
-      size: 142646416
-    - path: out/aq/accurate/ecfp2k-rf/metrics.json
+      md5: 87b692f48e3d3caacd36c4dc8229bff6
+      size: 154575
+    - path: out/aq/scaffold/mmb-ft-avg-hier/metrics.json
       hash: md5
-      md5: 1326919d002bde36f3e93a88d8404d3c
-      size: 622
-    - path: out/aq/accurate/ecfp2k-rf/model/
+      md5: 9ca5c2f43202f54eca81fed9aa9d747e
+      size: 917
+    - path: out/aq/scaffold/mmb-ft-avg-hier/model/
       hash: md5
-      md5: 5b24b750bef3789b6b5adc979061b0f6.dir
-      size: 712546804
-      nfiles: 5
+      md5: f2dfa8737b15110a4bd561d7bebca426.dir
+      size: 476968575
+      nfiles: 11
   explain_model:
     cmd:
-    - mkdir -p out/aq/accurate/ecfp2k-rf/viz
-    - python3 scripts/explain_ecfp.py
+    - mkdir -p out/aq/scaffold/mmb-ft-avg-hier/viz
+    - python3 scripts/explain_shap.py
     deps:
-    - path: data/aq/accurate/test.pkl
+    - path: data/aq/scaffold/test.pkl
       hash: md5
-      md5: 9891a523a7b66e58b19c119650c71a27
-      size: 20038
-    - path: out/aq/accurate/ecfp2k-rf/best.pt
+      md5: d950d274cfd670f7f49adcecef523c77
+      size: 53396
+    - path: out/aq/scaffold/mmb-ft-avg-hier/best.pt
       hash: md5
-      md5: 649131ddf8331da801a4b0354b073d92
-      size: 142646416
-    - path: scripts/explain_ecfp.py
+      md5: 87b692f48e3d3caacd36c4dc8229bff6
+      size: 154575
+    - path: scripts/explain_shap.py
       hash: md5
-      md5: a7d8c2a7287f0e1061b6b951914c5bf8
-      size: 16899
+      md5: 072efdcef0cc6f1cda0cac300b42f23d
+      size: 8638
     - path: src/explainer.py
       hash: md5
-      md5: cc8c2cc7ea7ec45d6c9530b2eab87642
-      size: 13040
+      md5: 66ff3736c22485db0817ce9ef9bf2815
+      size: 13047
     - path: src/maskedhead.py
       hash: md5
       md5: e51c7a5310350d0e2607cfac6375cab7
@@ -552,20 +553,20 @@ stages:
     params:
       params.yaml:
         head:
-          head: rf
-          fit: sklearn
+          head: hier
+          fit: model
         model:
-          model: ecfp2k
-          nbits: 2048
-          finetune: false
+          model: mmb-ft-avg
+          finetune: true
           n_batch: 48
           seed: 42
-          n_epochs: 30
+          n_epochs: 1
         split:
-          split: accurate
+          split: scaffold
           n_splits: 5
           split_frac: 0.9
           data_seed: 42
+          scaffold_k: 0
           color: r
           scale: false
         task:
@@ -578,36 +579,35 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
         xai:
-          model: ecfp
-          xai: ecfp
-          topk: 9
+          model: mmb-avg
+          xai: shap
           mask: false
           cmap: div
     outs:
-    - path: out/aq/accurate/ecfp2k-rf/attributions.csv
+    - path: out/aq/scaffold/mmb-ft-avg-hier/attributions.csv
       hash: md5
-      md5: b1676d23d372e211d1f0f826bcff5501
-      size: 151480
-    - path: out/aq/accurate/ecfp2k-rf/viz
+      md5: 8d3cbbb0439e2fe5885bf08ac2425da8
+      size: 1111063
+    - path: out/aq/scaffold/mmb-ft-avg-hier/viz
       hash: md5
-      md5: c300948e0bd9fe94c72569f8a7c74e09.dir
-      size: 43639963
-      nfiles: 1156
+      md5: e882736880e4b01cda760240927939fa.dir
+      size: 44435575
+      nfiles: 926
   predict_model:
     cmd:
-    - mkdir -p out/aq/accurate/ecfp2k-rf/viz
+    - mkdir -p out/aq/scaffold/mmb-ft-avg-hier/viz
     - python3 scripts/predict_model.py
     - python3 scripts/plot_datasplit.py
     deps:
-    - path: data/aq/accurate/
+    - path: data/aq/scaffold/
       hash: md5
-      md5: 0f00946f0c8268b62b2a80dcf44259c5.dir
-      size: 3008991
+      md5: 5e2663c51b6e6b175ece4459fdf31136.dir
+      size: 2881218
       nfiles: 12
-    - path: out/aq/accurate/ecfp2k-rf/best.pt
+    - path: out/aq/scaffold/mmb-ft-avg-hier/best.pt
       hash: md5
-      md5: 649131ddf8331da801a4b0354b073d92
-      size: 142646416
+      md5: 87b692f48e3d3caacd36c4dc8229bff6
+      size: 154575
     - path: scripts/plot_datasplit.py
       hash: md5
       md5: 67df0b5de0b523caccd498d817163775
@@ -623,20 +623,20 @@ stages:
     params:
       params.yaml:
         head:
-          head: rf
-          fit: sklearn
+          head: hier
+          fit: model
         model:
-          model: ecfp2k
-          nbits: 2048
-          finetune: false
+          model: mmb-ft-avg
+          finetune: true
           n_batch: 48
           seed: 42
-          n_epochs: 30
+          n_epochs: 1
         split:
-          split: accurate
+          split: scaffold
           n_splits: 5
           split_frac: 0.9
           data_seed: 42
+          scaffold_k: 0
           color: r
           scale: false
         task:
@@ -649,68 +649,68 @@ stages:
           plot_title: Aqueous solubility
           plot_propname: log(S)
     outs:
-    - path: out/aq/accurate/ecfp2k-rf/latent_viz.png
+    - path: out/aq/scaffold/mmb-ft-avg-hier/latent_viz.png
       hash: md5
-      md5: 7ae1ceac56f3ee6d8386ed110e3ae62b
-      size: 241902
-    - path: out/aq/accurate/ecfp2k-rf/parity_plot.png
+      md5: 92daad24dd3ad13e15b0494e76b8e1e6
+      size: 268505
+    - path: out/aq/scaffold/mmb-ft-avg-hier/parity_plot.png
       hash: md5
-      md5: 08971f5fd60660d449f41f53eb15c7ce
-      size: 51954
-    - path: out/aq/accurate/ecfp2k-rf/predictions.csv
+      md5: 4ca34fd7848306b071be0215f71ae1f1
+      size: 46127
+    - path: out/aq/scaffold/mmb-ft-avg-hier/predictions.csv
       hash: md5
-      md5: ef2dfecd2be524805dfdbb6c761ff4ff
-      size: 130512
+      md5: ece2bdd4c30516f8aeee45f240ad8dfe
+      size: 546031
   all:
     cmd:
     - pwd
-    - mkdir -p /workspace/final/aq/accurate/ecfp2k-rf/{model,viz}
-    - cp -r out/aq/accurate/ecfp2k-rf/ /workspace/final/aq/accurate/
-    - cp -r dvc.lock /workspace/final/aq/accurate/ecfp2k-rf/dvc.lock
-    - cp -r params.yaml /workspace/final/aq/accurate/ecfp2k-rf/params.yaml
+    - mkdir -p /workspace/final/aq/scaffold/mmb-ft-avg-hier/{model,viz}
+    - cp -r out/aq/scaffold/mmb-ft-avg-hier/ /workspace/final/aq/scaffold/
+    - cp -r dvc.lock /workspace/final/aq/scaffold/mmb-ft-avg-hier/dvc.lock
+    - cp -r params.yaml /workspace/final/aq/scaffold/mmb-ft-avg-hier/params.yaml
     - python3 scripts/plot_similarity.py
     - python3 scripts/plot_models.py
-    - echo "Finished full aq accurate pipeline with ecfp2k-rf"
+    - echo "Finished full aq scaffold pipeline with mmb-ft-avg-hier"
     deps:
-    - path: out/aq/accurate/
+    - path: out/aq/scaffold/
       hash: md5
-      md5: d0a6a890f74b186a5a690874adbb69b3.dir
-      size: 1217190263
-      nfiles: 1178
-    - path: out/aq/accurate/ecfp2k-rf/attributions.csv
+      md5: a1685bd0b0802873badaa279e0ac6aa7.dir
+      size: 602904241
+      nfiles: 945
+    - path: out/aq/scaffold/mmb-ft-avg-hier/attributions.csv
       hash: md5
-      md5: b1676d23d372e211d1f0f826bcff5501
-      size: 151480
-    - path: out/aq/accurate/ecfp2k-rf/best.pt
+      md5: 8d3cbbb0439e2fe5885bf08ac2425da8
+      size: 1111063
+    - path: out/aq/scaffold/mmb-ft-avg-hier/best.pt
       hash: md5
-      md5: 649131ddf8331da801a4b0354b073d92
-      size: 142646416
-    - path: out/aq/accurate/ecfp2k-rf/latent_viz.png
+      md5: 87b692f48e3d3caacd36c4dc8229bff6
+      size: 154575
+    - path: out/aq/scaffold/mmb-ft-avg-hier/latent_viz.png
       hash: md5
-      md5: 7ae1ceac56f3ee6d8386ed110e3ae62b
-      size: 241902
-    - path: out/aq/accurate/ecfp2k-rf/model
+      md5: 92daad24dd3ad13e15b0494e76b8e1e6
+      size: 268505
+    - path: out/aq/scaffold/mmb-ft-avg-hier/model
       hash: md5
-      md5: 5b24b750bef3789b6b5adc979061b0f6.dir
-      size: 712546804
-      nfiles: 5
-    - path: out/aq/accurate/ecfp2k-rf/parity_plot.png
+      md5: f2dfa8737b15110a4bd561d7bebca426.dir
+      size: 476968575
+      nfiles: 11
+    - path: out/aq/scaffold/mmb-ft-avg-hier/parity_plot.png
       hash: md5
-      md5: 08971f5fd60660d449f41f53eb15c7ce
-      size: 51954
-    - path: out/aq/accurate/ecfp2k-rf/predictions.csv
+      md5: 4ca34fd7848306b071be0215f71ae1f1
+      size: 46127
+    - path: out/aq/scaffold/mmb-ft-avg-hier/predictions.csv
       hash: md5
-      md5: ef2dfecd2be524805dfdbb6c761ff4ff
-      size: 130512
-    - path: out/aq/accurate/ecfp2k-rf/viz
+      md5: ece2bdd4c30516f8aeee45f240ad8dfe
+      size: 546031
+    - path: out/aq/scaffold/mmb-ft-avg-hier/viz
       hash: md5
-      md5: c300948e0bd9fe94c72569f8a7c74e09.dir
-      size: 43639963
-      nfiles: 1156
+      md5: e882736880e4b01cda760240927939fa.dir
+      size: 44435575
+      nfiles: 926
     - path: scripts/plot_models.py
       hash: md5
-      md5: 5029bd150d703156f197f206efc1627a
-      size: 6039
+      md5: 26cd98667331cd1b47ab0d2fa81b0ea4
+      size: 6188
     - path: scripts/plot_similarity.py
       hash: md5
       md5: e0f8dbf182973c6704998119cc1d3708

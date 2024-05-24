@@ -61,14 +61,14 @@ def explain_shap(cfg: DictConfig) -> None:
     cfg = OmegaConf.load('./params.yaml')
     print('SHAP EXPLAIN CONFIG from params.yaml')
     print(OmegaConf.to_yaml(cfg))
-    cfg.model.n_batch = 4
+    cfg.model.n_batch = 48
 
     pl.seed_everything(cfg.model.seed)
     root = f"./data/{cfg.task.task}/{cfg.split.split}"
     with open(f"{root}/test.pkl", 'rb') as f:
         test = pickle.load(f)
     test_loader = DataLoader(test, batch_size=cfg.model.n_batch,
-                             shuffle=False, num_workers=1)
+                             shuffle=False, num_workers=8)
 
     basepath = f"./out/{cfg.task.task}/{cfg.split.split}"
     mdir = f"{cfg.model.model}-{cfg.head.head}"
@@ -161,7 +161,8 @@ def explain_shap(cfg: DictConfig) -> None:
         smiles, labels = batch
         atom_weights = []
 
-        shapvals = explainer(smiles).values
+        # shapvals = explainer(smiles).values
+        shapvals = []
         tokens = [tokenizer.text_to_tokens(s) for s in smiles]
         preds = model(smiles).cpu().detach().numpy()
         labels = labels.cpu().detach().numpy()
@@ -177,7 +178,14 @@ def explain_shap(cfg: DictConfig) -> None:
             lab = labels[b_ix]
             pred = preds[b_ix]
             uid = b_nr * cfg.model.n_batch + b_ix
-            shapval = shapvals[b_ix]
+
+            # shapval = shapvals[b_ix]
+
+            if uid not in [108]:
+                shapval = explainer([smi]).values[0]
+            else:
+                shapval = np.zeros(len(token))
+            shapvals.append(shapval)
             print(uid, 'shapval:', shapval)
 
             atom_weight = cmapper(shapval, token)
@@ -194,7 +202,7 @@ def explain_shap(cfg: DictConfig) -> None:
             # neg_color = cmapper(shap_neg, token)
             # neg_color = neg_cmapper.to_rdkit_cmap(neg_color)
 
-            if uid not in []:  # 17, 39, 94, 210, 217
+            if uid not in [108]:  # 17, 39, 94, 210, 217
                 # segmentation fault, likely due to weird structure?
                 plot_weighted_molecule(atom_color, smi, token, lab, pred,
                                        f"{uid}_{xai}", f"{basepath}/{mdir}/viz/")
@@ -205,8 +213,8 @@ def explain_shap(cfg: DictConfig) -> None:
 
         ###############################
 
-        print(len(atom_weights))
-        print(len(shapvals))
+        print(len(atom_weights), type(atom_weights))
+        print(len(shapvals), type(shapvals))
         print(len(preds))
         res = pd.DataFrame({
             'smiles': smiles,
