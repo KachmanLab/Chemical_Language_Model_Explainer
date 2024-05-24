@@ -64,10 +64,10 @@ def plot_models():
                         scale_ = 5.657
                     elif cfg.split.split == 'accurate':
                         # scaler.center_ = -2.68
-                        scale_ = 5.779
+                        scale_ = 5.8
                     elif cfg.split.split == 'random':
                         # scaler.center_ = -2.68
-                        scale_ = 5.78
+                        scale_ = 5.779
 
                     val_mae = [e * scale_ for e in val_mae]
                     test_mae = test_mae * scale_
@@ -153,7 +153,6 @@ def plot_models():
     df.to_csv(f"{basepath}/model_metrics.csv")
     print(df)
 
-
     ##################
     basepath = f"/workspace/final/{cfg.task.task}"
     finaldf = []
@@ -165,9 +164,10 @@ def plot_models():
     final_df = pd.concat(finaldf)
     final_df.set_index('Model', inplace=True)
     final_df = final_df.pivot_table(index='Model', columns='split', sort=False,
-                        values=['mae-test', 'mae-std', 'rmse-test', 'rmse-std'])
+                                    values=['mae-test', 'mae-std', 'rmse-test', 'rmse-std'])
 
-    final_df.columns = [f'{split}-{metric}' for metric, split in final_df.columns]
+    final_df.columns = [f'{split}-{metric}' for metric,
+                        split in final_df.columns]
     # final_df.columns = ['_'.join(col).strip() for col in final_df.columns.values]
     final_df.to_csv(f"{basepath}/all_model_metrics.csv")
     print(finaldf)

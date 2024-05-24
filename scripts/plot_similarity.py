@@ -31,8 +31,8 @@ def plot_similarity():
         'mmb-avg-lin', 'mmb-avg-hier',
         'ecfp-lin', 'ecfp2k-lin',
         'ecfp-lin-scaled', 'ecfp2k-lin-scaled',
-        'ecfp-hier', 'ecfp2k-hier',
-        'ecfp-svr', 'ecfp2k-svr',
+        # 'ecfp-hier', 'ecfp2k-hier',
+        # 'ecfp-svr', 'ecfp2k-svr',
         'ecfp-rf', 'ecfp2k-rf',
     ]
 
@@ -101,8 +101,8 @@ def plot_similarity():
     print(np.array(similarities).shape)
     mask = np.triu(np.ones_like(similarity_matrix, dtype=bool), k=1)
 
-    sns.set(font_scale=1.1)
-    plt.figure(figsize=(10, 8))  # was (10,8)
+    sns.set(font_scale=1.05)
+    plt.figure(figsize=(15, 12))  # was (10,8)
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
     sns.heatmap(similarity_matrix,
