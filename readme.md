@@ -1,43 +1,37 @@
 # Explainability Techniques for Chemical Language Models
 This repository accompanies the paper 'Explainability Techniques for Chemical Language Models' with code to reproduce the results and apply the technique to other self-attention encoder architectures.
-The paper can be found on Arxiv: https://arxiv.org/abs/2305.16192
+The original preprint can be found on Arxiv: https://arxiv.org/abs/2305.16192
 
-Fully reproducible runs using dvc & mlflow with model checkpoints and all test set visualizations can be explored at https://dagshub.com/stefanhoedl/Chemical_Language_Model_Explainer.
-
-The repository is split into the following:
+The repository uses is split into the following structure and uses DVC + Hydra to configure runs.
 ```
+dvc.yaml                - dvc pipeline stages to reproduce results
+
 src/
-    model.py            - AqueousRegModel, CombiRegModel & <REG> tokenizer
-    dataloader.py       - AqueousSolu & CombiSolu-Exp Dataloaders (SolProp)
+    model.py            - AqueousRegModel <REG> tokenizer
+    dataloader.py       - AqueousSolu Dataloaders (SolProp) & splitting
     explainer.py        - Explainability code to attribute atom relevance
 
 scripts/
-    train_aqueous.py	- training script for AqueousSolu
-    explain_aqueous.py 	- inference script + plots + visualization
-    predict_aqueous.py  - train+val+test predition + atom weights to .csv
-    aqueous_config.json - Aqueous config parameters
-
-    train_combi.py      - training script for CombiSolu-Exp
-    explain_combi.py 	- inference script + plots + visualization
-    combi_config.json   - Combi config parameters
+    split_data.py       - script to split AqueousSolu-Exp dataset according to conf/split/*
+    train_model.py	- training script for all pytorch models (mmb, mmb-avg, ecfp-lin, ecfp-hier)
+    train_sklearn.py	- training script for all sklearn-based models (svr, rf)
+    predict_model.py    - use best model checkpoint to predict test set & parity plot
+    explain_mmb.py 	- MMB + XAI: explainability script + plots + visualization
+    explain_shap.py 	- MMB + SHAP: explainability script + plots + visualization
+    explain_ecfp.py 	- ECFP (lin,hier,svr,rf) explainability script to attrib + save figs
+    plot_{}.py          - various plotting script (model, similarity, datasplit, pca, ...)
 
 nemo_src/
     transformer_attn.py - MegaMolBART source augmented with code to extract attention + grads
     infer.py            - MegaMolBART source to load model
     regex_tokenizer.py  - MegaMolBART source for the tokenzier
 
-results/{aqueous, combi}/
+final/{modelname}/
     models/             - model checkpoint file produced by training script
     viz/                - visualizations for test set produced by explain script
-
-dvc.yaml                - dvc stages to reproduce results with 'dvc repro {aqueous, combi}'
-```
-```
-# mkdir -p /workspace/data/aq_proc/{random,accurate,scaffold}
-# mkdir -p /workspace/aq_prod/{random,accurate,scaffold}/{mmb-hier,mmb-lin,mmb-ft-hier,mmb-ft-lin,mmb-avg,ecfp}/viz
 ```
 
-# Setup:
+# Setup / Installation:
 ### Clone repository, build MegaMolBART docker container
 ```
 git clone https://github.com/KachmanLab/Chemical_Language_Model_Explainer.git
@@ -52,20 +46,24 @@ docker run \
     nvcr.io/nvidia/clara/megamolbart_v0.2:0.2.0
 ```
 
-### Download the SolProp datasets
+### Download the SolProp datasets (Version v1.2, Jul 1, 2022)
 ```
 download SolProp datasets from https://zenodo.org/record/5970538
-extract AqueousSolu.csv and CombiSolu-Exp.csv into /data
+extract AqueousSolu.csv into /data
 ```
 
 ### Run & attach to docker container
 ```
 # attach shell to container
 docker exec -it mmb bash
-# change to /workspace directory
+# change to /workspace directory (which mounts the local repo into container)
 cd /workspace
 # install requirements
 pip install -r requirements.txt
+```
+Alternatively, install requirements with pip directly. Other dependencies should be installed with the MegaMolBART docker container.
+```
+pip install dagshub==0.3.8 mlflow==2.7.1 dvc==3.24.0 matplotlib==3.5.2 rdkit==2023.3.3 scikit-learn==0.24.2 numpy==1.22.3 pandas==1.4.3 seaborn==0.13.0 hydra-core==1.3.2 omegaconf==2.3.0 wandb==0.13.1 pyopenssl==22.1.0 shap==0.43.0
 ```
 
 ### Add code to extract attention scores + gradients
@@ -94,22 +92,39 @@ cp /workspace/nemo_src/transformer_attn.py /opt/conda/lib/python3.8/site-package
         attention_probs.register_hook(self.save_attn_gradients)
 ```
 
-### Reproduce everything with DVC
+
+# Reproduciblity with DVC + Hydra
+This project uses DVC + Hydra to set default configurations in './conf/{task,split,model,head}' and execute them from the command line.
+All scripts read the 'params.yaml' file, which is modified by DVC before execution. 
+Settings can be selected using -S 'split=random', or overridden with  specific options such as -S 'split.n_splits = 3'
+Note that the model & xai config need to match. The --queue option enables queueing experiments for sequential execution by specifing multiple config options.
 ```
-# run 
-dvc repro aqueous
-dvc repro combi
+dvc config hydra.enabled=True 
+dvc exp run --queue -S
+
+# run single experiment 
+dvc exp run -S 'task=aq' -S 'model=mmb-ft' -S 'head=lin' -S 'split=accurate' -S 'model.n_epochs=30' -S 'model.n_batch=48' -S 'split.n_splits=5' -S 'xai=ours'
+
+# using DVC queue (dvc queue start) 
+dvc exp run --queue -S 'task=aq' -S 'model=mmb,mmb-ft' -S 'head=lin,hier' -S 'split=accurate' -S 'model.n_epochs=30' -S 'model.n_batch=48' -S 'split.n_splits=5' -S 'xai=ours'
+dvc exp run --queue -S 'task=aq' -S 'model=mmb-avg,mmb-ft-avg' -S 'head=lin,hier' -S 'split=accurate' -S 'model.n_epochs=30' -S 'model.n_batch=48' -S 'split.n_splits=5' -S 'xai=shap'
+dvc exp run --queue -S 'task=aq' -S 'model=ecfp,ecfp2k -S 'head=lin,hier,svr,rf' -S 'split=accurate' -S 'model.n_epochs=30' -S 'model.n_batch=48' -S 'split.n_splits=5' -S 'xai=ecfp'
 ```
 
 ### or run train + explain scripts individually
 ```
-python scripts/train_aqueous.py
-...
-python scripts/explain_combi.py
+# edit params.yaml first
+python scripts/split_data.py
+python scripts/train_model.py
+python scripts/predict_model.py
+python scripts/explain_model.py
 ```
 
-### Citation
-If you found this repository useful, please cite our paper:
+### Acknowledgements 
+We acknowledge funding from the National Growth Fund project 'Big Chemistry' (1420578), funded by the Ministry of Education, Culture and Science. This project has received funding from the European Union’s Horizon 2020 research and innovation programmes under Grant Agreement No. 833466 (ERC Adv. Grant Life-Inspired). This project has received funding from a Spinoza Grant of the Netherlands Organisation for Scientific Research (NWO).
+
+## Citation
+If you found this repository useful, please cite our preprint:
 ```
 @misc{hödl2023explainability,
       title={Explainability Techniques for Chemical Language Models}, 
